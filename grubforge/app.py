@@ -15,6 +15,7 @@ from grubforge.screens.dashboard     import DashboardScreen
 from grubforge.screens.config_editor import ConfigEditorScreen
 from grubforge.screens.themes        import ThemesScreen
 from grubforge.screens.backup        import BackupScreen
+from grubforge.screens.boot_entries  import BootEntriesScreen
 
 
 # ── Navigation config ─────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ NAV_ITEMS = [
     ("2", "config-editor",   "🔧  Config Editor"),
     ("3", "themes",          "🎨  Themes"),
     ("4", "backup-restore",  "🗂  Backup & Restore"),
+    ("5", "boot-entries",    "🖥  Boot Entries"),
 ]
 
 SCREEN_WIDGET_IDS = {
@@ -31,6 +33,7 @@ SCREEN_WIDGET_IDS = {
     "config-editor":  "screen-config-editor",
     "themes":         "screen-themes",
     "backup-restore": "screen-backup-restore",
+    "boot-entries":   "screen-boot-entries",
 }
 
 BREADCRUMBS = {
@@ -38,6 +41,7 @@ BREADCRUMBS = {
     "config-editor":  "GrubForge › /etc/default/grub",
     "themes":         "GrubForge › Themes",
     "backup-restore": "GrubForge › Backup & Restore",
+    "boot-entries":   "GrubForge › Boot Entries",
 }
 
 VERSION = "v0.1.0"
@@ -56,6 +60,7 @@ class GrubForgeApp(App):
         Binding("2",      "show_config",     "Config Editor", show=False),
         Binding("3",      "show_themes",     "Themes",        show=False),
         Binding("4",      "show_backup",     "Backup",        show=False),
+        Binding("5",      "show_boot_entries", "Boot Entries", show=False),
         Binding("q",      "quit",            "Quit",          show=True),
         Binding("?",      "show_help",       "Help",          show=True),
         Binding("ctrl+c", "quit",            "Quit",          show=False),
@@ -93,6 +98,9 @@ class GrubForgeApp(App):
             )
             yield BackupScreen(
                 id="screen-backup-restore", classes="hidden-screen"
+            )
+            yield BootEntriesScreen(
+                id="screen-boot-entries", classes="hidden-screen"
             )
             yield Static(_status_bar(), id="status-bar")
 
@@ -137,12 +145,15 @@ class GrubForgeApp(App):
 
     def action_show_backup(self) -> None:
         self._switch_to("backup-restore")
+        
+    def action_show_boot_entries(self) -> None:
+        self._switch_to("boot-entries")
 
     def action_show_help(self) -> None:
         self.notify(
-            "1 Dashboard  2 Config  3 Themes  4 Backup\n"
+            "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries\n"
             "E Edit value  S Save  R Refresh  Ctrl+R Regen grub.cfg\n"
-            "B New backup  D Delete backup  q Quit",
+            "K Move up  J Move down  B New backup  D Delete  q Quit",
             title="⚡ GrubForge Help",
             timeout=8,
         )
@@ -168,7 +179,7 @@ def _header(label: str, crumb: str) -> str:
 def _status_bar() -> str:
     return (
         "[dim #585b70]"
-        "1 Dashboard  2 Config  3 Themes  4 Backup  │  "
+        "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries  │  "
         "E Edit  S Save  R Refresh  Ctrl+R Regen  │  "
         "? Help  q Quit"
         "[/dim #585b70]"

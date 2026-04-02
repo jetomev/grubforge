@@ -58,14 +58,14 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 ### Arch Linux (recommended)
 ```bash
 sudo pacman -S python-textual python-rich
-git clone https://github.com/YOUR_USERNAME/grubforge.git
+git clone https://github.com/jetomev/grubforge.git
 cd grubforge
 ```
 
 ### Other distributions
 ```bash
 pip install textual rich
-git clone https://github.com/YOUR_USERNAME/grubforge.git
+git clone https://github.com/jetomev/grubforge.git
 cd grubforge
 ```
 

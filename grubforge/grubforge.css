@@ -1,0 +1,453 @@
+/*
+ * GrubForge — Catppuccin Mocha Theme
+ * Textual TUI stylesheet
+ *
+ * Palette:
+ *   Base:     #1e1e2e   Mantle:   #181825   Crust:    #11111b
+ *   Surface0: #313244   Surface1: #45475a   Surface2: #585b70
+ *   Overlay0: #6c7086   Text:     #cdd6f4
+ *   Blue:     #89b4fa   Green:    #a6e3a1   Red:      #f38ba8
+ *   Yellow:   #f9e2af   Pink:     #f5c2e7
+ */
+
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+
+Screen {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    layout: horizontal;
+}
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+
+.hidden-screen {
+    display: none;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
+#sidebar {
+    background: #181825;
+    border-right: solid #313244;
+    width: 26;
+    height: 100%;
+    layout: vertical;
+}
+
+#sidebar-logo {
+    background: #11111b;
+    color: #89b4fa;
+    text-align: center;
+    padding: 1 0;
+    border-bottom: solid #313244;
+    text-style: bold;
+    height: 4;
+}
+
+#nav-list {
+    background: #181825;
+    padding: 1 0;
+    height: 1fr;
+    layout: vertical;
+}
+
+.nav-item {
+    padding: 0 2;
+    height: 3;
+    color: #a6adc8;
+    background: #181825;
+}
+
+.nav-item:hover {
+    background: #313244;
+    color: #cdd6f4;
+}
+
+.nav-item.active {
+    background: #313244;
+    color: #89b4fa;
+    border-left: thick #89b4fa;
+    text-style: bold;
+}
+
+#sidebar-footer {
+    background: #11111b;
+    color: #585b70;
+    padding: 0 2;
+    height: 3;
+    border-top: solid #313244;
+}
+
+/* ── Content Area ─────────────────────────────────────────────────────────── */
+
+#content-area {
+    background: #1e1e2e;
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+}
+
+/* ── Screen Header ────────────────────────────────────────────────────────── */
+
+.screen-header {
+    background: #181825;
+    color: #89b4fa;
+    border-bottom: solid #313244;
+    padding: 0 2;
+    height: 3;
+    text-style: bold;
+}
+
+/* ── Status Bar ───────────────────────────────────────────────────────────── */
+
+#status-bar {
+    background: #11111b;
+    color: #585b70;
+    height: 1;
+    padding: 0 2;
+}
+
+/* ── Dashboard ────────────────────────────────────────────────────────────── */
+
+DashboardScreen {
+    padding: 1 2;
+    background: #1e1e2e;
+    height: 1fr;
+    overflow-y: auto;
+}
+
+/* ── Config Editor ────────────────────────────────────────────────────────── */
+
+ConfigEditorScreen {
+    height: 1fr;
+    layout: vertical;
+}
+
+#config-split {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#config-keys-panel {
+    background: #181825;
+    border-right: solid #313244;
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+}
+
+#config-keys-title {
+    background: #11111b;
+    color: #a6adc8;
+    padding: 0 2;
+    height: 2;
+    border-bottom: solid #313244;
+}
+
+#config-table {
+    height: 1fr;
+    scrollbar-background: #181825;
+    scrollbar-color: #45475a;
+    scrollbar-color-hover: #585b70;
+}
+
+DataTable > .datatable--header {
+    background: #11111b;
+    color: #89b4fa;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #313244;
+    color: #cdd6f4;
+}
+
+DataTable > .datatable--hover {
+    background: #262637;
+}
+
+#config-detail-panel {
+    background: #1e1e2e;
+    padding: 1 2;
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+    overflow-y: auto;
+}
+
+.detail-key {
+    color: #89b4fa;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.detail-description {
+    color: #a6adc8;
+    margin-bottom: 1;
+}
+
+.detail-current {
+    color: #6c7086;
+    margin-bottom: 1;
+}
+
+.detail-pending {
+    color: #f9e2af;
+    margin-bottom: 1;
+}
+
+#edit-input {
+    background: #313244;
+    color: #cdd6f4;
+    border: solid #45475a;
+    margin-bottom: 1;
+}
+
+#edit-input:focus {
+    border: solid #89b4fa;
+}
+
+#edit-validation {
+    height: 1;
+    margin-bottom: 1;
+}
+
+#editor-buttons {
+    layout: horizontal;
+    height: 3;
+    margin-bottom: 1;
+}
+
+#editor-hint {
+    color: #6c7086;
+}
+
+#editor-status {
+    background: #11111b;
+    padding: 0 2;
+    height: 2;
+    border-top: solid #313244;
+}
+
+#raw-config-panel {
+    background: #181825;
+    border-top: solid #313244;
+    height: 12;
+    layout: vertical;
+}
+
+.panel-title {
+    background: #11111b;
+    color: #a6adc8;
+    padding: 0 2;
+    height: 2;
+    border-bottom: solid #313244;
+}
+
+#raw-view {
+    background: #181825;
+    color: #cdd6f4;
+    padding: 0 2;
+    height: 1fr;
+    overflow-y: auto;
+}
+
+/* ── Backup Screen ────────────────────────────────────────────────────────── */
+
+BackupScreen {
+    height: 1fr;
+    layout: vertical;
+}
+
+#backup-split {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#backup-list-panel {
+    background: #181825;
+    border-right: solid #313244;
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+}
+
+#backup-list {
+    height: 1fr;
+    scrollbar-background: #181825;
+    scrollbar-color: #45475a;
+}
+
+ListView > .listview--highlight {
+    background: #313244;
+    color: #89b4fa;
+}
+
+#backup-detail-panel {
+    padding: 1 2;
+    width: 1fr;
+    height: 100%;
+    layout: vertical;
+    background: #1e1e2e;
+    overflow-y: auto;
+}
+
+#backup-detail-header {
+    margin-bottom: 1;
+}
+
+#backup-action-buttons {
+    layout: horizontal;
+    height: 3;
+    margin-bottom: 1;
+}
+
+#preview-title {
+    margin-bottom: 0;
+}
+
+#backup-preview {
+    background: #181825;
+    color: #cdd6f4;
+    border: solid #313244;
+    padding: 0 1;
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#backup-status {
+    background: #11111b;
+    padding: 0 2;
+    height: 2;
+    border-top: solid #313244;
+}
+
+/* ── Themes Screen ────────────────────────────────────────────────────────── */
+
+ThemesScreen {
+    padding: 2 4;
+    background: #1e1e2e;
+    height: 1fr;
+    overflow-y: auto;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+Button {
+    background: #313244;
+    color: #cdd6f4;
+    border: solid #45475a;
+    height: 3;
+    margin: 0 1 0 0;
+}
+
+Button:hover {
+    background: #45475a;
+    border: solid #585b70;
+}
+
+Button:focus {
+    border: solid #89b4fa;
+}
+
+Button.-primary {
+    background: #1e3a5f;
+    color: #89b4fa;
+    border: solid #89b4fa;
+}
+
+Button.-primary:hover {
+    background: #244878;
+}
+
+Button.-success {
+    background: #1c3a2a;
+    color: #a6e3a1;
+    border: solid #a6e3a1;
+}
+
+Button.-success:hover {
+    background: #234831;
+}
+
+Button.-warning {
+    background: #3d3012;
+    color: #f9e2af;
+    border: solid #f9e2af;
+}
+
+Button.-warning:hover {
+    background: #4a3a15;
+}
+
+Button.-danger {
+    background: #3d1a24;
+    color: #f38ba8;
+    border: solid #f38ba8;
+}
+
+Button.-danger:hover {
+    background: #4a1e2a;
+}
+
+/* ── Modals ───────────────────────────────────────────────────────────────── */
+
+ConfirmDialog {
+    align: center middle;
+}
+
+#confirm-dialog-container {
+    background: #181825;
+    border: solid #45475a;
+    width: 62;
+    height: auto;
+    padding: 2 3;
+    min-height: 10;
+}
+
+#confirm-dialog-title {
+    color: #f9e2af;
+    text-style: bold;
+    margin-bottom: 1;
+    width: 100%;
+    text-align: center;
+}
+
+#confirm-dialog-body {
+    color: #cdd6f4;
+    margin-bottom: 2;
+    width: 100%;
+    text-align: center;
+}
+
+#confirm-dialog-buttons {
+    layout: horizontal;
+    align: center middle;
+    height: 3;
+    width: 100%;
+}
+
+#confirm-dialog-buttons Button {
+    margin: 0 1;
+}
+
+/* ── Input ────────────────────────────────────────────────────────────────── */
+
+Input {
+    background: #313244;
+    color: #cdd6f4;
+    border: solid #45475a;
+}
+
+Input:focus {
+    border: solid #89b4fa;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────────── */
+
+ScrollableContainer {
+    scrollbar-background: #1e1e2e;
+    scrollbar-color: #45475a;
+    scrollbar-color-hover: #585b70;
+    scrollbar-color-active: #89b4fa;
+}

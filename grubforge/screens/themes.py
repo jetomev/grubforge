@@ -1,45 +1,242 @@
 """
-GrubForge — Themes Screen (Placeholder)
-Full theme browser, preview, and download coming in the next iteration.
+GrubForge — Theme Browser Screen
+Scan, preview, and apply installed GRUB themes.
 """
 
 from textual.app import ComposeResult
-from textual.widgets import Static
-from textual.containers import ScrollableContainer
+from textual.widgets import ListView, ListItem, Static, Button
+from textual.containers import Container, Vertical, Horizontal
+from textual.binding import Binding
+from textual import work
+
+from grubforge.theme_manager import (
+    GrubTheme,
+    list_themes,
+    apply_theme,
+    get_color_palette,
+    THEMES_DIR,
+)
+from grubforge.widgets.confirm_dialog import ConfirmDialog
 
 
-class ThemesScreen(ScrollableContainer):
-    """Theme browser placeholder — coming soon."""
+class ThemesScreen(Container):
+    """Theme browser — scan, preview, and apply GRUB themes."""
+
+    BINDINGS = [
+        Binding("a",  "apply_theme",    "Apply Theme", show=True),
+        Binding("f5", "refresh",        "Refresh",     show=True),
+    ]
+
+    _themes: list = []
+    _selected_idx: int = -1
 
     def compose(self) -> ComposeResult:
-        yield Static(
-            """\
-[bold #89b4fa]╔═══════════════════════════════════════════════╗
-║              Theme Browser                     ║
-╚═══════════════════════════════════════════════╝[/bold #89b4fa]
+        with Container(id="backup-split"):
+            # Left: theme list
+            with Vertical(id="backup-list-panel"):
+                yield Static(
+                    " 🎨  Themes  [dim](A apply  •  F5 refresh)[/dim]",
+                    classes="panel-title",
+                )
+                yield ListView(id="theme-list")
 
-[dim]This screen is coming in the next iteration.[/dim]
+            # Right: theme detail + preview
+            with Vertical(id="backup-detail-panel"):
+                yield Static("", id="theme-detail-header")
+                with Horizontal(id="backup-action-buttons"):
+                    yield Button("✓ Apply Theme", id="btn-apply", classes="-success")
+                    yield Button("↺ Refresh",     id="btn-refresh", classes="-primary")
+                yield Static(" 🎨 Color Palette", classes="panel-title")
+                yield Static("", id="theme-palette")
+                yield Static(" 📄 theme.txt Preview", classes="panel-title")
+                yield Static("", id="theme-preview")
 
-[bold #a6adc8]Planned features:[/bold #a6adc8]
+        yield Static("", id="backup-status")
 
-  [#89b4fa]●[/#89b4fa]  Browse locally installed GRUB themes
-  [#89b4fa]●[/#89b4fa]  Live ASCII preview of theme colors
-  [#89b4fa]●[/#89b4fa]  One-click apply (updates GRUB_THEME in config)
-  [#89b4fa]●[/#89b4fa]  Download themes from a curated list:
-       – Catppuccin Mocha
-       – Vimix
-       – Sleek
-       – Poly Dark
-       – CyberRe
+    def on_mount(self) -> None:
+        self._load_themes()
 
-[bold #a6adc8]Where GRUB themes live:[/bold #a6adc8]
+    # ── Load themes ───────────────────────────────────────────────────────────
 
-  [dim]/boot/grub/themes/[/dim]
+    def _load_themes(self) -> None:
+        self._themes = list_themes()
+        lv = self.query_one("#theme-list", ListView)
+        lv.clear()
 
-[bold #a6adc8]Currently configured theme:[/bold #a6adc8]
+        if not self._themes:
+            lv.append(ListItem(Static(
+                f"[dim]No themes found in {THEMES_DIR}[/dim]\n"
+                f"[dim]Install themes or use the downloader (coming soon)[/dim]"
+            )))
+            self._selected_idx = -1
+            self._clear_detail()
+            self._set_status(f"No themes found in {THEMES_DIR}", "warn")
+            return
 
-  [dim]Set GRUB_THEME in Config Editor (screen 2)[/dim]
+        for theme in self._themes:
+            active = " [green]● active[/green]" if theme.is_active else ""
+            color_count = len(theme.colors)
+            text = (
+                f" 🎨  [#cdd6f4]{theme.name}[/#cdd6f4]{active}\n"
+                f"     [dim]{color_count} colors detected[/dim]"
+            )
+            lv.append(ListItem(Static(text)))
 
-[dim italic]  Press 2 to go to Config Editor[/dim italic]
-"""
+        self._selected_idx = 0
+        self._show_detail(0)
+        self._set_status(
+            f"Found {len(self._themes)} theme(s) in {THEMES_DIR}", "info"
+        )
+
+    # ── List selection ────────────────────────────────────────────────────────
+
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
+        idx = event.list_view.index
+        if idx is not None and 0 <= idx < len(self._themes):
+            self._selected_idx = idx
+            self._show_detail(idx)
+
+    # ── Detail pane ───────────────────────────────────────────────────────────
+
+    def _show_detail(self, idx: int) -> None:
+        if idx < 0 or idx >= len(self._themes):
+            self._clear_detail()
+            return
+
+        theme  = self._themes[idx]
+        active = " [green]● currently active[/green]" if theme.is_active else ""
+
+        header = (
+            f"[bold #89b4fa]{theme.name}[/bold #89b4fa]{active}\n"
+            f"[dim]Path:[/dim]   [#a6adc8]{theme.path}[/#a6adc8]\n"
+            f"[dim]Config:[/dim] [#a6adc8]{theme.theme_txt}[/#a6adc8]\n"
+            + (f"[dim]BG:[/dim]    [#a6adc8]{theme.background_file}[/#a6adc8]\n"
+               if theme.has_background else "")
+            + f"[dim]Fonts:[/dim] [#a6adc8]{', '.join(theme.fonts[:3]) or 'none detected'}[/#a6adc8]\n"
+        )
+        self.query_one("#theme-detail-header", Static).update(header)
+
+        # ── Color palette ──
+        palette = get_color_palette(theme)
+        if palette:
+            lines = []
+            for label, hex_color in palette[:10]:
+                # Draw a colored block using Rich markup + the hex value
+                swatch = self._color_swatch(hex_color)
+                lines.append(
+                    f"  {swatch}  [dim]{label:30s}[/dim]  [#a6adc8]{hex_color}[/#a6adc8]"
+                )
+            self.query_one("#theme-palette", Static).update("\n".join(lines))
+        else:
+            self.query_one("#theme-palette", Static).update(
+                "[dim]  No colors detected in theme.txt[/dim]"
+            )
+
+        # ── Raw theme.txt preview ──
+        if theme.raw_txt:
+            lines = []
+            for line in theme.raw_txt.splitlines()[:40]:
+                s = line.strip()
+                if s.startswith("#"):
+                    lines.append(f"[dim]{line}[/dim]")
+                elif "color" in s.lower() and (":" in s or "=" in s):
+                    lines.append(f"[#f5c2e7]{line}[/#f5c2e7]")
+                elif "font" in s.lower():
+                    lines.append(f"[#89b4fa]{line}[/#89b4fa]")
+                elif s.startswith("+"):
+                    lines.append(f"[#a6e3a1]{line}[/#a6e3a1]")
+                else:
+                    lines.append(f"[#cdd6f4]{line}[/#cdd6f4]")
+            self.query_one("#theme-preview", Static).update("\n".join(lines))
+        else:
+            self.query_one("#theme-preview", Static).update(
+                "[dim]  Could not read theme.txt[/dim]"
+            )
+
+    def _clear_detail(self) -> None:
+        self.query_one("#theme-detail-header", Static).update(
+            "[dim]Select a theme to preview it.[/dim]"
+        )
+        self.query_one("#theme-palette", Static).update("")
+        self.query_one("#theme-preview", Static).update("")
+
+    def _color_swatch(self, hex_color: str) -> str:
+        """
+        Return a Rich markup string showing a colored block.
+        Uses the hex color as both background and foreground for a solid block.
+        """
+        try:
+            color = hex_color.lstrip("#")
+            return f"[on #{color}]   [/on #{color}]"
+        except Exception:
+            return "   "
+
+    # ── Buttons ───────────────────────────────────────────────────────────────
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-apply":
+            self.run_worker(self.action_apply_theme(), exclusive=True)
+        elif event.button.id == "btn-refresh":
+            self.action_refresh()
+
+    # ── Actions ───────────────────────────────────────────────────────────────
+
+    @work
+    async def action_apply_theme(self) -> None:
+        idx = self._selected_idx
+        if idx < 0 or idx >= len(self._themes):
+            self._set_status("No theme selected.", "warn")
+            return
+
+        theme     = self._themes[idx]
+        confirmed = await self.app.push_screen_wait(
+            ConfirmDialog(
+                title="Apply GRUB Theme",
+                message=(
+                    f"Apply theme:\n"
+                    f"  {theme.name}\n\n"
+                    f"This will set GRUB_THEME in /etc/default/grub.\n"
+                    f"A backup will be created first.\n\n"
+                    f"Run Ctrl+R in Config Editor to regenerate grub.cfg."
+                ),
+                confirm_label="Apply",
+                confirm_variant="success",
+            )
+        )
+        if not confirmed:
+            return
+
+        try:
+            apply_theme(theme)
+            self._set_status(
+                f"Theme '{theme.name}' applied. Go to Config Editor and press Ctrl+R to regenerate grub.cfg.",
+                "ok",
+            )
+            # Reload list to update active indicator
+            self._load_themes()
+        except PermissionError:
+            self._set_status(
+                "Permission denied — run GrubForge with sudo.", "error"
+            )
+        except Exception as e:
+            self._set_status(f"Failed to apply theme: {e}", "error")
+
+    def action_refresh(self) -> None:
+        self._load_themes()
+        self._set_status("Theme list refreshed.", "info")
+
+    # ── Status bar ────────────────────────────────────────────────────────────
+
+    def _set_status(self, msg: str, level: str = "info") -> None:
+        color_map = {
+            "ok":    "#a6e3a1",
+            "info":  "#89b4fa",
+            "warn":  "#f9e2af",
+            "error": "#f38ba8",
+        }
+        icon_map = {"ok": "✓", "info": "●", "warn": "⚠", "error": "✗"}
+        color = color_map.get(level, "#cdd6f4")
+        icon  = icon_map.get(level, "●")
+        self.query_one("#backup-status", Static).update(
+            f"[{color}]{icon} {msg}[/{color}]"
         )

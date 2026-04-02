@@ -6,6 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-purple.svg)
 
 ---
 
@@ -29,11 +30,12 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 
 ## Features
 
+- 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
 - 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
+- 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, and apply with one key
+- 🖥 **Boot Entries** — reorder your boot menu entries, save a custom order, and restore the original at any time
 - 🗂 **Backup & Restore** — timestamped backups created automatically before every change
-- 🎨 **Theme Browser** — browse, preview, and apply GRUB themes *(coming soon)*
-- 📦 **Theme Downloader** — download themes from a curated list *(coming soon)*
-- 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke
+- 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
 - 🌙 **Catppuccin Mocha** — a beautiful, consistent dark theme throughout
 
 ---
@@ -77,12 +79,14 @@ cd grubforge
 sudo python main.py
 ```
 
-> `sudo` is required to write to `/etc/default/grub` and run `grub-mkconfig`.
+> `sudo` is required to write to `/etc/default/grub`, manage `/etc/grub.d/` scripts, and run `grub-mkconfig`.
 > You can run without `sudo` to explore the app safely in read-only demo mode.
 
 ---
 
 ## Keybindings
+
+### Global
 
 | Key | Action |
 |-----|--------|
@@ -90,34 +94,67 @@ sudo python main.py
 | `2` | Config Editor |
 | `3` | Theme Browser |
 | `4` | Backup & Restore |
+| `5` | Boot Entries |
+| `?` | Help |
+| `q` | Quit |
+
+### Config Editor
+
+| Key | Action |
+|-----|--------|
 | `E` | Edit selected value |
 | `S` | Save all pending changes |
 | `R` | Refresh from disk |
 | `Ctrl+R` | Regenerate grub.cfg |
+
+### Theme Browser
+
+| Key | Action |
+|-----|--------|
+| `A` | Apply selected theme |
+| `F5` | Refresh theme list |
+
+### Boot Entries
+
+| Key | Action |
+|-----|--------|
+| `K` | Move entry up |
+| `J` | Move entry down |
+| `S` | Save custom order |
+| `R` | Restore original order |
+| `F5` | Refresh |
+
+### Backup & Restore
+
+| Key | Action |
+|-----|--------|
 | `B` | Create new backup |
+| `R` | Restore selected backup |
 | `D` | Delete selected backup |
-| `?` | Help |
-| `q` | Quit |
+| `F5` | Refresh |
 
 ---
 
 ## Project Structure
-```
+
 grubforge/
 ├── main.py                          # Entry point
 └── grubforge/
-    ├── app.py                       # Main Textual application shell
-    ├── config_manager.py            # GRUB config parser, writer, validator
-    ├── backup_manager.py            # Backup create, list, restore, delete
-    ├── grubforge.css                # Catppuccin Mocha stylesheet
-    ├── screens/
-    │   ├── dashboard.py             # System overview screen
-    │   ├── config_editor.py         # Config editor screen
-    │   ├── backup.py                # Backup & restore screen
-    │   └── themes.py                # Theme browser (coming soon)
-    └── widgets/
-        └── confirm_dialog.py        # Reusable confirmation dialog
-```
+├── app.py                       # Main Textual application shell
+├── config_manager.py            # GRUB config parser, writer, validator
+├── backup_manager.py            # Backup create, list, restore, delete
+├── theme_manager.py             # Theme scanner, parser, color extractor
+├── boot_entries_manager.py      # Boot entry parser, reorder, grub.d manager
+├── grubforge.css                # Catppuccin Mocha stylesheet
+├── screens/
+│   ├── dashboard.py             # System overview screen
+│   ├── config_editor.py         # Config editor screen
+│   ├── themes.py                # Theme browser screen
+│   ├── boot_entries.py          # Boot entries screen
+│   └── backup.py                # Backup & restore screen
+└── widgets/
+└── confirm_dialog.py        # Reusable confirmation dialog
+
 
 ---
 
@@ -133,17 +170,22 @@ Every change goes through three layers of protection:
 
 Backups are stored in `/var/lib/grubforge/backups` and can be restored from within the app at any time.
 
+When reordering boot entries, GrubForge disables the auto-generate scripts in `/etc/grub.d/` rather than editing generated files directly. This is the same approach used by grub-customizer and is fully reversible with one button press.
+
 ---
 
 ## Roadmap
 
+- [x] Dashboard with system overview
 - [x] Config editor with live validation
 - [x] Automatic backup and restore
 - [x] grub-mkconfig integration
-- [ ] Theme browser (local themes)
+- [x] Theme browser (local themes)
+- [x] Boot entry reordering
 - [ ] Theme downloader (curated list)
-- [ ] Boot entry viewer
-- [ ] Packaged installer (AUR / pip)
+- [ ] Custom boot entry creation
+- [ ] Boot entry renaming
+- [ ] Packaged installer (AUR)
 - [ ] Man page
 
 ---

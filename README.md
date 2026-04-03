@@ -190,6 +190,36 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 
 ---
 
+## Changelog
+
+### v0.3.0 — April 2, 2026
+**Boot Entries Manager**
+- 🖥 View all GRUB boot entries parsed from `/boot/grub/grub.cfg`
+- ↕ Reorder entries with K/J keys or Move Up/Down buttons
+- 💾 Save custom order to `/etc/grub.d/40_custom`
+- ↺ Restore original auto-generated order with one button
+- 🔧 Script status panel showing which `/etc/grub.d/` scripts are enabled
+- 🎨 Color coded entries by source (Arch Linux, OS Prober, UEFI, BTRFS Snapshots)
+
+### v0.2.0 — April 2, 2026
+**Theme Browser**
+- 🎨 Automatically scan `/boot/grub/themes/` for installed themes
+- 🎨 Color palette preview with visual swatches from each theme
+- 📄 Syntax highlighted `theme.txt` preview
+- ✓ One-click apply with automatic backup before writing
+- 🟢 Active theme indicator
+- 🔧 Fixed graphical terminal settings for themes to display correctly
+
+### v0.1.0 — April 1, 2026
+**Initial Release**
+- 🏠 Dashboard with system overview
+- 🔧 Config Editor with live validation for all 17 GRUB settings
+- 🗂 Automatic backup and restore with timestamped backups
+- 🔄 grub-mkconfig integration — regenerate boot menu in one keystroke
+- 🌙 Catppuccin Mocha theme throughout
+
+---
+
 ## Authors
 
 **jetomev** — idea, vision, direction, testing

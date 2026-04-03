@@ -137,24 +137,26 @@ sudo python main.py
 
 ## Project Structure
 
+## Project Structure
+```
 grubforge/
-├── main.py                          # Entry point
-└── grubforge/
-├── app.py                       # Main Textual application shell
-├── config_manager.py            # GRUB config parser, writer, validator
-├── backup_manager.py            # Backup create, list, restore, delete
-├── theme_manager.py             # Theme scanner, parser, color extractor
-├── boot_entries_manager.py      # Boot entry parser, reorder, grub.d manager
-├── grubforge.css                # Catppuccin Mocha stylesheet
-├── screens/
-│   ├── dashboard.py             # System overview screen
-│   ├── config_editor.py         # Config editor screen
-│   ├── themes.py                # Theme browser screen
-│   ├── boot_entries.py          # Boot entries screen
-│   └── backup.py                # Backup & restore screen
-└── widgets/
-└── confirm_dialog.py        # Reusable confirmation dialog
-
+|-- main.py                      # Entry point
+|-- grubforge/
+    |-- app.py                   # Main Textual application shell
+    |-- config_manager.py        # GRUB config parser, writer, validator
+    |-- backup_manager.py        # Backup create, list, restore, delete
+    |-- theme_manager.py         # Theme scanner, parser, color extractor
+    |-- boot_entries_manager.py  # Boot entry parser, reorder, grub.d manager
+    |-- grubforge.css            # Catppuccin Mocha stylesheet
+    |-- screens/
+    |   |-- dashboard.py         # System overview screen
+    |   |-- config_editor.py     # Config editor screen
+    |   |-- themes.py            # Theme browser screen
+    |   |-- boot_entries.py      # Boot entries screen
+    |   |-- backup.py            # Backup & restore screen
+    |-- widgets/
+        |-- confirm_dialog.py    # Reusable confirmation dialog
+```
 
 ---
 

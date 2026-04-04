@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-purple.svg)
+![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-purple.svg)
 
 ---
 
@@ -178,21 +178,31 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 
 ## Roadmap
 
+## Roadmap
+
 - [x] Dashboard with system overview
 - [x] Config editor with live validation
 - [x] Automatic backup and restore
 - [x] grub-mkconfig integration
 - [x] Theme browser (local themes)
 - [x] Boot entry reordering
+- [x] Boot entry renaming
+- [ ] OS detection and os-prober integration (in Boot Entries)
 - [ ] Theme downloader (curated list)
 - [ ] Custom boot entry creation
-- [ ] Boot entry renaming
 - [ ] Packaged installer (AUR)
 - [ ] Man page
 
 ---
 
 ## Changelog
+
+### v0.4.0 — April 3, 2026
+**Boot Entry Renaming**
+- ✏ Rename any boot entry directly from the Boot Entries screen
+- 🔄 Rename input pre-fills with the current entry name when selected
+- ✅ Renamed entries preserved correctly when saving custom order
+- 🔒 Only the display name changes — all boot commands stay identical
 
 ### v0.3.0 — April 2, 2026
 **Boot Entries Manager**

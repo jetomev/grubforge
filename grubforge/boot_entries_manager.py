@@ -295,3 +295,32 @@ def _mock_entries() -> list:
             raw_block  = 'menuentry "UEFI Firmware Settings" {\n  echo "Loading UEFI"\n}',
         ),
     ]
+    
+def rename_entry(entry: BootEntry, new_title: str) -> BootEntry:
+    """
+    Return a new BootEntry with the title replaced in the raw block.
+    Does not write anything to disk — caller handles that.
+    """
+    if not new_title or not new_title.strip():
+        raise ValueError("New title cannot be empty.")
+
+    new_title = new_title.strip()
+
+    # Replace the title in the first line of the raw block
+    # Handles both single and double quoted titles
+    new_raw = re.sub(
+        r'^(menuentry|submenu)\s+([\'"]).*?\2',
+        lambda m: f'{m.group(1)} {m.group(2)}{new_title}{m.group(2)}',
+        entry.raw_block,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
+    return BootEntry(
+        title      = new_title,
+        entry_type = entry.entry_type,
+        source     = entry.source,
+        raw_block  = new_raw,
+        children   = entry.children,
+        enabled    = entry.enabled,
+    )

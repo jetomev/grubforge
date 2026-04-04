@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.4.0](https://img.shields.io/badge/Version-0.4.0-purple.svg)
+![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-purple.svg)
 
 ---
 
@@ -33,7 +33,7 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 - 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
 - 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
 - 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, and apply with one key
-- 🖥 **Boot Entries** — reorder your boot menu entries, rename them, save a custom order, and restore the original at any time
+- 🖥 **Boot Entries** — reorder, rename, and create custom boot entries, save a custom order, and restore the original at any time
 - 🗂 **Backup & Restore** — timestamped backups created automatically before every change
 - 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
 - 🌙 **Catppuccin Mocha** — a beautiful, consistent dark theme throughout
@@ -178,8 +178,6 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 
 ## Roadmap
 
-## Roadmap
-
 - [x] Dashboard with system overview
 - [x] Config editor with live validation
 - [x] Automatic backup and restore
@@ -187,15 +185,23 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] Theme browser (local themes)
 - [x] Boot entry reordering
 - [x] Boot entry renaming
+- [x] Custom boot entry creation
 - [ ] OS detection and os-prober integration (in Boot Entries)
 - [ ] Theme downloader (curated list)
-- [ ] Custom boot entry creation
 - [ ] Packaged installer (AUR)
 - [ ] Man page
 
 ---
 
 ## Changelog
+
+### v0.5.0 — April 4, 2026
+**Custom Boot Entry Creation**
+- ➕ Add custom boot entries directly from the Boot Entries screen
+- 📋 Four built-in templates: Linux, Chainload, Memtest, Blank
+- ✏ Raw block editor — full control over the menuentry commands
+- 👁 Preview Template button fills the editor with a named template
+- ✅ Custom entries are added to the list and saved with the same flow as reordering
 
 ### v0.4.0 — April 3, 2026
 **Boot Entry Renaming**

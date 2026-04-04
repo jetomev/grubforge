@@ -324,3 +324,70 @@ def rename_entry(entry: BootEntry, new_title: str) -> BootEntry:
         children   = entry.children,
         enabled    = entry.enabled,
     )
+    
+# ── Custom entry templates ────────────────────────────────────────────────────
+
+CUSTOM_ENTRY_TEMPLATES = {
+    "Linux": """\
+menuentry "{title}" {{
+    search --no-floppy --fs-uuid --set=root {uuid}
+    linux   /boot/vmlinuz-linux root=UUID={uuid} rw quiet loglevel=3
+    initrd  /boot/initramfs-linux.img
+}}""",
+
+    "Chainload": """\
+menuentry "{title}" {{
+    insmod part_gpt
+    insmod fat
+    search --no-floppy --fs-uuid --set=root {uuid}
+    chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+}}""",
+
+    "Memtest": """\
+menuentry "{title}" {{
+    insmod part_gpt
+    insmod ext2
+    search --no-floppy --fs-uuid --set=root {uuid}
+    linux16 /boot/memtest86+/memtest.efi
+}}""",
+
+    "Blank": """\
+menuentry "{title}" {{
+    # Add your boot commands here
+    echo "Loading {title}..."
+}}""",
+}
+
+
+def create_custom_entry(title: str, template_name: str, raw_block: str = "") -> BootEntry:
+    """
+    Create a new BootEntry from a title and raw block.
+    If raw_block is provided, use it directly.
+    Otherwise use the template as a starting point.
+    """
+    if not title or not title.strip():
+        raise ValueError("Entry title cannot be empty.")
+
+    title = title.strip()
+
+    if not raw_block:
+        template = CUSTOM_ENTRY_TEMPLATES.get(template_name, CUSTOM_ENTRY_TEMPLATES["Blank"])
+        raw_block = template.format(title=title, uuid="YOUR-UUID-HERE")
+
+    return BootEntry(
+        title      = title,
+        entry_type = "menuentry",
+        source     = "40_custom",
+        raw_block  = raw_block,
+    )
+
+
+def get_template_names() -> list:
+    """Return list of available template names."""
+    return list(CUSTOM_ENTRY_TEMPLATES.keys())
+
+
+def get_template_preview(template_name: str, title: str = "My Entry") -> str:
+    """Return a filled-in preview of a template."""
+    template = CUSTOM_ENTRY_TEMPLATES.get(template_name, CUSTOM_ENTRY_TEMPLATES["Blank"])
+    return template.format(title=title, uuid="YOUR-UUID-HERE")

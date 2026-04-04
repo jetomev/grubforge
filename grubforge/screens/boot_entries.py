@@ -1,11 +1,11 @@
 """
 GrubForge — Boot Entries Screen
-View, reorder, rename, and group GRUB boot entries.
+View, reorder, rename, and create custom GRUB boot entries.
 Writes custom order to /etc/grub.d/40_custom.
 """
 
 from textual.app import ComposeResult
-from textual.widgets import ListView, ListItem, Static, Button, Input
+from textual.widgets import ListView, ListItem, Static, Button, Input, Select, TextArea
 from textual.containers import Container, Vertical, Horizontal
 from textual.binding import Binding
 
@@ -18,6 +18,9 @@ from grubforge.boot_entries_manager import (
     get_script_status,
     restore_original_order,
     rename_entry,
+    create_custom_entry,
+    get_template_names,
+    get_template_preview,
     GRUB_CFG_PATH,
     MANAGED_SCRIPTS,
 )
@@ -26,7 +29,7 @@ from grubforge.widgets.confirm_dialog import ConfirmDialog
 
 
 class BootEntriesScreen(Container):
-    """Boot entry reorder, rename, and grouping screen."""
+    """Boot entry reorder, rename, and custom entry screen."""
 
     BINDINGS = [
         Binding("k",      "move_up",       "Move Up",          show=True),
@@ -67,32 +70,25 @@ class BootEntriesScreen(Container):
 
                 # ── Rename section ──
                 yield Static(" ✏  Rename Entry", classes="panel-title")
-                yield Static(
-                    "[dim]Select an entry then type a new name below.[/dim]",
-                    id="rename-hint",
-                )
                 yield Input(placeholder="New entry name…", id="rename-input")
                 with Horizontal(id="rename-buttons"):
-                    yield Button("✏ Rename", id="btn-rename", classes="-success")
+                    yield Button("✏ Rename", id="btn-rename",       classes="-success")
                     yield Button("✗ Clear",  id="btn-rename-clear", classes="-warning")
 
-                # ── Script status ──
-                yield Static(" 🔧 Script Status", classes="panel-title")
-                yield Static("", id="script-status")
-
-                # ── How it works ──
-                yield Static(" ℹ  How it works", classes="panel-title")
-                yield Static(
-                    "\n"
-                    "[dim]1. Use [bold]K/J[/bold] to reorder entries\n"
-                    "2. Press [bold]N[/bold] to rename selected entry\n"
-                    "3. Press [bold]S[/bold] to save your order\n"
-                    "   Writes to [bold]/etc/grub.d/40_custom[/bold]\n"
-                    "   and disables auto-generate scripts\n"
-                    "4. grub-mkconfig runs automatically\n\n"
-                    "Press [bold]R[/bold] to restore original order.[/dim]",
-                    id="entry-hint",
+                # ── Add custom entry section ──
+                yield Static(" ➕  Add Custom Entry", classes="panel-title")
+                yield Input(placeholder="Entry title…", id="custom-title-input")
+                yield Select(
+                    [(t, t) for t in get_template_names()],
+                    id="custom-template-select",
+                    prompt="Select template…",
                 )
+                yield Button("Preview Template", id="btn-preview-template", classes="-primary")
+                yield Static("", id="custom-preview-label")
+                yield TextArea("", id="custom-raw-editor", language="bash")
+                with Horizontal(id="custom-buttons"):
+                    yield Button("➕ Add Entry", id="btn-add-custom",    classes="-success")
+                    yield Button("✗ Clear",      id="btn-clear-custom",  classes="-warning")
 
         yield Static("", id="backup-status")
 
@@ -104,7 +100,6 @@ class BootEntriesScreen(Container):
     def _load_entries(self) -> None:
         self._entries = parse_boot_entries()
         self._rebuild_list()
-        self._update_script_status()
         self._set_status(
             f"Loaded {len(self._entries)} boot entries from {GRUB_CFG_PATH}", "info"
         )
@@ -127,22 +122,6 @@ class BootEntriesScreen(Container):
             )
             lv.append(ListItem(Static(text)))
 
-    def _update_script_status(self) -> None:
-        status = get_script_status()
-        lines  = []
-        for name, executable in status.items():
-            if executable is None:
-                lines.append(f"  [dim]{name:25s} not installed[/dim]")
-            elif executable:
-                lines.append(
-                    f"  [green]●[/green] [dim]{name:25s}[/dim] [green]enabled[/green]"
-                )
-            else:
-                lines.append(
-                    f"  [yellow]●[/yellow] [dim]{name:25s}[/dim] [yellow]disabled[/yellow]"
-                )
-        self.query_one("#script-status", Static).update("\n".join(lines))
-
     # ── Selection ─────────────────────────────────────────────────────────────
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
@@ -150,7 +129,6 @@ class BootEntriesScreen(Container):
         if idx is not None and 0 <= idx < len(self._entries):
             self._selected_idx = idx
             self._show_detail(idx)
-            # Pre-fill rename input with current title
             self.query_one("#rename-input", Input).value = \
                 self._entries[idx].title
 
@@ -220,6 +198,8 @@ class BootEntriesScreen(Container):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "rename-input":
             self._do_rename()
+        elif event.input.id == "custom-title-input":
+            self._preview_template()
 
     def _do_rename(self) -> None:
         idx = self._selected_idx
@@ -247,6 +227,54 @@ class BootEntriesScreen(Container):
         except Exception as e:
             self._set_status(f"Rename failed: {e}", "error")
 
+    # ── Custom entry ──────────────────────────────────────────────────────────
+
+    def _preview_template(self) -> None:
+        title    = self.query_one("#custom-title-input", Input).value.strip()
+        template = self.query_one("#custom-template-select", Select).value
+
+        if not title:
+            title = "My Custom Entry"
+
+        if not template or template == Select.BLANK:
+            self._set_status("Select a template first.", "warn")
+            return
+
+        preview = get_template_preview(str(template), title)
+        editor  = self.query_one("#custom-raw-editor", TextArea)
+        editor.load_text(preview)
+        self.query_one("#custom-preview-label", Static).update(
+            f"[dim]Template: [bold]{template}[/bold] — edit the block below as needed[/dim]"
+        )
+        self._set_status(f"Template '{template}' loaded. Edit as needed then click Add Entry.", "info")
+
+    def _do_add_custom(self) -> None:
+        title    = self.query_one("#custom-title-input", Input).value.strip()
+        raw      = self.query_one("#custom-raw-editor", TextArea).text.strip()
+        template = self.query_one("#custom-template-select", Select).value
+
+        if not title:
+            self._set_status("Entry title cannot be empty.", "warn")
+            return
+
+        if not raw:
+            self._set_status("Entry block cannot be empty. Use Preview Template first.", "warn")
+            return
+
+        try:
+            entry = create_custom_entry(title, str(template), raw_block=raw)
+            self._entries.append(entry)
+            self._rebuild_list()
+            self._set_status(
+                f"Added '{title}' to the list. Press S to save and apply.", "ok"
+            )
+            # Clear the form
+            self.query_one("#custom-title-input",    Input).value = ""
+            self.query_one("#custom-raw-editor",     TextArea).load_text("")
+            self.query_one("#custom-preview-label",  Static).update("")
+        except Exception as e:
+            self._set_status(f"Failed to add entry: {e}", "error")
+
     # ── Buttons ───────────────────────────────────────────────────────────────
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -265,6 +293,14 @@ class BootEntriesScreen(Container):
                 self._do_rename()
             case "btn-rename-clear":
                 self.query_one("#rename-input", Input).value = ""
+            case "btn-preview-template":
+                self._preview_template()
+            case "btn-add-custom":
+                self._do_add_custom()
+            case "btn-clear-custom":
+                self.query_one("#custom-title-input",   Input).value = ""
+                self.query_one("#custom-raw-editor",    TextArea).load_text("")
+                self.query_one("#custom-preview-label", Static).update("")
 
     # ── Save order ────────────────────────────────────────────────────────────
 
@@ -318,8 +354,6 @@ class BootEntriesScreen(Container):
                 self._set_status(
                     f"grub-mkconfig failed: {output[:80]}", "error"
                 )
-
-            self._update_script_status()
 
         except PermissionError:
             self._set_status(

@@ -33,7 +33,7 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 - 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
 - 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
 - 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, and apply with one key
-- 🖥 **Boot Entries** — reorder your boot menu entries, save a custom order, and restore the original at any time
+- 🖥 **Boot Entries** — reorder your boot menu entries, rename them, save a custom order, and restore the original at any time
 - 🗂 **Backup & Restore** — timestamped backups created automatically before every change
 - 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
 - 🌙 **Catppuccin Mocha** — a beautiful, consistent dark theme throughout

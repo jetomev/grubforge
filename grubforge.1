@@ -1,0 +1,222 @@
+.\" grubforge.1 — GrubForge man page
+.\" GNU GPL v3 — see LICENSE
+.TH GRUBFORGE 1 "April 2026" "GrubForge v0.8.0" "User Commands"
+.
+.SH NAME
+grubforge \- terminal UI for managing the GRUB bootloader
+.
+.SH SYNOPSIS
+.B sudo python main.py
+.
+.SH DESCRIPTION
+.B GrubForge
+is a keyboard-driven terminal user interface (TUI) for managing and
+customizing the GRUB bootloader on Linux.
+It provides a safe, guided interface for editing
+.IR /etc/default/grub ,
+browsing and applying themes, managing timestamped backups,
+reordering and customizing boot entries, and regenerating the boot menu
+via
+.BR grub-mkconfig (8).
+.PP
+Every write operation creates an automatic backup first.
+Every destructive action requires confirmation before proceeding.
+GrubForge can be run without
+.B sudo
+in read-only demo mode for safe exploration.
+.
+.SH USAGE
+.TP
+.B cd ~/Programs/grubforge && sudo python main.py
+Run GrubForge with full write access.
+.TP
+.B cd ~/Programs/grubforge && python main.py
+Run in demo mode (read-only, no system files modified).
+.
+.SH SCREENS
+GrubForge is organised into five screens, each accessible by pressing
+the corresponding number key.
+.
+.SS 1 \- Dashboard
+Displays a system overview: config file status, grub.cfg path,
+number of detected boot entries, active GRUB settings, and backup count.
+.
+.SS 2 \- Config Editor
+Browse and edit all 17 managed
+.I /etc/default/grub
+settings. Each key shows a plain-language description, its current
+value, and a pending-edit indicator. Changes are staged locally and
+written together on Save, with a backup created automatically first.
+.
+.SS 3 \- Theme Browser
+Scans
+.I /boot/grub/themes/
+for installed GRUB themes. Displays a color palette preview and
+syntax-highlighted
+.I theme.txt
+preview for each theme. Press
+.B H
+for a built-in installation guide with recommended theme sources.
+.
+.SS 4 \- Backup & Restore
+Lists all timestamped backups stored in
+.IR /var/lib/grubforge/backups .
+Supports creating, previewing, restoring, and deleting backups.
+A maximum of 20 backups are kept; older ones are rotated out automatically.
+.
+.SS 5 \- Boot Entries
+Parses
+.I /boot/grub/grub.cfg
+and lists all top-level boot entries. Supports reordering, renaming,
+and creating custom entries from built-in templates (Linux, Chainload,
+Memtest, Blank). Custom order is written to
+.IR /etc/grub.d/40_custom .
+Includes OS detection via
+.BR os-prober (8).
+.
+.SH KEYBINDINGS
+.SS Global
+.TP
+.B 1
+Switch to Dashboard
+.TP
+.B 2
+Switch to Config Editor
+.TP
+.B 3
+Switch to Theme Browser
+.TP
+.B 4
+Switch to Backup & Restore
+.TP
+.B 5
+Switch to Boot Entries
+.TP
+.B ?
+Show help overlay
+.TP
+.B q
+Quit
+.
+.SS Config Editor
+.TP
+.B E
+Focus the edit input for the selected key
+.TP
+.B S
+Save all pending changes to
+.I /etc/default/grub
+.TP
+.B R
+Reload config from disk
+.TP
+.B Ctrl+R
+Run
+.B grub-mkconfig
+to regenerate
+.I /boot/grub/grub.cfg
+.
+.SS Theme Browser
+.TP
+.B A
+Apply the selected theme
+.TP
+.B F5
+Refresh the theme list
+.TP
+.B H
+Toggle the theme installation help guide
+.
+.SS Backup & Restore
+.TP
+.B B
+Create a new manual backup
+.TP
+.B R
+Restore the selected backup
+.TP
+.B D
+Delete the selected backup
+.TP
+.B F5
+Refresh the backup list
+.
+.SS Boot Entries
+.TP
+.B K
+Move selected entry up
+.TP
+.B J
+Move selected entry down
+.TP
+.B S
+Save custom boot order to
+.I /etc/grub.d/40_custom
+and regenerate grub.cfg
+.TP
+.B N
+Focus the rename input
+.TP
+.B R
+Restore original boot order
+.TP
+.B F5
+Refresh the entry list
+.
+.SH FILES
+.TP
+.I /etc/default/grub
+Primary GRUB configuration file. Read and written by GrubForge.
+.TP
+.I /boot/grub/grub.cfg
+Generated boot menu. Never edited directly — regenerated via
+.BR grub-mkconfig (8).
+.TP
+.I /boot/grub/themes/
+Directory scanned for installed GRUB themes.
+.TP
+.I /etc/grub.d/40_custom
+Custom boot entry script written when saving a custom boot order.
+.TP
+.I /var/lib/grubforge/backups/
+Directory where timestamped backups of
+.I /etc/default/grub
+are stored. Created automatically on first run.
+.
+.SH REQUIREMENTS
+.IP \(bu 2
+Linux (developed and tested on Arch Linux)
+.IP \(bu 2
+Python 3.10 or newer
+.IP \(bu 2
+python-textual >= 0.47.0
+.IP \(bu 2
+python-rich >= 13.0.0
+.IP \(bu 2
+GRUB bootloader installed
+.IP \(bu 2
+Root privileges for write operations
+.
+.SH SEE ALSO
+.BR grub-mkconfig (8),
+.BR grub-install (8),
+.BR os-prober (8)
+.
+.SH AUTHORS
+.B jetomev
+\(em idea, vision, direction, testing
+.PP
+.B Claude (Anthropic)
+\(em co-developer, architecture, implementation
+.
+.SH LICENSE
+GrubForge is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License v3.0 as published by
+the Free Software Foundation.
+.PP
+See
+.I /usr/share/licenses/grubforge/LICENSE
+or
+.UR https://www.gnu.org/licenses/gpl-3.0.html
+.UE
+for the full license text.

@@ -391,3 +391,118 @@ def get_template_preview(template_name: str, title: str = "My Entry") -> str:
     """Return a filled-in preview of a template."""
     template = CUSTOM_ENTRY_TEMPLATES.get(template_name, CUSTOM_ENTRY_TEMPLATES["Blank"])
     return template.format(title=title, uuid="YOUR-UUID-HERE")
+    
+# ── OS Detection ──────────────────────────────────────────────────────────────
+
+def is_os_prober_installed() -> bool:
+    """Check if os-prober is installed on the system."""
+    return Path("/usr/bin/os-prober").exists()
+
+
+def is_os_prober_enabled() -> bool:
+    """
+    Check if os-prober is enabled in /etc/default/grub.
+    Returns True if GRUB_DISABLE_OS_PROBER is not set or set to false.
+    """
+    from grubforge.config_manager import GRUB_CONFIG_PATH, parse_grub_config
+    try:
+        config = parse_grub_config(GRUB_CONFIG_PATH)
+        entry  = config.entries.get("GRUB_DISABLE_OS_PROBER")
+        if not entry or entry.commented:
+            return True   # not set means os-prober runs by default
+        return entry.value.lower() == "false"
+    except Exception:
+        return False
+
+
+def install_os_prober() -> tuple:
+    """
+    Install os-prober via pacman.
+    Returns (success: bool, output: str).
+    Requires root privileges.
+    """
+    try:
+        result = subprocess.run(
+            ["pacman", "-S", "--noconfirm", "os-prober"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        output = result.stdout + result.stderr
+        return result.returncode == 0, output
+    except FileNotFoundError:
+        return False, "pacman not found. Is this an Arch-based system?"
+    except subprocess.TimeoutExpired:
+        return False, "pacman timed out after 120 seconds."
+    except Exception as e:
+        return False, str(e)
+
+
+def enable_os_prober() -> None:
+    """
+    Set GRUB_DISABLE_OS_PROBER=false in /etc/default/grub.
+    Creates a backup first.
+    Requires root privileges.
+    """
+    from grubforge.config_manager import GRUB_CONFIG_PATH, parse_grub_config, write_grub_config
+    from grubforge.backup_manager import create_backup
+
+    create_backup(label="pre-os-prober-enable")
+    config    = parse_grub_config(GRUB_CONFIG_PATH)
+    new_lines = write_grub_config(config, {"GRUB_DISABLE_OS_PROBER": "false"})
+
+    if GRUB_CONFIG_PATH.exists():
+        GRUB_CONFIG_PATH.write_text("".join(new_lines), encoding="utf-8")
+
+
+def run_os_prober() -> tuple:
+    """
+    Run os-prober to detect other operating systems.
+    Returns (success: bool, detected: list of str).
+    Each detected item is a line like:
+      /dev/sdb2:Windows 11:Windows:chain
+    Requires root privileges.
+    """
+    try:
+        result = subprocess.run(
+            ["os-prober"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        output = result.stdout.strip()
+        if not output:
+            return True, []
+
+        detected = []
+        for line in output.splitlines():
+            line = line.strip()
+            if line:
+                detected.append(line)
+
+        return True, detected
+    except FileNotFoundError:
+        return False, ["os-prober not found."]
+    except subprocess.TimeoutExpired:
+        return False, ["os-prober timed out after 30 seconds."]
+    except Exception as e:
+        return False, [str(e)]
+
+
+def parse_os_prober_output(lines: list) -> list:
+    """
+    Parse os-prober output lines into human readable dicts.
+    Each line format: /dev/sdXN:Label:ShortName:type
+    Returns list of {device, label, short, type} dicts.
+    """
+    results = []
+    for line in lines:
+        parts = line.split(":")
+        if len(parts) >= 3:
+            results.append({
+                "device": parts[0].strip(),
+                "label":  parts[1].strip(),
+                "short":  parts[2].strip() if len(parts) > 2 else "",
+                "type":   parts[3].strip() if len(parts) > 3 else "unknown",
+            })
+    return results

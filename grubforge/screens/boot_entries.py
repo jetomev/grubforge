@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 """
-GrubForge — Boot Entries Screen
-View, reorder, rename, and create custom GRUB boot entries.
+GrubForge - Boot Entries Screen
+View, reorder, rename, create custom entries, and detect other OSes.
 Writes custom order to /etc/grub.d/40_custom.
 """
 
@@ -21,6 +22,12 @@ from grubforge.boot_entries_manager import (
     create_custom_entry,
     get_template_names,
     get_template_preview,
+    is_os_prober_installed,
+    is_os_prober_enabled,
+    install_os_prober,
+    enable_os_prober,
+    run_os_prober,
+    parse_os_prober_output,
     GRUB_CFG_PATH,
     MANAGED_SCRIPTS,
 )
@@ -29,15 +36,15 @@ from grubforge.widgets.confirm_dialog import ConfirmDialog
 
 
 class BootEntriesScreen(Container):
-    """Boot entry reorder, rename, and custom entry screen."""
+    """Boot entry reorder, rename, custom entry, and OS detection screen."""
 
     BINDINGS = [
-        Binding("k",      "move_up",       "Move Up",          show=True),
-        Binding("j",      "move_down",      "Move Down",        show=True),
-        Binding("s",      "save_order",     "Save Order",       show=True),
-        Binding("n",      "start_rename",   "Rename",           show=True),
-        Binding("r",      "restore_order",  "Restore Original", show=True),
-        Binding("f5",     "refresh",        "Refresh",          show=True),
+        Binding("k",  "move_up",       "Move Up",          show=True),
+        Binding("j",  "move_down",     "Move Down",        show=True),
+        Binding("s",  "save_order",    "Save Order",       show=True),
+        Binding("n",  "start_rename",  "Rename",           show=True),
+        Binding("r",  "restore_order", "Restore Original", show=True),
+        Binding("f5", "refresh",       "Refresh",          show=True),
     ]
 
     _entries: list = []
@@ -48,54 +55,64 @@ class BootEntriesScreen(Container):
             # Left: entry list
             with Vertical(id="backup-list-panel"):
                 yield Static(
-                    " 🖥  Boot Entries  [dim](K up  •  J down  •  N rename  •  S save)[/dim]",
+                    " Boot Entries  [dim](K up  J down  N rename  S save)[/dim]",
                     classes="panel-title",
                 )
                 yield ListView(id="entries-list")
 
-            # Right: detail + actions
+            # Right: all controls
             with Vertical(id="backup-detail-panel"):
                 yield Static("", id="entry-detail-header")
 
-                # ── Move / Save buttons ──
+                # Move / Save
                 with Horizontal(id="backup-action-buttons"):
-                    yield Button("▲ Move Up",    id="btn-up",    classes="-primary")
-                    yield Button("▼ Move Down",  id="btn-down",  classes="-primary")
-                    yield Button("💾 Save Order", id="btn-save", classes="-success")
+                    yield Button("Move Up",    id="btn-up",    classes="-primary")
+                    yield Button("Move Down",  id="btn-down",  classes="-primary")
+                    yield Button("Save Order", id="btn-save",  classes="-success")
 
-                # ── Restore / Refresh buttons ──
+                # Restore / Refresh
                 with Horizontal(id="entry-action-buttons-2"):
-                    yield Button("↺ Restore Original", id="btn-restore", classes="-warning")
-                    yield Button("↺ Refresh",           id="btn-refresh", classes="-primary")
+                    yield Button("Restore Original", id="btn-restore", classes="-warning")
+                    yield Button("Refresh",          id="btn-refresh", classes="-primary")
 
-                # ── Rename section ──
-                yield Static(" ✏  Rename Entry", classes="panel-title")
-                yield Input(placeholder="New entry name…", id="rename-input")
+                # Rename
+                yield Static(" Rename Entry", classes="panel-title")
+                yield Input(placeholder="New entry name...", id="rename-input")
                 with Horizontal(id="rename-buttons"):
-                    yield Button("✏ Rename", id="btn-rename",       classes="-success")
-                    yield Button("✗ Clear",  id="btn-rename-clear", classes="-warning")
+                    yield Button("Rename", id="btn-rename",       classes="-success")
+                    yield Button("Clear",  id="btn-rename-clear", classes="-warning")
 
-                # ── Add custom entry section ──
-                yield Static(" ➕  Add Custom Entry", classes="panel-title")
-                yield Input(placeholder="Entry title…", id="custom-title-input")
+                # Add custom entry
+                yield Static(" Add Custom Entry", classes="panel-title")
+                yield Input(placeholder="Entry title...", id="custom-title-input")
                 yield Select(
                     [(t, t) for t in get_template_names()],
                     id="custom-template-select",
-                    prompt="Select template…",
+                    prompt="Select template...",
                 )
                 yield Button("Preview Template", id="btn-preview-template", classes="-primary")
                 yield Static("", id="custom-preview-label")
                 yield TextArea("", id="custom-raw-editor", language="bash")
                 with Horizontal(id="custom-buttons"):
-                    yield Button("➕ Add Entry", id="btn-add-custom",    classes="-success")
-                    yield Button("✗ Clear",      id="btn-clear-custom",  classes="-warning")
+                    yield Button("Add Entry", id="btn-add-custom",   classes="-success")
+                    yield Button("Clear",     id="btn-clear-custom", classes="-warning")
+
+                # OS Detection
+                yield Static(" Detect Other Operating Systems", classes="panel-title")
+                yield Static("", id="os-prober-status")
+                with Horizontal(id="os-prober-buttons"):
+                    yield Button("Scan for OSes",    id="btn-scan-os",    classes="-primary")
+                    yield Button("Install os-prober", id="btn-install-os", classes="-warning")
+                    yield Button("Enable os-prober",  id="btn-enable-os",  classes="-success")
+                yield Static("", id="os-prober-results")
 
         yield Static("", id="backup-status")
 
     def on_mount(self) -> None:
         self._load_entries()
+        self._refresh_os_prober_status()
 
-    # ── Load entries ──────────────────────────────────────────────────────────
+    # Load entries
 
     def _load_entries(self) -> None:
         self._entries = parse_boot_entries()
@@ -122,7 +139,27 @@ class BootEntriesScreen(Container):
             )
             lv.append(ListItem(Static(text)))
 
-    # ── Selection ─────────────────────────────────────────────────────────────
+    # OS Prober status
+
+    def _refresh_os_prober_status(self) -> None:
+        installed = is_os_prober_installed()
+        enabled   = is_os_prober_enabled()
+
+        installed_str = "[green]installed[/green]" if installed else "[red]not installed[/red]"
+        enabled_str   = "[green]enabled[/green]"   if enabled   else "[yellow]disabled[/yellow]"
+
+        self.query_one("#os-prober-status", Static).update(
+            f"  [dim]os-prober:[/dim] {installed_str}   "
+            f"[dim]status:[/dim] {enabled_str}\n"
+            f"  [dim]Scan to detect Windows, other Linux, and EFI entries.[/dim]"
+        )
+
+        install_btn = self.query_one("#btn-install-os", Button)
+        enable_btn  = self.query_one("#btn-enable-os",  Button)
+        install_btn.display = not installed
+        enable_btn.display  = installed and not enabled
+
+    # Selection
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         idx = event.list_view.index
@@ -146,7 +183,7 @@ class BootEntriesScreen(Container):
             f"[dim]Order: [/dim][#cdd6f4]{idx + 1} of {len(self._entries)}[/#cdd6f4]\n"
             + (
                 f"[dim]Children ({len(entry.children)}):[/dim]\n"
-                + "\n".join(f"  [dim]• {c}[/dim]" for c in entry.children[:5])
+                + "\n".join(f"  [dim]- {c}[/dim]" for c in entry.children[:5])
                 if entry.children else ""
             )
         )
@@ -162,7 +199,7 @@ class BootEntriesScreen(Container):
         }
         return colors.get(source, "#a6adc8")
 
-    # ── Move up / down ────────────────────────────────────────────────────────
+    # Move up / down
 
     def action_move_up(self) -> None:
         idx = self._selected_idx
@@ -190,7 +227,7 @@ class BootEntriesScreen(Container):
             f"Moved '{self._entries[self._selected_idx].title}' down.", "info"
         )
 
-    # ── Rename ────────────────────────────────────────────────────────────────
+    # Rename
 
     def action_start_rename(self) -> None:
         self.query_one("#rename-input", Input).focus()
@@ -222,12 +259,12 @@ class BootEntriesScreen(Container):
             self._rebuild_list()
             self._show_detail(idx)
             self._set_status(
-                f"Renamed: '{old_title}' → '{new_title}'  —  Press S to save.", "info"
+                f"Renamed: '{old_title}' -> '{new_title}' - Press S to save.", "info"
             )
         except Exception as e:
             self._set_status(f"Rename failed: {e}", "error")
 
-    # ── Custom entry ──────────────────────────────────────────────────────────
+    # Custom entry
 
     def _preview_template(self) -> None:
         title    = self.query_one("#custom-title-input", Input).value.strip()
@@ -244,13 +281,15 @@ class BootEntriesScreen(Container):
         editor  = self.query_one("#custom-raw-editor", TextArea)
         editor.load_text(preview)
         self.query_one("#custom-preview-label", Static).update(
-            f"[dim]Template: [bold]{template}[/bold] — edit the block below as needed[/dim]"
+            f"[dim]Template: [bold]{template}[/bold] - edit below as needed[/dim]"
         )
-        self._set_status(f"Template '{template}' loaded. Edit as needed then click Add Entry.", "info")
+        self._set_status(
+            f"Template '{template}' loaded. Edit as needed then click Add Entry.", "info"
+        )
 
     def _do_add_custom(self) -> None:
         title    = self.query_one("#custom-title-input", Input).value.strip()
-        raw      = self.query_one("#custom-raw-editor", TextArea).text.strip()
+        raw      = self.query_one("#custom-raw-editor",  TextArea).text.strip()
         template = self.query_one("#custom-template-select", Select).value
 
         if not title:
@@ -268,14 +307,131 @@ class BootEntriesScreen(Container):
             self._set_status(
                 f"Added '{title}' to the list. Press S to save and apply.", "ok"
             )
-            # Clear the form
-            self.query_one("#custom-title-input",    Input).value = ""
-            self.query_one("#custom-raw-editor",     TextArea).load_text("")
-            self.query_one("#custom-preview-label",  Static).update("")
+            self.query_one("#custom-title-input",   Input).value = ""
+            self.query_one("#custom-raw-editor",    TextArea).load_text("")
+            self.query_one("#custom-preview-label", Static).update("")
         except Exception as e:
             self._set_status(f"Failed to add entry: {e}", "error")
 
-    # ── Buttons ───────────────────────────────────────────────────────────────
+    # OS Detection
+
+    def action_scan_os(self) -> None:
+        self.app.run_worker(self._scan_os_worker(), exclusive=True)
+
+    def action_install_os_prober(self) -> None:
+        self.app.run_worker(self._install_os_prober_worker(), exclusive=True)
+
+    def action_enable_os_prober(self) -> None:
+        self.app.run_worker(self._enable_os_prober_worker(), exclusive=True)
+
+    async def _scan_os_worker(self) -> None:
+        if not is_os_prober_installed():
+            self._set_status(
+                "os-prober is not installed. Click 'Install os-prober' first.", "warn"
+            )
+            return
+
+        if not is_os_prober_enabled():
+            self._set_status(
+                "os-prober is disabled. Click 'Enable os-prober' first.", "warn"
+            )
+            return
+
+        self._set_status("Scanning for other operating systems...", "info")
+        self.query_one("#os-prober-results", Static).update("[dim]Scanning...[/dim]")
+
+        success, lines = run_os_prober()
+
+        if not success:
+            self._set_status(f"os-prober failed: {lines[0]}", "error")
+            self.query_one("#os-prober-results", Static).update(
+                f"[red]Error: {lines[0]}[/red]"
+            )
+            return
+
+        if not lines:
+            self._set_status("No other operating systems detected.", "info")
+            self.query_one("#os-prober-results", Static).update(
+                "[dim]No other operating systems found.[/dim]\n"
+                "[dim]Make sure other drives are connected and mounted.[/dim]"
+            )
+            return
+
+        parsed  = parse_os_prober_output(lines)
+        display = []
+        for os_entry in parsed:
+            display.append(
+                f"  [green]found[/green] [bold #cdd6f4]{os_entry['label']}[/bold #cdd6f4]\n"
+                f"     [dim]Device: {os_entry['device']}  Type: {os_entry['type']}[/dim]"
+            )
+
+        self.query_one("#os-prober-results", Static).update("\n".join(display))
+        self._set_status(
+            f"Found {len(parsed)} OS(es). Press Ctrl+R in Config Editor to add them to GRUB.",
+            "ok"
+        )
+
+    async def _install_os_prober_worker(self) -> None:
+        confirmed = await self.app.push_screen_wait(
+            ConfirmDialog(
+                title="Install os-prober",
+                message=(
+                    "This will run:\n"
+                    "  pacman -S os-prober\n\n"
+                    "os-prober scans for other operating\n"
+                    "systems and adds them to GRUB."
+                ),
+                confirm_label="Install",
+                confirm_variant="primary",
+            )
+        )
+        if not confirmed:
+            return
+
+        self._set_status("Installing os-prober...", "info")
+        success, output = install_os_prober()
+
+        if success:
+            self._set_status("os-prober installed successfully!", "ok")
+        else:
+            self._set_status(f"Install failed: {output[:80]}", "error")
+
+        self._refresh_os_prober_status()
+
+    async def _enable_os_prober_worker(self) -> None:
+        confirmed = await self.app.push_screen_wait(
+            ConfirmDialog(
+                title="Enable os-prober",
+                message=(
+                    "This will set:\n"
+                    "  GRUB_DISABLE_OS_PROBER=false\n\n"
+                    "in /etc/default/grub.\n"
+                    "A backup will be created first.\n\n"
+                    "Then press Ctrl+R in Config Editor\n"
+                    "to regenerate grub.cfg."
+                ),
+                confirm_label="Enable",
+                confirm_variant="success",
+            )
+        )
+        if not confirmed:
+            return
+
+        try:
+            enable_os_prober()
+            self._set_status(
+                "os-prober enabled. Go to Config Editor and press Ctrl+R to regenerate grub.cfg.",
+                "ok"
+            )
+            self._refresh_os_prober_status()
+        except PermissionError:
+            self._set_status(
+                "Permission denied - run GrubForge with sudo.", "error"
+            )
+        except Exception as e:
+            self._set_status(f"Failed to enable os-prober: {e}", "error")
+
+    # Buttons
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         match event.button.id:
@@ -301,8 +457,14 @@ class BootEntriesScreen(Container):
                 self.query_one("#custom-title-input",   Input).value = ""
                 self.query_one("#custom-raw-editor",    TextArea).load_text("")
                 self.query_one("#custom-preview-label", Static).update("")
+            case "btn-scan-os":
+                self.action_scan_os()
+            case "btn-install-os":
+                self.action_install_os_prober()
+            case "btn-enable-os":
+                self.action_enable_os_prober()
 
-    # ── Save order ────────────────────────────────────────────────────────────
+    # Save order
 
     def action_save_order(self) -> None:
         self.app.run_worker(self._save_order_worker(), exclusive=True)
@@ -322,9 +484,9 @@ class BootEntriesScreen(Container):
                     f"Save this boot order:\n\n"
                     f"{order_summary}\n\n"
                     f"This will:\n"
-                    f"• Write order to /etc/grub.d/40_custom\n"
-                    f"• Disable auto-generate scripts\n"
-                    f"• Regenerate grub.cfg"
+                    f"- Write order to /etc/grub.d/40_custom\n"
+                    f"- Disable auto-generate scripts\n"
+                    f"- Regenerate grub.cfg"
                 ),
                 confirm_label="Save & Apply",
                 confirm_variant="success",
@@ -335,7 +497,7 @@ class BootEntriesScreen(Container):
 
         try:
             write_custom_order(self._entries)
-            self._set_status("Written to 40_custom…", "info")
+            self._set_status("Written to 40_custom...", "info")
 
             scripts_to_disable = set(
                 e.source for e in self._entries
@@ -343,7 +505,6 @@ class BootEntriesScreen(Container):
             )
             for script in scripts_to_disable:
                 disable_script(script)
-            self._set_status("Scripts disabled…", "info")
 
             success, output = regenerate_grub()
             if success:
@@ -357,12 +518,12 @@ class BootEntriesScreen(Container):
 
         except PermissionError:
             self._set_status(
-                "Permission denied — run GrubForge with sudo.", "error"
+                "Permission denied - run GrubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Error: {e}", "error")
 
-    # ── Restore original order ────────────────────────────────────────────────
+    # Restore original order
 
     def action_restore_order(self) -> None:
         self.app.run_worker(self._restore_order_worker(), exclusive=True)
@@ -373,9 +534,9 @@ class BootEntriesScreen(Container):
                 title="Restore Original Boot Order",
                 message=(
                     "This will:\n"
-                    "• Re-enable all auto-generate scripts\n"
-                    "• Clear your custom 40_custom order\n"
-                    "• Regenerate grub.cfg automatically\n\n"
+                    "- Re-enable all auto-generate scripts\n"
+                    "- Clear your custom 40_custom order\n"
+                    "- Regenerate grub.cfg automatically\n\n"
                     "Your current custom order will be lost."
                 ),
                 confirm_label="Restore",
@@ -387,7 +548,7 @@ class BootEntriesScreen(Container):
 
         try:
             restore_original_order()
-            self._set_status("Scripts restored…", "info")
+            self._set_status("Scripts restored...", "info")
 
             success, output = regenerate_grub()
             if success:
@@ -403,18 +564,19 @@ class BootEntriesScreen(Container):
 
         except PermissionError:
             self._set_status(
-                "Permission denied — run GrubForge with sudo.", "error"
+                "Permission denied - run GrubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Error: {e}", "error")
 
-    # ── Refresh ───────────────────────────────────────────────────────────────
+    # Refresh
 
     def action_refresh(self) -> None:
         self._load_entries()
+        self._refresh_os_prober_status()
         self._set_status("Boot entries refreshed.", "info")
 
-    # ── Status bar ────────────────────────────────────────────────────────────
+    # Status bar
 
     def _set_status(self, msg: str, level: str = "info") -> None:
         color_map = {
@@ -423,9 +585,9 @@ class BootEntriesScreen(Container):
             "warn":  "#f9e2af",
             "error": "#f38ba8",
         }
-        icon_map = {"ok": "✓", "info": "●", "warn": "⚠", "error": "✗"}
+        icon_map = {"ok": "ok", "info": ">>", "warn": "!!", "error": "xx"}
         color = color_map.get(level, "#cdd6f4")
-        icon  = icon_map.get(level, "●")
+        icon  = icon_map.get(level, ">>")
         self.query_one("#backup-status", Static).update(
             f"[{color}]{icon} {msg}[/{color}]"
         )

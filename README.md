@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.7.0](https://img.shields.io/badge/Version-0.7.0-purple.svg)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-purple.svg)
 
 ---
 
@@ -42,7 +42,20 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 
 ## Screenshots
 
-*Coming soon*
+### Dashboard
+![Dashboard](screenshots/screenshot_dashboard.png)
+
+### Config Editor
+![Config Editor](screenshots/screenshot_config_editor.png)
+
+### Theme Browser
+![Theme Browser](screenshots/screenshot_themes.png)
+
+### Backup & Restore
+![Backup & Restore](screenshots/screenshot_backup.png)
+
+### Boot Entries
+![Boot Entries](screenshots/screenshot_boot_entries.png)
 
 ---
 
@@ -137,7 +150,6 @@ sudo python main.py
 
 ## Project Structure
 
-## Project Structure
 ```
 grubforge/
 |-- main.py                      # Entry point
@@ -187,7 +199,7 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] Boot entry renaming
 - [x] Custom boot entry creation
 - [x] OS detection and os-prober integration
-- [ ] Theme downloader (curated list)
+- [x] Screenshots in README
 - [ ] Packaged installer (AUR)
 - [ ] Man page
 

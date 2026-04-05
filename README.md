@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.5.0](https://img.shields.io/badge/Version-0.5.0-purple.svg)
+![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-purple.svg)
 
 ---
 
@@ -33,7 +33,7 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 - 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
 - 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
 - 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, and apply with one key
-- 🖥 **Boot Entries** — reorder, rename, and create custom boot entries, save a custom order, and restore the original at any time
+- 🖥 **Boot Entries** — reorder, rename, and create custom boot entries, detect other OSes via os-prober, save a custom order, and restore the original at any time
 - 🗂 **Backup & Restore** — timestamped backups created automatically before every change
 - 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
 - 🌙 **Catppuccin Mocha** — a beautiful, consistent dark theme throughout
@@ -186,7 +186,7 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] Boot entry reordering
 - [x] Boot entry renaming
 - [x] Custom boot entry creation
-- [ ] OS detection and os-prober integration (in Boot Entries)
+- [x] OS detection and os-prober integration
 - [ ] Theme downloader (curated list)
 - [ ] Packaged installer (AUR)
 - [ ] Man page
@@ -194,6 +194,15 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 ---
 
 ## Changelog
+
+### v0.6.0 — April 4, 2026
+**OS Detection**
+- Detect other operating systems installed on your drives directly from Boot Entries
+- Checks if os-prober is installed and enabled automatically on screen load
+- Install os-prober via pacman with one click if missing
+- Enable os-prober in /etc/default/grub with automatic backup
+- Scan button runs os-prober and displays all detected OSes with device and type info
+- Works seamlessly with existing grub-mkconfig regeneration flow
 
 ### v0.5.0 — April 4, 2026
 **Custom Boot Entry Creation**

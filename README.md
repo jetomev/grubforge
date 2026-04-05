@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-purple.svg)
+![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-purple.svg)
 
 ---
 
@@ -200,8 +200,8 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] Custom boot entry creation
 - [x] OS detection and os-prober integration
 - [x] Screenshots in README
+- [x] Man page
 - [ ] Packaged installer (AUR)
-- [ ] Man page
 
 ---
 

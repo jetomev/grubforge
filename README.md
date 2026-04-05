@@ -6,7 +6,8 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-purple.svg)
+![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-purple.svg)
+[![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
 ---
 
@@ -70,7 +71,17 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 
 ## Installation
 
-### Arch Linux (recommended)
+### Arch Linux — AUR (recommended)
+
+GrubForge is available on the Arch User Repository:
+[https://aur.archlinux.org/packages/grubforge](https://aur.archlinux.org/packages/grubforge)
+
+```bash
+yay -S grubforge
+```
+
+### Arch Linux — From source
+
 ```bash
 sudo pacman -S python-textual python-rich
 git clone https://github.com/jetomev/grubforge.git
@@ -78,6 +89,7 @@ cd grubforge
 ```
 
 ### Other distributions
+
 ```bash
 pip install textual rich
 git clone https://github.com/jetomev/grubforge.git
@@ -87,6 +99,15 @@ cd grubforge
 ---
 
 ## Usage
+
+### Installed via AUR
+
+```bash
+sudo grubforge
+```
+
+### Running from source
+
 ```bash
 cd grubforge
 sudo python main.py
@@ -126,6 +147,7 @@ sudo python main.py
 |-----|--------|
 | `A` | Apply selected theme |
 | `F5` | Refresh theme list |
+| `H` | Toggle installation help guide |
 
 ### Boot Entries
 
@@ -134,6 +156,7 @@ sudo python main.py
 | `K` | Move entry up |
 | `J` | Move entry down |
 | `S` | Save custom order |
+| `N` | Rename selected entry |
 | `R` | Restore original order |
 | `F5` | Refresh |
 
@@ -153,6 +176,7 @@ sudo python main.py
 ```
 grubforge/
 |-- main.py                      # Entry point
+|-- grubforge.1                  # Man page
 |-- grubforge/
     |-- app.py                   # Main Textual application shell
     |-- config_manager.py        # GRUB config parser, writer, validator
@@ -201,22 +225,29 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] OS detection and os-prober integration
 - [x] Screenshots in README
 - [x] Man page
-- [ ] Packaged installer (AUR)
+- [x] Packaged installer (AUR)
 
 ---
 
 ## Changelog
 
+### v1.0.0 — April 4, 2026
+**First Stable Release — AUR Package**
+- 📦 GrubForge is now available on the AUR: `yay -S grubforge`
+- 🚀 Proper system executable — run with `sudo grubforge` from anywhere
+- 🔧 PKGBUILD installs to `/usr/lib/grubforge/` with launcher at `/usr/bin/grubforge`
+- 📖 Man page installed to `/usr/share/man/man1/grubforge.1`
+
 ### v0.9.0 — April 4, 2026
 **Man Page**
-- 📖 **Man page added** — `grubforge.1` included in the repository
+- 📖 Man page added — `grubforge.1` included in the repository
 - Documents all 5 screens, all keybindings, and all managed file paths
 - Built-in SEE ALSO references to `grub-mkconfig`, `grub-install`, `os-prober`
 - Test locally with: `man ./grubforge.1`
 
 ### v0.8.0 — April 4, 2026
 **Screenshots**
-- 📸 **Screenshots added to README** — all five screens captured and published
+- 📸 Screenshots added to README — all five screens captured and published
   - Dashboard
   - Config Editor
   - Theme Browser

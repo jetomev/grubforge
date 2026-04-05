@@ -207,6 +207,22 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 
 ## Changelog
 
+### v0.9.0 — April 4, 2026
+**Man Page**
+- 📖 **Man page added** — `grubforge.1` included in the repository
+- Documents all 5 screens, all keybindings, and all managed file paths
+- Built-in SEE ALSO references to `grub-mkconfig`, `grub-install`, `os-prober`
+- Test locally with: `man ./grubforge.1`
+
+### v0.8.0 — April 4, 2026
+**Screenshots**
+- 📸 **Screenshots added to README** — all five screens captured and published
+  - Dashboard
+  - Config Editor
+  - Theme Browser
+  - Backup & Restore
+  - Boot Entries
+
 ### v0.7.0 — April 4, 2026
 **Theme Browser Help Guide**
 - Press H in the Theme Browser to open the installation guide

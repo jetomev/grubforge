@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 0.6.0](https://img.shields.io/badge/Version-0.6.0-purple.svg)
+![Version: 0.7.0](https://img.shields.io/badge/Version-0.7.0-purple.svg)
 
 ---
 
@@ -32,7 +32,7 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 
 - 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
 - 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
-- 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, and apply with one key
+- 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, apply with one key, and get guided help on installing new themes
 - 🖥 **Boot Entries** — reorder, rename, and create custom boot entries, detect other OSes via os-prober, save a custom order, and restore the original at any time
 - 🗂 **Backup & Restore** — timestamped backups created automatically before every change
 - 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
@@ -182,7 +182,7 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 - [x] Config editor with live validation
 - [x] Automatic backup and restore
 - [x] grub-mkconfig integration
-- [x] Theme browser (local themes)
+- [x] Theme browser with help guide
 - [x] Boot entry reordering
 - [x] Boot entry renaming
 - [x] Custom boot entry creation
@@ -194,6 +194,16 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 ---
 
 ## Changelog
+
+### v0.7.0 — April 4, 2026
+**Theme Browser Help Guide**
+- Press H in the Theme Browser to open the installation guide
+- Explains exactly where to save themes (/boot/grub/themes/)
+- Shows correct folder structure with examples
+- Step by step installation instructions
+- Curated list of recommended theme sources with URLs
+- Tips on required GRUB settings for themes to display correctly
+- Press H again or select a theme to close the help
 
 ### v0.6.0 — April 4, 2026
 **OS Detection**
@@ -250,6 +260,7 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 ## Authors
 
 **jetomev** — idea, vision, direction, testing
+
 **Claude (Anthropic)** — co-developer, architecture, implementation
 
 This project was built as a collaboration between a human with a great idea and an AI that helped bring it to life — one command at a time.

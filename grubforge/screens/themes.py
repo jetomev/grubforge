@@ -8,7 +8,6 @@ from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Static, Button
 from textual.containers import Container, Vertical, Horizontal
 from textual.binding import Binding
-from textual import work
 
 from grubforge.theme_manager import (
     GrubTheme,
@@ -61,7 +60,7 @@ class ThemesScreen(Container):
     def on_mount(self) -> None:
         self._load_themes()
 
-    # Load themes
+    # ── Load themes ───────────────────────────────────────────────────────────
 
     def _load_themes(self) -> None:
         self._themes = list_themes()
@@ -93,7 +92,7 @@ class ThemesScreen(Container):
             f"Found {len(self._themes)} theme(s) in {THEMES_DIR}", "info"
         )
 
-    # List selection
+    # ── List selection ────────────────────────────────────────────────────────
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         idx = event.list_view.index
@@ -102,7 +101,7 @@ class ThemesScreen(Container):
             self._show_detail(idx)
             self._hide_help()
 
-    # Detail pane
+    # ── Detail pane ───────────────────────────────────────────────────────────
 
     def _show_detail(self, idx: int) -> None:
         if idx < 0 or idx >= len(self._themes):
@@ -175,7 +174,7 @@ class ThemesScreen(Container):
         except Exception:
             return "   "
 
-    # Help
+    # ── Help ──────────────────────────────────────────────────────────────────
 
     def action_show_help(self) -> None:
         if self._showing_help:
@@ -253,20 +252,22 @@ class ThemesScreen(Container):
         if self._selected_idx >= 0:
             self._show_detail(self._selected_idx)
 
-    # Buttons
+    # ── Buttons ───────────────────────────────────────────────────────────────
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-apply":
-            self.run_worker(self.action_apply_theme(), exclusive=True)
+            self.action_apply_theme()
         elif event.button.id == "btn-refresh":
             self.action_refresh()
         elif event.button.id == "btn-help":
             self.action_show_help()
 
-    # Apply theme
+    # ── Apply theme ───────────────────────────────────────────────────────────
 
-    @work
-    async def action_apply_theme(self) -> None:
+    def action_apply_theme(self) -> None:
+        self.app.run_worker(self._apply_theme_worker(), exclusive=True)
+
+    async def _apply_theme_worker(self) -> None:
         idx = self._selected_idx
         if idx < 0 or idx >= len(self._themes):
             self._set_status("No theme selected.", "warn")
@@ -308,7 +309,7 @@ class ThemesScreen(Container):
         self._load_themes()
         self._set_status("Theme list refreshed.", "info")
 
-    # Status bar
+    # ── Status bar ────────────────────────────────────────────────────────────
 
     def _set_status(self, msg: str, level: str = "info") -> None:
         color_map = {

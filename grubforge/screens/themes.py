@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-GrubForge - Theme Browser Screen
+grubForge - Theme Browser Screen
 Scan, preview, and apply installed GRUB themes.
 """
 
@@ -23,9 +23,8 @@ class ThemesScreen(Container):
     """Theme browser - scan, preview, and apply GRUB themes."""
 
     BINDINGS = [
-        Binding("a",  "apply_theme", "Apply Theme", show=True),
-        Binding("f5", "refresh",     "Refresh",     show=True),
-        Binding("h",  "show_help",   "Help",        show=True),
+        Binding("f5", "refresh",   "Refresh", show=True, priority=True),
+        Binding("h",  "show_help", "Help",    show=True, priority=True),
     ]
 
     _themes: list = []
@@ -208,7 +207,7 @@ class ThemesScreen(Container):
   2. Extract it to /boot/grub/themes/
      Example:
      [dim]sudo tar -xzf catppuccin-mocha.tar.gz -C /boot/grub/themes/[/dim]
-  3. Press F5 in GrubForge to refresh the theme list
+  3. Press F5 in grubForge to refresh the theme list
   4. Select the theme and press A to apply
   5. Go to Config Editor (press 2) and press Ctrl+R to regenerate grub.cfg
 
@@ -272,6 +271,9 @@ class ThemesScreen(Container):
         if idx < 0 or idx >= len(self._themes):
             self._set_status("No theme selected.", "warn")
             return
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to apply themes.", "warn")
+            return
 
         theme     = self._themes[idx]
         confirmed = await self.app.push_screen_wait(
@@ -300,7 +302,7 @@ class ThemesScreen(Container):
             self._load_themes()
         except PermissionError:
             self._set_status(
-                "Permission denied - run GrubForge with sudo.", "error"
+                "Permission denied - run grubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Failed to apply theme: {e}", "error")

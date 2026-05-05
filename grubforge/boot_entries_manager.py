@@ -1,5 +1,5 @@
 """
-GrubForge — Boot Entries Manager
+grubForge — Boot Entries Manager
 Reads boot entries from grub.cfg, allows reordering and grouping,
 writes custom order to /etc/grub.d/40_custom, and manages script permissions.
 """
@@ -22,9 +22,9 @@ MANAGED_SCRIPTS  = ["10_linux", "20_linux_xen", "30_os-prober", "30_uefi-firmwar
 CUSTOM_40_HEADER = """\
 #!/bin/sh
 exec tail -n +3 $0
-# This file is managed by GrubForge.
+# This file is managed by grubForge.
 # Manual edits may be overwritten.
-# To restore original boot order, use GrubForge > Boot Entries > Restore Original.
+# To restore original boot order, use grubForge > Boot Entries > Restore Original.
 
 """
 

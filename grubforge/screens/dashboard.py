@@ -1,5 +1,5 @@
 """
-GrubForge — Dashboard Screen
+grubForge — Dashboard Screen
 System overview: GRUB version, config status, backup count, quick stats.
 """
 
@@ -42,6 +42,9 @@ class DashboardScreen(ScrollableContainer):
     def compose(self) -> ComposeResult:
         yield Static("", id="dashboard-content")
 
+    def action_refresh(self) -> None:
+        self._refresh_data()
+
     def _refresh_data(self) -> None:
         config   = parse_grub_config(GRUB_CONFIG_PATH)
         backups  = list_backups()
@@ -67,13 +70,23 @@ class DashboardScreen(ScrollableContainer):
         entry_count    = _count_boot_entries(grubcfg) if grubcfg_exists else 0
 
         cfg_status = (
-            "[green]✓ Found[/green]" if config_exists
+            f"[green]✓ {GRUB_CONFIG_PATH}[/green]" if config_exists
             else "[yellow]⚠ Not found (mock mode)[/yellow]"
         )
         grubcfg_status = (
             f"[green]✓ {grubcfg}[/green]" if grubcfg_exists
             else "[yellow]⚠ Not found (run grub-mkconfig)[/yellow]"
         )
+
+        if config_exists and grubcfg_exists:
+            cfg_mtime  = GRUB_CONFIG_PATH.stat().st_mtime
+            grub_mtime = grubcfg.stat().st_mtime
+            if grub_mtime < cfg_mtime:
+                sync_status = "[#f9e2af]⚠ grub.cfg older than /etc/default/grub — press Ctrl+R to regenerate[/#f9e2af]"
+            else:
+                sync_status = "[#a6e3a1]✓ in sync[/#a6e3a1]"
+        else:
+            sync_status = "[dim]n/a[/dim]"
         backup_color = "green" if backup_count > 0 else "yellow"
         mock_note = (
             "\n[dim italic]  ↳ Running in demo mode — /etc/default/grub not found[/dim italic]"
@@ -82,7 +95,7 @@ class DashboardScreen(ScrollableContainer):
 
         content = f"""\
 [bold #89b4fa]╔═══════════════════════════════════════════════╗
-║           GrubForge — System Overview          ║
+║          grubForge — System Overview          ║
 ╚═══════════════════════════════════════════════╝[/bold #89b4fa]
 {mock_note}
 
@@ -90,6 +103,7 @@ class DashboardScreen(ScrollableContainer):
 
   [dim]Config file  [/dim]  {cfg_status}
   [dim]grub.cfg     [/dim]  {grubcfg_status}
+  [dim]Sync         [/dim]  {sync_status}
   [dim]Boot entries [/dim]  [#cdd6f4]{entry_count}[/#cdd6f4] [dim]detected[/dim]
 
 [bold #a6adc8]── Active Settings ────────────────────────────────[/bold #a6adc8]

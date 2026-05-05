@@ -1,5 +1,5 @@
 """
-GrubForge — ConfirmDialog Widget
+grubForge — ConfirmDialog Widget
 A modal confirmation dialog used before any destructive or system-level action.
 """
 

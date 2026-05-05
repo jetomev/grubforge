@@ -1,5 +1,5 @@
 """
-GrubForge — Backup Manager
+grubForge — Backup Manager
 Creates timestamped backups of /etc/default/grub and restores them safely.
 """
 
@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 BACKUP_DIR       = Path("/var/lib/grubforge/backups")
 GRUB_CONFIG_PATH = Path("/etc/default/grub")
-MAX_BACKUPS      = 20
+MAX_BACKUPS      = 10
 BACKUP_PREFIX    = "grub_"
 BACKUP_SUFFIX    = ".bak"
 
@@ -163,7 +163,7 @@ def _read_label(backup_path: Path) -> str:
 
 def _mock_backup_content(ts: str) -> str:
     return f"""\
-# GrubForge mock backup — {ts}
+# grubForge mock backup — {ts}
 # (Demo mode: no real /etc/default/grub found on this system)
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=5

@@ -21,3 +21,11 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
+
+# makepkg workspace (produced when building a local package for testing)
+/pkg/
+/src/
+/PKGBUILD
+/.SRCINFO
+*.tar.gz
+*.pkg.tar.*

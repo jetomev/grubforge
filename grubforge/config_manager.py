@@ -1,5 +1,5 @@
 """
-GrubForge — Config Manager
+grubForge — Config Manager
 Handles reading, parsing, validating, and writing /etc/default/grub safely.
 """
 
@@ -32,6 +32,17 @@ MANAGED_KEYS = [
     "GRUB_DISABLE_OS_PROBER",
     "GRUB_SAVEDEFAULT",
 ]
+
+REQUIRED_KEYS = {
+    "GRUB_DEFAULT",
+    "GRUB_TIMEOUT",
+}
+
+
+def is_required(key: str) -> bool:
+    """True if the GRUB key must have a non-empty value to be valid."""
+    return key in REQUIRED_KEYS
+
 
 KEY_DESCRIPTIONS = {
     "GRUB_DEFAULT":               "Default boot entry (index or 'saved')",
@@ -170,6 +181,13 @@ def validate_changes(changes: dict) -> ValidationResult:
     result = ValidationResult(valid=True)
 
     for key, value in changes.items():
+        if not value:
+            if is_required(key):
+                result.errors.append(
+                    f"{key} is required and cannot be empty"
+                )
+            continue
+
         if key == "GRUB_TIMEOUT":
             if not _is_int(value) or int(value) < -1:
                 result.errors.append(

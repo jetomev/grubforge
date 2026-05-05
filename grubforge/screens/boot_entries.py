@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-GrubForge - Boot Entries Screen
+grubForge - Boot Entries Screen
 View, reorder, rename, create custom entries, and detect other OSes.
 Writes custom order to /etc/grub.d/40_custom.
 """
@@ -39,12 +39,13 @@ class BootEntriesScreen(Container):
     """Boot entry reorder, rename, custom entry, and OS detection screen."""
 
     BINDINGS = [
-        Binding("k",  "move_up",       "Move Up",          show=True),
-        Binding("j",  "move_down",     "Move Down",        show=True),
-        Binding("s",  "save_order",    "Save Order",       show=True),
-        Binding("n",  "start_rename",  "Rename",           show=True),
-        Binding("r",  "restore_order", "Restore Original", show=True),
-        Binding("f5", "refresh",       "Refresh",          show=True),
+        Binding("k",  "move_up",       "Move Up",          show=True, priority=True),
+        Binding("j",  "move_down",     "Move Down",        show=True, priority=True),
+        Binding("n",  "start_rename",  "Rename",           show=True, priority=True),
+        Binding("x",  "restore_order", "Restore Original", show=True, priority=True),
+        Binding("f5", "refresh",       "Refresh",          show=True, priority=True),
+        # Save Order is reached via the universal `S` binding (action_save_order is the
+        # method the global dispatcher calls for this screen).
     ]
 
     _entries: list = []
@@ -55,7 +56,7 @@ class BootEntriesScreen(Container):
             # Left: entry list
             with Vertical(id="backup-list-panel"):
                 yield Static(
-                    " Boot Entries  [dim](K up  J down  N rename  S save)[/dim]",
+                    " Boot Entries  [dim](K up  J down  N rename  X restore)[/dim]",
                     classes="panel-title",
                 )
                 yield ListView(id="entries-list")
@@ -66,21 +67,21 @@ class BootEntriesScreen(Container):
 
                 # Move / Save
                 with Horizontal(id="backup-action-buttons"):
-                    yield Button("Move Up",    id="btn-up",    classes="-primary")
-                    yield Button("Move Down",  id="btn-down",  classes="-primary")
-                    yield Button("Save Order", id="btn-save",  classes="-success")
+                    yield Button("Move Up (k)",    id="btn-up",    classes="-primary")
+                    yield Button("Move Down (j)",  id="btn-down",  classes="-primary")
+                    yield Button("Save Order (s)", id="btn-save",  classes="-success")
 
                 # Restore / Refresh
                 with Horizontal(id="entry-action-buttons-2"):
-                    yield Button("Restore Original", id="btn-restore", classes="-warning")
-                    yield Button("Refresh",          id="btn-refresh", classes="-primary")
+                    yield Button("Restore Original (x)", id="btn-restore", classes="-warning")
+                    yield Button("Refresh (r)",          id="btn-refresh", classes="-primary")
 
                 # Rename
                 yield Static(" Rename Entry", classes="panel-title")
                 yield Input(placeholder="New entry name...", id="rename-input")
                 with Horizontal(id="rename-buttons"):
-                    yield Button("Rename", id="btn-rename",       classes="-success")
-                    yield Button("Clear",  id="btn-rename-clear", classes="-warning")
+                    yield Button("Rename (n)", id="btn-rename",       classes="-success")
+                    yield Button("Clear",      id="btn-rename-clear", classes="-warning")
 
                 # Add custom entry
                 yield Static(" Add Custom Entry", classes="panel-title")
@@ -372,6 +373,9 @@ class BootEntriesScreen(Container):
         )
 
     async def _install_os_prober_worker(self) -> None:
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to install os-prober.", "warn")
+            return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
                 title="Install os-prober",
@@ -399,6 +403,9 @@ class BootEntriesScreen(Container):
         self._refresh_os_prober_status()
 
     async def _enable_os_prober_worker(self) -> None:
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to enable os-prober.", "warn")
+            return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
                 title="Enable os-prober",
@@ -426,7 +433,7 @@ class BootEntriesScreen(Container):
             self._refresh_os_prober_status()
         except PermissionError:
             self._set_status(
-                "Permission denied - run GrubForge with sudo.", "error"
+                "Permission denied - run grubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Failed to enable os-prober: {e}", "error")
@@ -473,6 +480,9 @@ class BootEntriesScreen(Container):
         if not self._entries:
             self._set_status("No entries to save.", "warn")
             return
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to save boot order.", "warn")
+            return
 
         order_summary = "\n".join(
             f"  {i+1}. {e.title}" for i, e in enumerate(self._entries)
@@ -518,7 +528,7 @@ class BootEntriesScreen(Container):
 
         except PermissionError:
             self._set_status(
-                "Permission denied - run GrubForge with sudo.", "error"
+                "Permission denied - run grubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Error: {e}", "error")
@@ -529,6 +539,9 @@ class BootEntriesScreen(Container):
         self.app.run_worker(self._restore_order_worker(), exclusive=True)
 
     async def _restore_order_worker(self) -> None:
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to restore boot order.", "warn")
+            return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
                 title="Restore Original Boot Order",
@@ -564,7 +577,7 @@ class BootEntriesScreen(Container):
 
         except PermissionError:
             self._set_status(
-                "Permission denied - run GrubForge with sudo.", "error"
+                "Permission denied - run grubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Error: {e}", "error")

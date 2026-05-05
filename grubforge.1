@@ -1,15 +1,17 @@
-.\" grubforge.1 — GrubForge man page
+.\" grubforge.1 — grubForge man page
 .\" GNU GPL v3 — see LICENSE
-.TH GRUBFORGE 1 "April 2026" "GrubForge v0.8.0" "User Commands"
+.TH GRUBFORGE 1 "May 2026" "grubForge v1.0.1" "User Commands"
 .
 .SH NAME
 grubforge \- terminal UI for managing the GRUB bootloader
 .
 .SH SYNOPSIS
-.B sudo python main.py
+.B grubforge
+.br
+.B sudo grubforge
 .
 .SH DESCRIPTION
-.B GrubForge
+.B grubForge
 is a keyboard-driven terminal user interface (TUI) for managing and
 customizing the GRUB bootloader on Linux.
 It provides a safe, guided interface for editing
@@ -21,20 +23,20 @@ via
 .PP
 Every write operation creates an automatic backup first.
 Every destructive action requires confirmation before proceeding.
-GrubForge can be run without
+grubForge can be run without
 .B sudo
 in read-only demo mode for safe exploration.
 .
 .SH USAGE
 .TP
-.B cd ~/Programs/grubforge && sudo python main.py
-Run GrubForge with full write access.
+.B sudo grubforge
+Run grubForge with full write access.
 .TP
-.B cd ~/Programs/grubforge && python main.py
+.B grubforge
 Run in demo mode (read-only, no system files modified).
 .
 .SH SCREENS
-GrubForge is organised into five screens, each accessible by pressing
+grubForge is organised into five screens, each accessible by pressing
 the corresponding number key.
 .
 .SS 1 \- Dashboard
@@ -62,7 +64,7 @@ for a built-in installation guide with recommended theme sources.
 Lists all timestamped backups stored in
 .IR /var/lib/grubforge/backups .
 Supports creating, previewing, restoring, and deleting backups.
-A maximum of 20 backups are kept; older ones are rotated out automatically.
+A maximum of 10 backups are kept; older ones are rotated out automatically.
 .
 .SS 5 \- Boot Entries
 Parses
@@ -73,6 +75,22 @@ Memtest, Blank). Custom order is written to
 .IR /etc/grub.d/40_custom .
 Includes OS detection via
 .BR os-prober (8).
+.PP
+.B Caveat \- kernel updates while custom order is active.
+While a custom boot order is saved, the auto-generate scripts
+.RI ( 10_linux ,
+.IR 30_os-prober ,
+.IR 30_uefi-firmware )
+are non-executable. Any subsequent
+.B grub-mkconfig
+run \(em including those triggered automatically by kernel-update
+post-install hooks \(em will produce a
+.I grub.cfg
+without auto-detected linux entries. New kernels will not appear in
+the boot menu until you press
+.B R
+(Restore original) in the Boot Entries screen, or add them manually
+as custom entries.
 .
 .SH KEYBINDINGS
 .SS Global
@@ -166,7 +184,7 @@ Refresh the entry list
 .SH FILES
 .TP
 .I /etc/default/grub
-Primary GRUB configuration file. Read and written by GrubForge.
+Primary GRUB configuration file. Read and written by grubForge.
 .TP
 .I /boot/grub/grub.cfg
 Generated boot menu. Never edited directly — regenerated via
@@ -210,7 +228,7 @@ Root privileges for write operations
 \(em co-developer, architecture, implementation
 .
 .SH LICENSE
-GrubForge is free software: you can redistribute it and/or modify it
+grubForge is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License v3.0 as published by
 the Free Software Foundation.
 .PP

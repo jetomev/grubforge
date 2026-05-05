@@ -1,4 +1,4 @@
-"""GrubForge — GRUB TUI Manager entry point."""
+"""grubForge — GRUB TUI Manager entry point."""
 
 from grubforge.app import GrubForgeApp
 

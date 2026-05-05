@@ -1,5 +1,5 @@
 """
-GrubForge — Theme Manager
+grubForge — Theme Manager
 Scans /boot/grub/themes/, parses theme.txt files, and extracts color information.
 """
 

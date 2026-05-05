@@ -1,5 +1,5 @@
 """
-GrubForge — Backup & Restore Screen
+grubForge — Backup & Restore Screen
 List all backups, preview content, restore or delete them.
 """
 
@@ -9,7 +9,6 @@ from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Static, Button
 from textual.containers import Container, Vertical, Horizontal
 from textual.binding import Binding
-from textual import work
 
 from grubforge.backup_manager import (
     Backup,
@@ -20,6 +19,7 @@ from grubforge.backup_manager import (
     read_backup_content,
     BACKUP_DIR,
     GRUB_CONFIG_PATH,
+    MAX_BACKUPS,
 )
 from grubforge.widgets.confirm_dialog import ConfirmDialog
 
@@ -27,10 +27,10 @@ class BackupScreen(Container):
     """Backup and restore manager."""
 
     BINDINGS = [
-        Binding("b",  "create_backup",  "New Backup", show=True),
-        Binding("r",  "restore_backup", "Restore",    show=True),
-        Binding("d",  "delete_backup",  "Delete",     show=True),
-        Binding("f5", "refresh",        "Refresh",    show=True),
+        Binding("n",  "create_backup",  "New Backup", show=True, priority=True),
+        Binding("x",  "restore_backup", "Restore",    show=True, priority=True),
+        Binding("d",  "delete_backup",  "Delete",     show=True, priority=True),
+        Binding("f5", "refresh",        "Refresh",    show=True, priority=True),
     ]
 
     _backups: list = []
@@ -40,7 +40,7 @@ class BackupScreen(Container):
         with Container(id="backup-split"):
             with Vertical(id="backup-list-panel"):
                 yield Static(
-                    " 🗂  Backups  [dim](B new  •  R restore  •  D delete)[/dim]",
+                    " 🗂  Backups  [dim](N new  •  X restore  •  D delete)[/dim]",
                     classes="panel-title",
                 )
                 yield ListView(id="backup-list")
@@ -48,9 +48,9 @@ class BackupScreen(Container):
             with Vertical(id="backup-detail-panel"):
                 yield Static("", id="backup-detail-header")
                 with Horizontal(id="backup-action-buttons"):
-                    yield Button("↩ Restore",    id="btn-restore", classes="-success")
-                    yield Button("✗ Delete",      id="btn-delete",  classes="-danger")
-                    yield Button("＋ New Backup", id="btn-new",     classes="-primary")
+                    yield Button("↩ Restore (x)",   id="btn-restore", classes="-success")
+                    yield Button("✗ Delete (d)",    id="btn-delete",  classes="-danger")
+                    yield Button("＋ New Backup (n)", id="btn-new",   classes="-primary")
                 yield Static(" 📄 Preview", classes="panel-title", id="preview-title")
                 yield Static("", id="backup-preview")
 
@@ -59,7 +59,7 @@ class BackupScreen(Container):
     def on_mount(self) -> None:
         self._load_backups()
         self._set_status(
-            f"Backups stored in {BACKUP_DIR}  •  max 20 kept", "info"
+            f"Backups stored in {BACKUP_DIR}  •  max {MAX_BACKUPS} kept", "info"
         )
 
     # ── List management ───────────────────────────────────────────────────────
@@ -140,16 +140,21 @@ class BackupScreen(Container):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-new":
-            self.run_worker(self.action_create_backup(), exclusive=True)
+            self.action_create_backup()
         elif event.button.id == "btn-restore":
-            self.run_worker(self.action_restore_backup(), exclusive=True)
+            self.action_restore_backup()
         elif event.button.id == "btn-delete":
-            self.run_worker(self.action_delete_backup(), exclusive=True)
+            self.action_delete_backup()
 
     # ── Actions ───────────────────────────────────────────────────────────────
 
-    @work
-    async def action_create_backup(self) -> None:
+    def action_create_backup(self) -> None:
+        self.app.run_worker(self._create_backup_worker(), exclusive=True)
+
+    async def _create_backup_worker(self) -> None:
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to create backups.", "warn")
+            return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
                 title="Create Backup",
@@ -171,11 +176,16 @@ class BackupScreen(Container):
         except Exception as e:
             self._set_status(f"Backup failed: {e}", "error")
 
-    @work        
-    async def action_restore_backup(self) -> None:
+    def action_restore_backup(self) -> None:
+        self.app.run_worker(self._restore_backup_worker(), exclusive=True)
+
+    async def _restore_backup_worker(self) -> None:
         idx = self._selected_idx
         if idx < 0 or idx >= len(self._backups):
             self._set_status("No backup selected.", "warn")
+            return
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to restore backups.", "warn")
             return
 
         backup    = self._backups[idx]
@@ -203,11 +213,16 @@ class BackupScreen(Container):
         except Exception as e:
             self._set_status(f"Restore failed: {e}", "error")
 
-    @work        
-    async def action_delete_backup(self) -> None:
+    def action_delete_backup(self) -> None:
+        self.app.run_worker(self._delete_backup_worker(), exclusive=True)
+
+    async def _delete_backup_worker(self) -> None:
         idx = self._selected_idx
         if idx < 0 or idx >= len(self._backups):
             self._set_status("No backup selected.", "warn")
+            return
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to delete backups.", "warn")
             return
 
         backup    = self._backups[idx]

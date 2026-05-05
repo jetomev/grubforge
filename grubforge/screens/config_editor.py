@@ -1,5 +1,5 @@
 """
-GrubForge — Config Editor Screen
+grubForge — Config Editor Screen
 Browse, view, and edit all /etc/default/grub settings.
 Left panel: key table. Right panel: detail + inline editor.
 Bottom: raw file preview.
@@ -31,10 +31,8 @@ class ConfigEditorScreen(Container):
     """Full config editor: table + detail pane + raw view."""
 
     BINDINGS = [
-        Binding("e",      "start_edit",   "Edit value",   show=True),
-        Binding("s",      "save_changes", "Save & Apply", show=True),
-        Binding("r",      "refresh",      "Refresh",      show=True),
-        Binding("ctrl+r", "regen_grub",   "Regen grub.cfg"),
+        # Edit / Save / Refresh / Ctrl+R live as universal app-level bindings;
+        # this screen exposes the action methods that the global dispatcher calls.
     ]
 
     _selected_key: Optional[str] = None
@@ -193,9 +191,6 @@ class ConfigEditorScreen(Container):
             return
 
         val = self.query_one("#edit-input", Input).value.strip()
-        if not val:
-            self._set_status("Value cannot be empty.", "warn")
-            return
 
         result = validate_changes({self._selected_key: val})
         if not result.valid:
@@ -205,7 +200,8 @@ class ConfigEditorScreen(Container):
         self._pending[self._selected_key] = val
         self._build_table()
         self._show_detail(self._selected_key)
-        msg = f"Staged: {self._selected_key}={val}"
+        display_val = val if val else "(cleared)"
+        msg = f"Staged: {self._selected_key}={display_val}"
         if result.warnings:
             msg += f" — ⚠ {result.warnings[0]}"
         self._set_status(msg, "warn" if result.warnings else "info")
@@ -223,6 +219,9 @@ class ConfigEditorScreen(Container):
     async def action_save_changes(self) -> None:
         if not self._pending:
             self._set_status("No pending changes to save.", "info")
+            return
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to save config changes.", "warn")
             return
 
         changes_summary = "\n".join(
@@ -283,7 +282,7 @@ class ConfigEditorScreen(Container):
 
         except PermissionError:
             self._set_status(
-                "Permission denied — run GrubForge with sudo.", "error"
+                "Permission denied — run grubForge with sudo.", "error"
             )
         except Exception as e:
             self._set_status(f"Error: {e}", "error")
@@ -292,6 +291,9 @@ class ConfigEditorScreen(Container):
     
     @work
     async def action_regen_grub(self) -> None:
+        if self.app.read_only_mode:
+            self._set_status("Read-only mode — relaunch with sudo to regenerate grub.cfg.", "warn")
+            return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
                 title="Regenerate grub.cfg",

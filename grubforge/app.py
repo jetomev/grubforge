@@ -1,9 +1,10 @@
 """
-GrubForge — Main Application
+grubForge — Main Application
 Textual TUI shell: sidebar navigation + screen router.
 Catppuccin Mocha themed throughout.
 """
 
+import os
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -37,23 +38,27 @@ SCREEN_WIDGET_IDS = {
 }
 
 BREADCRUMBS = {
-    "dashboard":      "GrubForge › Home",
-    "config-editor":  "GrubForge › /etc/default/grub",
-    "themes":         "GrubForge › Themes",
-    "backup-restore": "GrubForge › Backup & Restore",
-    "boot-entries":   "GrubForge › Boot Entries",
+    "dashboard":      "grubForge › Home",
+    "config-editor":  "grubForge › /etc/default/grub",
+    "themes":         "grubForge › Themes",
+    "backup-restore": "grubForge › Backup & Restore",
+    "boot-entries":   "grubForge › Boot Entries",
 }
 
-VERSION = "v0.1.0"
+VERSION = "v1.0.1"
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
 class GrubForgeApp(App):
-    """GrubForge — GRUB Bootloader TUI Manager."""
+    """grubForge — GRUB Bootloader TUI Manager."""
 
-    TITLE    = "GrubForge"
+    TITLE    = "grubForge"
     CSS_PATH = Path(__file__).parent / "grubforge.css"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.read_only_mode = os.geteuid() != 0
 
     BINDINGS = [
         Binding("1",      "show_dashboard",  "Dashboard",     show=False),
@@ -64,6 +69,12 @@ class GrubForgeApp(App):
         Binding("q",      "quit",            "Quit",          show=True),
         Binding("?",      "show_help",       "Help",          show=True),
         Binding("ctrl+c", "quit",            "Quit",          show=False),
+        # Universal action bindings — dispatched to the active screen
+        Binding("e",      "global_edit",    "Edit",            show=False),
+        Binding("s",      "global_save",    "Save",            show=False),
+        Binding("a",      "global_apply",   "Apply",           show=False),
+        Binding("r",      "global_refresh", "Refresh",         show=False),
+        Binding("ctrl+r", "global_regen",   "Regen grub.cfg",  show=False),
     ]
 
     _active: str = "dashboard"
@@ -72,7 +83,7 @@ class GrubForgeApp(App):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="sidebar"):
-            yield Static(_logo(), id="sidebar-logo")
+            yield Static(_logo(self.read_only_mode), id="sidebar-logo")
             with Vertical(id="nav-list"):
                 for key, sid, label in NAV_ITEMS:
                     active_cls = "nav-item active" if sid == "dashboard" else "nav-item"
@@ -85,7 +96,7 @@ class GrubForgeApp(App):
 
         with Vertical(id="content-area"):
             yield Static(
-                _header("🏠  Dashboard", "GrubForge › Home"),
+                _header("🏠  Dashboard", "grubForge › Home"),
                 id="screen-header",
                 classes="screen-header",
             )
@@ -151,12 +162,49 @@ class GrubForgeApp(App):
 
     def action_show_help(self) -> None:
         self.notify(
-            "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries\n"
-            "E Edit value  S Save  R Refresh  Ctrl+R Regen grub.cfg\n"
-            "K Move up  J Move down  B New backup  D Delete  q Quit",
-            title="⚡ GrubForge Help",
+            "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries  q Quit\n"
+            "Universal: E Edit  S Save  A Apply  R Refresh  Ctrl+R Regen grub.cfg\n"
+            "Boot Entries: K up  J down  N rename  X restore original\n"
+            "Backup: N new  X restore  D delete\n"
+            "Themes: H install help\n"
+            "[dim]Press Esc to close (auto-dismisses in 8s)[/dim]",
+            title="⚡ grubForge Help",
             timeout=8,
         )
+
+    # ── Universal action dispatchers ──────────────────────────────────────────
+
+    def _dispatch(self, methods: list, action_label: str) -> None:
+        """Try each method name on the active screen widget; notify if none match."""
+        sid = SCREEN_WIDGET_IDS.get(self._active)
+        if not sid:
+            return
+        screen_widget = self.query_one(f"#{sid}")
+        for method_name in methods:
+            fn = getattr(screen_widget, method_name, None)
+            if callable(fn):
+                fn()
+                return
+        self.notify(
+            f"{action_label} isn't available on this screen.",
+            severity="information",
+            timeout=3,
+        )
+
+    def action_global_edit(self) -> None:
+        self._dispatch(["action_start_edit"], "Edit")
+
+    def action_global_save(self) -> None:
+        self._dispatch(["action_save_changes", "action_save_order"], "Save")
+
+    def action_global_apply(self) -> None:
+        self._dispatch(["action_apply_theme"], "Apply")
+
+    def action_global_refresh(self) -> None:
+        self._dispatch(["action_refresh"], "Refresh")
+
+    def action_global_regen(self) -> None:
+        self._dispatch(["action_regen_grub"], "Regenerate grub.cfg")
 
     def on_static_click(self, event: Static.Clicked) -> None:
         wid = getattr(event.widget, "id", "") or ""
@@ -166,10 +214,15 @@ class GrubForgeApp(App):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _logo() -> str:
+def _logo(read_only: bool = False) -> str:
+    badge = (
+        "\n[bold #f38ba8 reverse] DEMO [/bold #f38ba8 reverse] [dim #6c7086]read-only[/dim #6c7086]"
+        if read_only else ""
+    )
     return (
-        "[bold #89b4fa]⚡ GrubForge[/bold #89b4fa]\n"
+        "[bold #89b4fa]⚡ grubForge[/bold #89b4fa]\n"
         f"[dim #6c7086]GRUB TUI Manager {VERSION}[/dim #6c7086]"
+        f"{badge}"
     )
 
 def _header(label: str, crumb: str) -> str:
@@ -179,8 +232,8 @@ def _header(label: str, crumb: str) -> str:
 def _status_bar() -> str:
     return (
         "[dim #585b70]"
-        "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries  │  "
-        "E Edit  S Save  R Refresh  Ctrl+R Regen  │  "
+        "1-5 nav  │  "
+        "E Edit  S Save  A Apply  R Refresh  Ctrl+R Regen  │  "
         "? Help  q Quit"
         "[/dim #585b70]"
     )

@@ -1,4 +1,4 @@
-# ⚡ GrubForge
+# ⚡ grubForge
 
 > A terminal UI application for managing and customizing the GRUB bootloader on Linux — safely, intuitively, and beautifully.
 
@@ -6,18 +6,18 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-purple.svg)
+![Version: 1.0.1](https://img.shields.io/badge/Version-1.0.1-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
 ---
 
-## Why GrubForge?
+## Why grubForge?
 
 GRUB is the first program your computer runs after powering on. It is responsible for loading your operating system — and if it breaks, your machine won't boot. Editing it has traditionally meant opening a terminal, manually editing a configuration file as root, hoping you didn't make a typo, and running a command to compile the changes.
 
 There is no safety net. One wrong character can leave you staring at a black screen.
 
-**GrubForge exists to change that.**
+**grubForge exists to change that.**
 
 We believe managing your bootloader should be:
 - **Safe** — automatic backups before every change, confirm dialogs before every action
@@ -25,7 +25,7 @@ We believe managing your bootloader should be:
 - **Beautiful** — a Catppuccin Mocha themed TUI that feels like a proper application, not a 1980s config screen
 - **Accessible** — keyboard-driven, fast, and usable by people who are not bootloader experts
 
-GrubForge was born from a simple frustration: why is one of the most critical pieces of your Linux system also one of the most unfriendly to interact with? It doesn't have to be.
+grubForge was born from a simple frustration: why is one of the most critical pieces of your Linux system also one of the most unfriendly to interact with? It doesn't have to be.
 
 ---
 
@@ -73,7 +73,7 @@ GrubForge was born from a simple frustration: why is one of the most critical pi
 
 ### Arch Linux — AUR (recommended)
 
-GrubForge is available on the Arch User Repository:
+grubForge is available on the Arch User Repository:
 [https://aur.archlinux.org/packages/grubforge](https://aur.archlinux.org/packages/grubforge)
 
 ```bash
@@ -198,7 +198,7 @@ grubforge/
 
 ## Safety Philosophy
 
-GrubForge is built around one principle: **never break the bootloader**.
+grubForge is built around one principle: **never break the bootloader**.
 
 Every change goes through three layers of protection:
 
@@ -208,7 +208,9 @@ Every change goes through three layers of protection:
 
 Backups are stored in `/var/lib/grubforge/backups` and can be restored from within the app at any time.
 
-When reordering boot entries, GrubForge disables the auto-generate scripts in `/etc/grub.d/` rather than editing generated files directly. This is the same approach used by grub-customizer and is fully reversible with one button press.
+When reordering boot entries, grubForge disables the auto-generate scripts in `/etc/grub.d/` rather than editing generated files directly. This is the same approach used by grub-customizer and is fully reversible with one button press.
+
+> **Important caveat — kernel updates while custom order is active.** While a custom boot order is saved, the auto-generate scripts (`10_linux`, `30_os-prober`, `30_uefi-firmware`) are non-executable. Any subsequent `grub-mkconfig` run — including the ones triggered automatically by kernel-update post-install hooks — will produce a `grub.cfg` **without** auto-detected linux entries. New kernels will not appear in the boot menu until you press **Restore Original** in the Boot Entries screen, or add them manually as custom entries. If your system installs kernel updates regularly, prefer keeping grubForge in default-order mode and only saving a custom order on demand.
 
 ---
 
@@ -233,7 +235,7 @@ When reordering boot entries, GrubForge disables the auto-generate scripts in `/
 
 ### v1.0.0 — April 4, 2026
 **First Stable Release — AUR Package**
-- 📦 GrubForge is now available on the AUR: `yay -S grubforge`
+- 📦 grubForge is now available on the AUR: `yay -S grubforge`
 - 🚀 Proper system executable — run with `sudo grubforge` from anywhere
 - 🔧 PKGBUILD installs to `/usr/lib/grubforge/` with launcher at `/usr/bin/grubforge`
 - 📖 Man page installed to `/usr/share/man/man1/grubforge.1`
@@ -328,7 +330,7 @@ This project was built as a collaboration between a human with a great idea and 
 
 ## License
 
-GrubForge is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License v3.0** as published by the Free Software Foundation.
+grubForge is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License v3.0** as published by the Free Software Foundation.
 
 See [LICENSE](LICENSE) for the full license text.
 
@@ -338,4 +340,4 @@ See [LICENSE](LICENSE) for the full license text.
 
 Contributions are welcome! Please open an issue or pull request on GitHub.
 
-If you find GrubForge useful, consider starring the repository — it helps others find it.
+If you find grubForge useful, consider starring the repository — it helps others find it.

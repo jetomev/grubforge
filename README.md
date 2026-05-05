@@ -31,12 +31,14 @@ grubForge was born from a simple frustration: why is one of the most critical pi
 
 ## Features
 
-- 🏠 **Dashboard** — system overview showing GRUB config status, active settings, and backup count
-- 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation
+- 🏠 **Dashboard** — system overview showing GRUB config status, active settings, backup count, and a live sync indicator that flags when `grub.cfg` is out of date with `/etc/default/grub`
+- 🔧 **Config Editor** — view and edit all GRUB settings with descriptions and live validation; required vs optional keys distinguished so optional keys can be cleared
 - 🎨 **Theme Browser** — browse locally installed GRUB themes, preview color palettes, apply with one key, and get guided help on installing new themes
 - 🖥 **Boot Entries** — reorder, rename, and create custom boot entries, detect other OSes via os-prober, save a custom order, and restore the original at any time
-- 🗂 **Backup & Restore** — timestamped backups created automatically before every change
+- 🗂 **Backup & Restore** — timestamped backups created automatically before every change; FIFO retention caps the directory at 10 backups
 - 🔄 **grub-mkconfig** — regenerate your boot menu in one keystroke after any change
+- ⌨️ **Universal action bindings** — `E` Edit, `S` Save, `A` Apply, `R` Refresh, `Ctrl+R` Regen all fire from every screen and dispatch to the active screen's handler; section-local keys never collide with the universals
+- 🚦 **Read-only demo mode** — launch without `sudo` for safe exploration; a red **DEMO** badge in the sidebar makes the mode obvious, and destructive actions show a graceful "Read-only mode — relaunch with sudo" message instead of an OS errno
 - 🌙 **Catppuccin Mocha** — a beautiful, consistent dark theme throughout
 
 ---
@@ -120,54 +122,46 @@ sudo python main.py
 
 ## Keybindings
 
-### Global
+grubForge uses a **universal binding model**: action keys (Edit, Save, Apply, Refresh, Regen) work from every screen and dispatch to the active screen's appropriate handler. Section-specific keys (move, rename, restore, delete, new) are local to the screen they belong to and never collide with the universals. Pressing a universal key on a screen that doesn't support it shows a friendly notification rather than failing silently.
+
+### Universal — any screen
 
 | Key | Action |
 |-----|--------|
-| `1` | Dashboard |
-| `2` | Config Editor |
-| `3` | Theme Browser |
-| `4` | Backup & Restore |
-| `5` | Boot Entries |
-| `?` | Help |
+| `1`–`5` | Switch to Dashboard / Config Editor / Theme Browser / Backup & Restore / Boot Entries |
+| `E` | Edit (Config Editor) |
+| `S` | Save (Config Editor — save pending changes; Boot Entries — save custom order) |
+| `A` | Apply (Theme Browser — apply selected theme) |
+| `R` | Refresh the current screen |
+| `Ctrl+R` | Regenerate `grub.cfg` via `grub-mkconfig` |
+| `?` | Help overlay (`Esc` to close) |
 | `q` | Quit |
 
-### Config Editor
+### Backup & Restore (screen 4)
 
 | Key | Action |
 |-----|--------|
-| `E` | Edit selected value |
-| `S` | Save all pending changes |
-| `R` | Refresh from disk |
-| `Ctrl+R` | Regenerate grub.cfg |
+| `N` | Create a new manual backup |
+| `X` | Restore the selected backup |
+| `D` | Delete the selected backup |
+| `F5` | Refresh (alias for universal `R`) |
 
-### Theme Browser
-
-| Key | Action |
-|-----|--------|
-| `A` | Apply selected theme |
-| `F5` | Refresh theme list |
-| `H` | Toggle installation help guide |
-
-### Boot Entries
+### Boot Entries (screen 5)
 
 | Key | Action |
 |-----|--------|
-| `K` | Move entry up |
-| `J` | Move entry down |
-| `S` | Save custom order |
-| `N` | Rename selected entry |
-| `R` | Restore original order |
-| `F5` | Refresh |
+| `K` | Move selected entry up |
+| `J` | Move selected entry down |
+| `N` | Rename the selected entry |
+| `X` | Restore the original boot order |
+| `F5` | Refresh (alias for universal `R`) |
 
-### Backup & Restore
+### Theme Browser (screen 3)
 
 | Key | Action |
 |-----|--------|
-| `B` | Create new backup |
-| `R` | Restore selected backup |
-| `D` | Delete selected backup |
-| `F5` | Refresh |
+| `H` | Toggle the theme installation help guide |
+| `F5` | Refresh (alias for universal `R`) |
 
 ---
 
@@ -177,15 +171,19 @@ sudo python main.py
 grubforge/
 |-- main.py                      # Entry point
 |-- grubforge.1                  # Man page
+|-- pkg/
+|   |-- PKGBUILD                 # Packaging artifact
+|-- testing/
+|   |-- *.md                     # Test Matrix, Test Results, Release Checklist
 |-- grubforge/
-    |-- app.py                   # Main Textual application shell
-    |-- config_manager.py        # GRUB config parser, writer, validator
-    |-- backup_manager.py        # Backup create, list, restore, delete
+    |-- app.py                   # Main Textual application shell + universal bindings dispatcher
+    |-- config_manager.py        # GRUB config parser, writer, validator (required vs optional keys)
+    |-- backup_manager.py        # Backup create, list, restore, delete (FIFO cap at MAX_BACKUPS=10)
     |-- theme_manager.py         # Theme scanner, parser, color extractor
     |-- boot_entries_manager.py  # Boot entry parser, reorder, grub.d manager
     |-- grubforge.css            # Catppuccin Mocha stylesheet
     |-- screens/
-    |   |-- dashboard.py         # System overview screen
+    |   |-- dashboard.py         # System overview screen with sync indicator
     |   |-- config_editor.py     # Config editor screen
     |   |-- themes.py            # Theme browser screen
     |   |-- boot_entries.py      # Boot entries screen
@@ -228,10 +226,46 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 - [x] Screenshots in README
 - [x] Man page
 - [x] Packaged installer (AUR)
+- [x] Universal action bindings architecture (v1.0.1)
+- [x] Read-only demo-mode indicator (v1.0.1)
+- [x] Dashboard `grub.cfg` sync indicator (v1.0.1)
+- [x] Backup retention cap with FIFO rotation (v1.0.1)
+- [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
+- [ ] Configurable preferences (custom backup retention, theme paths, etc.)
 
 ---
 
 ## Changelog
+
+### v1.0.1 — May 5, 2026
+**Hotfix Batch — Stability + UX Polish (15 findings closed + backup retention cap)**
+
+This release closes the v1.0.1-alpha test cycle. Findings are F-numbered in the [Test Results](testing/) document for traceability — every fix in this release is tied back to a documented defect.
+
+Major:
+- 🛠 **Fixed `WorkerError` on Backup screen Create / Restore / Delete buttons** (F14) — the v1.0.0 worker regression that v1.0.0's hotfix was originally meant to kill. The fix had landed in `themes.py` but `backup.py` was missed; this release applies the same idiom (sync action shim → private async worker, no `@work` decorator double-wrap) to all three sites
+- ⌨️ **Universal action bindings architecture** (F13 + F15 + F16) — `E` Edit, `S` Save, `A` Apply, `R` Refresh, `Ctrl+R` Regen now fire from every screen via an app-level dispatcher; section-local keys rebound off footer collisions (Backup `B → N`, `R → X`; Boot Entries `R → X`); section bindings carry `priority=True` so they fire from any focus context; button labels carry inline key hints like `Restore (x)`
+- 🚦 **Demo-mode detection** (F4 + F17) — red **DEMO** badge in sidebar logo when launched without `sudo`; destructive actions across all screens now show "Read-only mode — relaunch with sudo to ..." instead of the raw `[Errno 13] Permission denied`
+- 📊 **Dashboard sync indicator** — flags when `/etc/default/grub` and `/boot/grub/grub.cfg` are out of sync, prompting `Ctrl+R` to regenerate; catches the same class of bug from any path that writes config without regen, including external tools
+
+Minor:
+- ⚙️ **Config Editor validator** (F12) — distinguishes required keys (`GRUB_DEFAULT`, `GRUB_TIMEOUT`) from optional; clearing `GRUB_THEME` and other optional values now works correctly
+- ✏️ **Rebrand sweep** (F10) — `GrubForge` → `grubForge` across docs, source strings, and user-facing messages; the canonical project name is consistent everywhere
+- 🗂 **Backup retention cap** (M4) — `MAX_BACKUPS` lowered from 20 to 10 (FIFO eviction was already in place; only the constant changed)
+- 🎨 Help overlay shows close hint (F5); Dashboard title-box centred (F7); Config file row mirrors `grub.cfg` row format with the path included (F8)
+- 📖 Man page synced (F1 / F2 / F3) — version, SYNOPSIS, USAGE all reflect the packaged launcher form
+
+Documentation:
+- ⚠️ **New caveat — kernel updates while custom order is active.** While a custom boot order is saved, the auto-generate scripts (`10_linux`, `30_os-prober`, `30_uefi-firmware`) are non-executable. Any subsequent `grub-mkconfig` run — including kernel-update post-install hooks — will produce a `grub.cfg` without auto-detected linux entries until **Restore Original** is run
+- 📋 **Test artifacts in repo** — Test Matrix, Test Results, and a Release Checklist now ship in `testing/` for transparency. The release-checklist captures the worker-pattern audit (greps for `@work` + `run_worker`), version sync across six locations, pre-test snapshot procedure, and co-author credit gates that this run identified as process gaps
+
+Investigation only (no code change):
+- **F18** — observed drift in `GRUB_GFXMODE` from `"1920x1080"` to `1920x1080,auto` during the v1.0.1-alpha run. Audit of `write_grub_config` and `apply_theme` confirmed grubForge scopes mutations to the keys passed in — the drift was caused by an external writer (likely the `tela` theme's post-install hook running `grub-mkconfig`)
+
+Deferred to v2+:
+- F6 / F9 / F11 — small-terminal cramping in Boot Entries, Config Editor, Theme Browser. To be fixed as a coherent layout pass
+
+This release was developed and tested as a Human+AI collaboration. Every finding (`F1`–`F18`) is documented in `testing/20260421 - Test Results for grubForge v1-0-1-alpha.md`.
 
 ### v1.0.0 — April 4, 2026
 **First Stable Release — AUR Package**

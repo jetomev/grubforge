@@ -88,12 +88,19 @@ post-install hooks \(em will produce a
 .I grub.cfg
 without auto-detected linux entries. New kernels will not appear in
 the boot menu until you press
-.B R
+.B X
 (Restore original) in the Boot Entries screen, or add them manually
 as custom entries.
 .
 .SH KEYBINDINGS
-.SS Global
+grubForge uses a universal binding model. Action keys (Edit, Save,
+Apply, Refresh, Regen) work from every screen and dispatch to the
+active screen's appropriate handler. Section-specific keys (move,
+rename, restore, delete, new) are local to the screen they belong
+to and never collide with the universals. Pressing a universal key
+on a screen that does not support it shows a friendly notification.
+.
+.SS Universal \- any screen
 .TP
 .B 1
 Switch to Dashboard
@@ -110,56 +117,51 @@ Switch to Backup & Restore
 .B 5
 Switch to Boot Entries
 .TP
-.B ?
-Show help overlay
-.TP
-.B q
-Quit
-.
-.SS Config Editor
-.TP
 .B E
-Focus the edit input for the selected key
+Edit (Config Editor: focus the edit input for the selected key)
 .TP
 .B S
-Save all pending changes to
-.I /etc/default/grub
+Save (Config Editor: save pending changes to
+.IR /etc/default/grub ;
+Boot Entries: save custom order to
+.IR /etc/grub.d/40_custom )
+.TP
+.B A
+Apply (Theme Browser: apply the selected theme)
 .TP
 .B R
-Reload config from disk
+Refresh the current screen
 .TP
 .B Ctrl+R
 Run
 .B grub-mkconfig
 to regenerate
 .I /boot/grub/grub.cfg
+.TP
+.B ?
+Show help overlay
+.RB ( Esc
+to close)
+.TP
+.B q
+Quit
 .
-.SS Theme Browser
+.SS Backup & Restore (screen 4)
 .TP
-.B A
-Apply the selected theme
-.TP
-.B F5
-Refresh the theme list
-.TP
-.B H
-Toggle the theme installation help guide
-.
-.SS Backup & Restore
-.TP
-.B B
+.B N
 Create a new manual backup
 .TP
-.B R
+.B X
 Restore the selected backup
 .TP
 .B D
 Delete the selected backup
 .TP
 .B F5
-Refresh the backup list
+Refresh (alias for universal
+.BR R )
 .
-.SS Boot Entries
+.SS Boot Entries (screen 5)
 .TP
 .B K
 Move selected entry up
@@ -167,19 +169,24 @@ Move selected entry up
 .B J
 Move selected entry down
 .TP
-.B S
-Save custom boot order to
-.I /etc/grub.d/40_custom
-and regenerate grub.cfg
-.TP
 .B N
 Focus the rename input
 .TP
-.B R
+.B X
 Restore original boot order
 .TP
 .B F5
-Refresh the entry list
+Refresh (alias for universal
+.BR R )
+.
+.SS Theme Browser (screen 3)
+.TP
+.B H
+Toggle the theme installation help guide
+.TP
+.B F5
+Refresh (alias for universal
+.BR R )
 .
 .SH FILES
 .TP

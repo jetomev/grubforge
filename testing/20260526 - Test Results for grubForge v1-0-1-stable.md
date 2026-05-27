@@ -214,6 +214,39 @@ Numbered F1–F15. Each follows the structured format.
 - **Proposed fix:** inspect `screens/backup.py` BINDINGS declaration vs `screens/themes.py:27` (which uses `priority=True` correctly for the H install help binding — that one works). Likely needs to move the binding to Screen-level rather than container-level. ~5 lines.
 - **Also:** verify X (restore) and D (delete) on Backup screen exhibit the same pattern in next session — likely same fix covers all three.
 
+### F16 — Textual `Static.Clicked` removed/renamed; grubforge crashes on import with Textual ≥8.2.7
+
+- **Test:** External bug report (GitHub Issue #1, user `jfp42`, filed 2026-05-19). Reproducible on any environment with Python 3.13 + Textual 8.2.7 + Rich 15.0.0.
+- **Expected:** `from grubforge.app import GrubForgeApp` succeeds; app launches normally
+- **Actual:** Import fails with:
+  ```
+  File "grubforge/app.py", line 209, in GrubForgeApp
+      def on_static_click(self, event: Static.Clicked) -> None:
+                                       ^^^^^^^^^^^^^^
+  AttributeError: type object 'Static' has no attribute 'Clicked'
+  ```
+  Textual deprecated/removed `Static.Clicked` between the version grubforge was developed against and 8.2.7. The Textual reference now states `Static: This widget has no reactive attributes.`
+- **Severity:** **blocker** for newer Textual versions. As soon as Arch (or any rolling distro) ships `python-textual ≥ 8.2.7`, every grubforge install breaks at first launch. We saw `python-textual` going `8.2.5 → 8.2.7` in a recent `nog update` run — this is imminent on Arch.
+- **Code:** `app.py:209` `def on_static_click(self, event: Static.Clicked) -> None:`
+- **Proposed fix:** switch to the supported click-event idiom for Textual 8.x. Per Textual docs the migration is one of:
+  - Use the generic `events.Click` and inspect `event.widget`:
+    ```python
+    from textual import events
+    def on_click(self, event: events.Click) -> None:
+        wid = getattr(event.widget, "id", "") or ""
+        if wid.startswith("nav-"):
+            self._switch_to(wid[4:])
+    ```
+  - Or use the `@on` decorator pinned to Static widgets with an id selector:
+    ```python
+    from textual import on
+    @on(events.Click, "Static.-nav-item")
+    def on_nav_click(self, event: events.Click) -> None: ...
+    ```
+  Either fixes the import error and restores the click-to-navigate behavior. ~5-10 lines change in `app.py`.
+- **Compatibility constraint for the PKGBUILD:** check current `depends=` declaration in PKGBUILD for `python-textual` version pin (likely unpinned — letting Arch deliver whatever current is). The fix should target Textual 8.2.7 since that's what users will have.
+- **External attribution:** found by community user `jfp42` (jfp@... per email in `develop/venv/grubforge` path). Credit in the v1.0.2 release notes.
+
 ---
 
 ## Cross-validation: imports / smoke / source dives
@@ -227,8 +260,9 @@ Numbered F1–F15. Each follows the structured format.
 
 ## v1.0.2 hotfix batch — preliminary grouping
 
-15 findings → likely 4-5 thematic fix groups. Sketch for the v1.0.2 design conversation (next):
+16 findings → 5 thematic fix groups. Sketch for the v1.0.2 design conversation (next):
 
+0. **Textual 8.x API compatibility (BLOCKER — fix FIRST)** (F16): migrate `Static.Clicked` to the supported `events.Click` idiom in `app.py:209`. Without this, the app doesn't even import on Arch once `python-textual` updates to 8.2.7. Land before anything else; verify with `import grubforge.app` smoke before iterating.
 1. **Dashboard / screen refresh** (F3, F4, F5, F8, F10): `on_screen_resume` re-read, unified status display, F3's third "pending changes" state
 2. **Global bindings architecture** (F7, F11, F12, F13): move regen + refresh to app-level (not screen-dispatched); extend Apply dispatcher to include `action_apply_edit`; update Themes Apply popup text after F7 fix
 3. **Feedback surface unification** (F9): all global-binding outcomes (success, error, not-available) through one notify popup helper
@@ -237,6 +271,8 @@ Numbered F1–F15. Each follows the structured format.
 Plus optional: address the smaller F11/F12/F14 edges naturally in their parent groups.
 
 Conservative scope estimate: **~250-350 lines** across `app.py`, `screens/dashboard.py`, `screens/backup.py`, `screens/config_editor.py`, `screens/themes.py`, and `grubforge.css`. Phase-commit pattern from nog's discipline applies — single Phase commit per group, then docs/version bump commit, then tag.
+
+**Severity tally:** 1 blocker (F16) + 6 major + 9 minor = 16 total.
 
 ---
 
@@ -259,8 +295,9 @@ Conservative scope estimate: **~250-350 lines** across `app.py`, `screens/dashbo
 | F13 | Config Editor A keyboard mismatch | major | Global bindings |
 | F14 | Config Editor E no-key-selected edge | minor | Discrete widget |
 | F15 | Backup N priority regressed | minor | Discrete widget |
+| F16 | Textual `Static.Clicked` API break | **blocker** | Textual 8.x compat |
 
-**Severity:** 6 major + 9 minor = 15 total.
+**Severity:** 1 blocker + 6 major + 9 minor = 16 total.
 
 ---
 

@@ -26,9 +26,12 @@ from grubforge.config_manager import (
 )
 from grubforge.backup_manager import create_backup
 from grubforge.widgets.confirm_dialog import ConfirmDialog
+from grubforge.widgets.status import StatusMixin
 
-class ConfigEditorScreen(Container):
+class ConfigEditorScreen(StatusMixin, Container):
     """Full config editor: table + detail pane + raw view."""
+
+    STATUS_WIDGET_ID = "editor-status"
 
     BINDINGS = [
         # Edit / Save / Refresh / Ctrl+R live as universal app-level bindings;
@@ -326,23 +329,5 @@ class ConfigEditorScreen(Container):
             self._show_detail(self._selected_key)
         self._set_status("Config reloaded from disk.", "info")
 
-    # ── Status bar ────────────────────────────────────────────────────────────
-
-    def _set_status(self, msg: str, level: str = "info") -> None:
-        color_map = {
-            "ok":    "#a6e3a1",
-            "info":  "#89b4fa",
-            "warn":  "#f9e2af",
-            "error": "#f38ba8",
-        }
-        icon_map = {
-            "ok":    "✓",
-            "info":  "●",
-            "warn":  "⚠",
-            "error": "✗",
-        }
-        color = color_map.get(level, "#cdd6f4")
-        icon  = icon_map.get(level, "●")
-        self.query_one("#editor-status", Static).update(
-            f"[{color}]{icon} {msg}[/{color}]"
-        )
+    # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback:
+    # persistent status line + app-level notify popup).

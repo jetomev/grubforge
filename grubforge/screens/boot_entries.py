@@ -33,10 +33,13 @@ from grubforge.boot_entries_manager import (
 )
 from grubforge.config_manager import regenerate_grub
 from grubforge.widgets.confirm_dialog import ConfirmDialog
+from grubforge.widgets.status import StatusMixin
 
 
-class BootEntriesScreen(Container):
+class BootEntriesScreen(StatusMixin, Container):
     """Boot entry reorder, rename, custom entry, and OS detection screen."""
+
+    STATUS_WIDGET_ID = "backup-status"
 
     BINDINGS = [
         Binding("k",  "move_up",       "Move Up",          show=True, priority=True),
@@ -589,18 +592,5 @@ class BootEntriesScreen(Container):
         self._refresh_os_prober_status()
         self._set_status("Boot entries refreshed.", "info")
 
-    # Status bar
-
-    def _set_status(self, msg: str, level: str = "info") -> None:
-        color_map = {
-            "ok":    "#a6e3a1",
-            "info":  "#89b4fa",
-            "warn":  "#f9e2af",
-            "error": "#f38ba8",
-        }
-        icon_map = {"ok": "ok", "info": ">>", "warn": "!!", "error": "xx"}
-        color = color_map.get(level, "#cdd6f4")
-        icon  = icon_map.get(level, ">>")
-        self.query_one("#backup-status", Static).update(
-            f"[{color}]{icon} {msg}[/{color}]"
-        )
+    # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback;
+    # also consolidates this screen's old ASCII icons onto the unicode set).

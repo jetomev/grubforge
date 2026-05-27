@@ -7,6 +7,7 @@ Catppuccin Mocha themed throughout.
 import os
 from pathlib import Path
 
+from textual import events
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Static
@@ -206,7 +207,11 @@ class GrubForgeApp(App):
     def action_global_regen(self) -> None:
         self._dispatch(["action_regen_grub"], "Regenerate grub.cfg")
 
-    def on_static_click(self, event: Static.Clicked) -> None:
+    # Textual 8.x removed `Static.Clicked` (the v1.0.1 F16 break — see GitHub
+    # Issue #1). Use the generic `events.Click` and filter by widget id; this
+    # works in both old and new Textual since `Click` is the underlying event
+    # type the now-removed `Static.Clicked` was a subclass of.
+    def on_click(self, event: events.Click) -> None:
         wid = getattr(event.widget, "id", "") or ""
         if wid.startswith("nav-"):
             self._switch_to(wid[4:])

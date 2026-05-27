@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.0.1](https://img.shields.io/badge/Version-1.0.1-purple.svg)
+![Version: 1.0.2](https://img.shields.io/badge/Version-1.0.2-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
 ---
@@ -230,12 +230,46 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 - [x] Read-only demo-mode indicator (v1.0.1)
 - [x] Dashboard `grub.cfg` sync indicator (v1.0.1)
 - [x] Backup retention cap with FIFO rotation (v1.0.1)
+- [x] Textual 8.x `events.Click` API compat (v1.0.2 — unblocks anyone on `python-textual ≥ 8.2.7`)
+- [ ] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings, milestone v1.0.3 on GitHub Issues)
 - [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
 - [ ] Configurable preferences (custom backup retention, theme paths, etc.)
 
 ---
 
 ## Changelog
+
+### v1.0.2 — May 26, 2026
+**Hotfix — Textual 8.x API compatibility (BLOCKER)**
+
+Fixes [GitHub Issue #1](https://github.com/jetomev/grubforge/issues/1), filed by `@jfp42` on 2026-05-19: grubforge crashed on import with `AttributeError: type object 'Static' has no attribute 'Clicked'` on Python 3.13 + Textual 8.2.7. Textual deprecated/removed `Static.Clicked` between the version grubforge was developed against and 8.2.7, so every install on a rolling distro (Arch et al.) was breaking at first launch as soon as `python-textual` got upgraded.
+
+**The fix:**
+
+```python
+# v1.0.1 (broken on Textual ≥ 8.2.7):
+def on_static_click(self, event: Static.Clicked) -> None:
+    wid = getattr(event.widget, "id", "") or ""
+    if wid.startswith("nav-"):
+        self._switch_to(wid[4:])
+
+# v1.0.2 (works on both old and new Textual):
+def on_click(self, event: events.Click) -> None:
+    wid = getattr(event.widget, "id", "") or ""
+    if wid.startswith("nav-"):
+        self._switch_to(wid[4:])
+```
+
+`events.Click` is the underlying event type the now-removed `Static.Clicked` was a subclass of. The handler filters by widget id (`nav-*` prefix) so non-nav clicks pass through harmlessly — identical behavior to v1.0.1.
+
+**Other changes in this release:**
+
+- 🛡 **PKGBUILD `check()` step added** — runs `python -c "from grubforge.app import GrubForgeApp"` during `makepkg`. Catches future Textual API breaks at build time so we never ship an unimportable package again.
+- 📋 **Test Matrix section 8** — Textual API compat regression-guard entries.
+
+**No other behavior changes.** Same dependencies (`python`, `python-textual`, `python-rich`). Same install layout. Same keybindings, screens, theme. F1–F15 findings from the v1.0.1-stable retest (see `testing/20260526 - Test Results for grubForge v1-0-1-stable.md`) are deferred to **v1.0.3** — that's the bigger UX batch covering Dashboard refresh, feedback unification, and global-binding architecture.
+
+**Credit:** v1.0.2 exists because `@jfp42` filed a detailed traceback on a Debian Sid install. Thank you.
 
 ### v1.0.1 — May 5, 2026
 **Hotfix Batch — Stability + UX Polish (15 findings closed + backup retention cap)**

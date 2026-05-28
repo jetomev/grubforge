@@ -24,6 +24,7 @@ class ThemesScreen(StatusMixin, Container):
     """Theme browser - scan, preview, and apply GRUB themes."""
 
     STATUS_WIDGET_ID = "backup-status"
+    DEFAULT_FOCUS = "#theme-list"   # F15: focused on show so F5/H fire at once
 
     BINDINGS = [
         Binding("f5", "refresh",   "Refresh", show=True, priority=True),

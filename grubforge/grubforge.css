@@ -41,7 +41,9 @@ Screen {
     padding: 1 0;
     border-bottom: solid #313244;
     text-style: bold;
-    height: 4;
+    /* F1: was height 4 — with padding 1+1 only 2 content lines fit, clipping
+       the 3rd line (the DEMO badge) in read-only mode. auto grows to fit. */
+    height: auto;
 }
 
 #nav-list {
@@ -306,13 +308,20 @@ ListView > .listview--highlight {
     margin-bottom: 0;
 }
 
-#backup-preview {
+/* F6: the scroll wrapper owns the frame + fills the pane; the inner Static
+   grows to its content height so the container actually has something to
+   scroll over. */
+#backup-preview-scroll {
     background: #181825;
-    color: #cdd6f4;
     border: solid #313244;
     padding: 0 1;
     height: 1fr;
-    overflow-y: auto;
+}
+
+#backup-preview {
+    background: #181825;
+    color: #cdd6f4;
+    height: auto;
 }
 
 #backup-status {

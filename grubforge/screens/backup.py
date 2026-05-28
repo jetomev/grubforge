@@ -7,7 +7,7 @@ from typing import Optional
 
 from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Static, Button
-from textual.containers import Container, Vertical, Horizontal
+from textual.containers import Container, Vertical, Horizontal, VerticalScroll
 from textual.binding import Binding
 
 from grubforge.backup_manager import (
@@ -28,6 +28,7 @@ class BackupScreen(StatusMixin, Container):
     """Backup and restore manager."""
 
     STATUS_WIDGET_ID = "backup-status"
+    DEFAULT_FOCUS = "#backup-list"   # F15: focused on show so N/X/D fire at once
 
     BINDINGS = [
         Binding("n",  "create_backup",  "New Backup", show=True, priority=True),
@@ -55,7 +56,12 @@ class BackupScreen(StatusMixin, Container):
                     yield Button("✗ Delete (d)",    id="btn-delete",  classes="-danger")
                     yield Button("＋ New Backup (n)", id="btn-new",   classes="-primary")
                 yield Static(" 📄 Preview", classes="panel-title", id="preview-title")
-                yield Static("", id="backup-preview")
+                # F6: the preview can run ~41 lines (GRUB_THEME, GFXMODE, etc.
+                # live below the fold). Wrap it in a scroll container so arrows /
+                # PgUp-PgDn / mouse wheel reach the whole backup — a bare Static
+                # with overflow:auto did not scroll.
+                with VerticalScroll(id="backup-preview-scroll"):
+                    yield Static("", id="backup-preview")
 
         yield Static("", id="backup-status")
 

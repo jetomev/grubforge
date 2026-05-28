@@ -40,6 +40,7 @@ class BootEntriesScreen(StatusMixin, Container):
     """Boot entry reorder, rename, custom entry, and OS detection screen."""
 
     STATUS_WIDGET_ID = "backup-status"
+    DEFAULT_FOCUS = "#entries-list"   # F15: focused on show so K/J/N/X fire at once
 
     BINDINGS = [
         Binding("k",  "move_up",       "Move Up",          show=True, priority=True),

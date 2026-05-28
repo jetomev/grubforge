@@ -31,6 +31,7 @@ class ConfigEditorScreen(StatusMixin, Container):
     """Full config editor: table + detail pane + raw view."""
 
     STATUS_WIDGET_ID = "editor-status"
+    DEFAULT_FOCUS = "#config-table"   # F15: focused on show so row nav works at once
 
     BINDINGS = [
         # Edit / Save / Refresh / Ctrl+R live as universal app-level bindings;
@@ -165,6 +166,17 @@ class ConfigEditorScreen(StatusMixin, Container):
     # ── Edit actions ──────────────────────────────────────────────────────────
 
     def action_start_edit(self) -> None:
+        # F14: if no row is selected yet, select the first key so E always lands
+        # on something editable instead of focusing an empty input box.
+        if not self._selected_key:
+            table = self.query_one("#config-table", DataTable)
+            if table.row_count:
+                table.move_cursor(row=0)
+                self._selected_key = MANAGED_KEYS[0]
+                self._show_detail(self._selected_key)
+        if not self._selected_key:
+            self._set_status("No keys available to edit.", "warn")
+            return
         self.query_one("#edit-input", Input).focus()
 
     def action_apply_edit(self) -> None:

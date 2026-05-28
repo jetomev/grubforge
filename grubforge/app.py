@@ -15,6 +15,7 @@ from textual.containers import Container, Vertical
 
 from grubforge.config_manager import regenerate_grub
 from grubforge.widgets.confirm_dialog import ConfirmDialog
+from grubforge.widgets.help_screen import HelpScreen
 from grubforge.screens.dashboard     import DashboardScreen
 from grubforge.screens.config_editor import ConfigEditorScreen
 from grubforge.screens.themes        import ThemesScreen
@@ -147,6 +148,19 @@ class GrubForgeApp(App):
         if callable(reload_view):
             reload_view()
 
+        # F15: focus the screen's primary widget on show. The screens are
+        # Container widgets — their `priority=True` key bindings (Backup N/X/D,
+        # Boot Entries K/J/N/X, …) only fire when the container is in the focus
+        # chain. Previously nothing was focused on entry, so those keys were
+        # inert until the user clicked into a panel. Focusing the main list/
+        # table here makes them work immediately.
+        focus_id = getattr(shown, "DEFAULT_FOCUS", None)
+        if focus_id:
+            try:
+                self.query_one(focus_id).focus()
+            except Exception:
+                pass
+
         label = next(lbl for _, sid, lbl in NAV_ITEMS if sid == screen_id)
         crumb = BREADCRUMBS.get(screen_id, "")
         self.query_one("#screen-header", Static).update(
@@ -173,16 +187,12 @@ class GrubForgeApp(App):
         self._switch_to("boot-entries")
 
     def action_show_help(self) -> None:
-        self.notify(
-            "1 Dashboard  2 Config  3 Themes  4 Backup  5 Boot Entries  q Quit\n"
-            "Universal: E Edit  S Save  A Apply  R Refresh  Ctrl+R Regen grub.cfg\n"
-            "Boot Entries: K up  J down  N rename  X restore original\n"
-            "Backup: N new  X restore  D delete\n"
-            "Themes: H install help\n"
-            "[dim]Press Esc to close (auto-dismisses in 8s)[/dim]",
-            title="⚡ grubForge Help",
-            timeout=8,
-        )
+        # F2: toggle a real modal instead of stacking notify toasts. If help is
+        # already open, ? closes it; otherwise push it.
+        if isinstance(self.screen, HelpScreen):
+            self.pop_screen()
+        else:
+            self.push_screen(HelpScreen())
 
     # ── Universal action dispatchers ──────────────────────────────────────────
 

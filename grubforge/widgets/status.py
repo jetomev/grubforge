@@ -60,7 +60,16 @@ class StatusMixin:
     # Override per screen with the id of its status Static, or leave None.
     STATUS_WIDGET_ID: str | None = None
 
-    def _set_status(self, msg: str, level: str = "info") -> None:
+    def _set_status(self, msg: str, level: str = "info", *, popup: bool = True) -> None:
+        """Update the in-screen status line and (by default) fire a toast popup.
+
+        Pass ``popup=False`` for *passive* status — a one-time hint written to
+        the status line at mount, not action feedback. Without this, every
+        screen's ``on_mount`` hint would toast at launch (all five screens mount
+        up-front, hidden), spraying popups before the user has done anything.
+        Action feedback uses the default ``popup=True`` so it stays consistent
+        with the global-binding dispatcher's notifications (F9 / F10).
+        """
         color = _COLOR.get(level, "#cdd6f4")
         icon = _ICON.get(level, "●")
 
@@ -78,4 +87,5 @@ class StatusMixin:
         # Transient app-level popup — consistent with the global-binding
         # dispatcher's notifications (F9). Screens with no status line still
         # surface feedback here (F10).
-        self.app.notify(msg, severity=_SEVERITY.get(level, "information"), timeout=4)
+        if popup:
+            self.app.notify(msg, severity=_SEVERITY.get(level, "information"), timeout=4)

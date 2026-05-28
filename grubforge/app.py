@@ -136,6 +136,15 @@ class GrubForgeApp(App):
             w = self.query_one(f"#{wid}")
             w.display = (sid == screen_id)
 
+        # F4/F5/F8: re-read disk state every time a screen is shown, so changes
+        # made on another screen (a Config Editor save, a new backup, a theme
+        # apply) are reflected without a manual R. The hook is silent — only an
+        # explicit R press (action_refresh) emits feedback.
+        shown = self.query_one(f"#{SCREEN_WIDGET_IDS[screen_id]}")
+        reload_view = getattr(shown, "_reload_view", None)
+        if callable(reload_view):
+            reload_view()
+
         label = next(lbl for _, sid, lbl in NAV_ITEMS if sid == screen_id)
         crumb = BREADCRUMBS.get(screen_id, "")
         self.query_one("#screen-header", Static).update(

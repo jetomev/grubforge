@@ -115,15 +115,18 @@ class BootEntriesScreen(StatusMixin, Container):
     def on_mount(self) -> None:
         self._load_entries()
         self._refresh_os_prober_status()
+        # Passive mount-time hint — status line only, no startup popup.
+        self._set_status(
+            f"Loaded {len(self._entries)} boot entries from {GRUB_CFG_PATH}", "info",
+            popup=False,
+        )
 
     # Load entries
 
     def _load_entries(self) -> None:
+        """Pure data load — no status emission (callers announce as needed)."""
         self._entries = parse_boot_entries()
         self._rebuild_list()
-        self._set_status(
-            f"Loaded {len(self._entries)} boot entries from {GRUB_CFG_PATH}", "info"
-        )
         if self._entries:
             self._show_detail(0)
 
@@ -587,9 +590,13 @@ class BootEntriesScreen(StatusMixin, Container):
 
     # Refresh
 
-    def action_refresh(self) -> None:
+    # Silent re-read used by the app when this screen is shown (F8).
+    def _reload_view(self) -> None:
         self._load_entries()
         self._refresh_os_prober_status()
+
+    def action_refresh(self) -> None:
+        self._reload_view()
         self._set_status("Boot entries refreshed.", "info")
 
     # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback;

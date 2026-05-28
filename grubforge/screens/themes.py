@@ -61,10 +61,26 @@ class ThemesScreen(StatusMixin, Container):
 
     def on_mount(self) -> None:
         self._load_themes()
+        # Passive mount-time hint — status line only, no startup popup.
+        if self._themes:
+            self._set_status(
+                f"Found {len(self._themes)} theme(s) in {THEMES_DIR}", "info",
+                popup=False,
+            )
+        else:
+            self._set_status(
+                f"No themes found in {THEMES_DIR} -- press H for help", "warn",
+                popup=False,
+            )
 
     # ── Load themes ───────────────────────────────────────────────────────────
 
     def _load_themes(self) -> None:
+        """Pure data load — populate the list/detail, no status emission.
+
+        Callers decide whether to announce (on_mount: passive hint;
+        action_refresh: popup). This keeps the silent on-show reload silent.
+        """
         self._themes = list_themes()
         lv = self.query_one("#theme-list", ListView)
         lv.clear()
@@ -76,7 +92,6 @@ class ThemesScreen(StatusMixin, Container):
             )))
             self._selected_idx = -1
             self._clear_detail()
-            self._set_status(f"No themes found in {THEMES_DIR} -- press H for help", "warn")
             return
 
         for theme in self._themes:
@@ -90,9 +105,6 @@ class ThemesScreen(StatusMixin, Container):
 
         self._selected_idx = 0
         self._show_detail(0)
-        self._set_status(
-            f"Found {len(self._themes)} theme(s) in {THEMES_DIR}", "info"
-        )
 
     # ── List selection ────────────────────────────────────────────────────────
 
@@ -310,8 +322,12 @@ class ThemesScreen(StatusMixin, Container):
         except Exception as e:
             self._set_status(f"Failed to apply theme: {e}", "error")
 
-    def action_refresh(self) -> None:
+    # Silent re-read used by the app when this screen is shown (F8).
+    def _reload_view(self) -> None:
         self._load_themes()
+
+    def action_refresh(self) -> None:
+        self._reload_view()
         self._set_status("Theme list refreshed.", "info")
 
     # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback;

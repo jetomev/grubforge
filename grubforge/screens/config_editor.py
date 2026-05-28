@@ -81,7 +81,8 @@ class ConfigEditorScreen(StatusMixin, Container):
         self._load_config()
         self._build_table()
         self._update_raw_view()
-        self._set_status("Config loaded. Select a key to view details.", "info")
+        # Passive mount-time hint — status line only, no startup popup.
+        self._set_status("Config loaded. Select a key to view details.", "info", popup=False)
 
     # ── Config loading ────────────────────────────────────────────────────────
 
@@ -321,12 +322,17 @@ class ConfigEditorScreen(StatusMixin, Container):
 
     # ── Refresh ───────────────────────────────────────────────────────────────
 
-    def action_refresh(self) -> None:
+    # Silent re-read used by the app when this screen is shown (F8). Pending
+    # staged edits are preserved — only the on-disk config is re-read.
+    def _reload_view(self) -> None:
         self._load_config()
         self._build_table()
         self._update_raw_view()
         if self._selected_key:
             self._show_detail(self._selected_key)
+
+    def action_refresh(self) -> None:
+        self._reload_view()
         self._set_status("Config reloaded from disk.", "info")
 
     # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback:

@@ -12,6 +12,7 @@ from textual.containers import ScrollableContainer
 
 from grubforge.config_manager import GRUB_CONFIG_PATH, parse_grub_config
 from grubforge.backup_manager import BACKUP_DIR, list_backups
+from grubforge.widgets.status import StatusMixin
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -33,8 +34,12 @@ def _count_boot_entries(cfg_path: Path) -> int:
 
 # ── Screen ────────────────────────────────────────────────────────────────────
 
-class DashboardScreen(ScrollableContainer):
+class DashboardScreen(StatusMixin, ScrollableContainer):
     """Main dashboard showing system and GRUB status at a glance."""
+
+    # Dashboard has no in-screen status line; StatusMixin still surfaces R
+    # feedback via the app-level popup (closes F10).
+    STATUS_WIDGET_ID = None
 
     def on_mount(self) -> None:
         self._refresh_data()
@@ -42,8 +47,27 @@ class DashboardScreen(ScrollableContainer):
     def compose(self) -> ComposeResult:
         yield Static("", id="dashboard-content")
 
-    def action_refresh(self) -> None:
+    # Silent re-read used by the app when this screen is shown (F4/F5/F8).
+    def _reload_view(self) -> None:
         self._refresh_data()
+
+    def action_refresh(self) -> None:
+        self._reload_view()
+        # No status line here, so this is popup-only — closes F10 (Dashboard R
+        # previously fired silently).
+        self._set_status("Dashboard refreshed.", "info")
+
+    def _has_pending_edits(self) -> bool:
+        """True if the Config Editor screen holds uncommitted staged edits.
+
+        The pending dict lives on the sibling Config Editor widget; query it
+        defensively so the Dashboard never hard-depends on its internals.
+        """
+        try:
+            editor = self.app.query_one("#screen-config-editor")
+            return bool(getattr(editor, "_pending", None))
+        except Exception:
+            return False
 
     def _refresh_data(self) -> None:
         config   = parse_grub_config(GRUB_CONFIG_PATH)
@@ -78,10 +102,16 @@ class DashboardScreen(ScrollableContainer):
             else "[yellow]⚠ Not found (run grub-mkconfig)[/yellow]"
         )
 
+        # F3: three distinct, color-matched sync states.
+        #   • yellow ⚠ pending changes  — Config Editor has uncommitted edits
+        #   • yellow ⚠ grub.cfg older   — disk-side drift, needs regen
+        #   • green  ✓ in sync          — fully clean
+        # Previously "pending edits" was conflated into the in-sync state,
+        # showing ✓ text in a yellow color (mismatch).
         if config_exists and grubcfg_exists:
-            cfg_mtime  = GRUB_CONFIG_PATH.stat().st_mtime
-            grub_mtime = grubcfg.stat().st_mtime
-            if grub_mtime < cfg_mtime:
+            if self._has_pending_edits():
+                sync_status = "[#f9e2af]⚠ pending changes — press S in Config Editor to save[/#f9e2af]"
+            elif grubcfg.stat().st_mtime < GRUB_CONFIG_PATH.stat().st_mtime:
                 sync_status = "[#f9e2af]⚠ grub.cfg older than /etc/default/grub — press Ctrl+R to regenerate[/#f9e2af]"
             else:
                 sync_status = "[#a6e3a1]✓ in sync[/#a6e3a1]"

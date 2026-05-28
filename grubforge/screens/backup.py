@@ -61,8 +61,10 @@ class BackupScreen(StatusMixin, Container):
 
     def on_mount(self) -> None:
         self._load_backups()
+        # Passive mount-time hint — status line only, no startup popup.
         self._set_status(
-            f"Backups stored in {BACKUP_DIR}  •  max {MAX_BACKUPS} kept", "info"
+            f"Backups stored in {BACKUP_DIR}  •  max {MAX_BACKUPS} kept", "info",
+            popup=False,
         )
 
     # ── List management ───────────────────────────────────────────────────────
@@ -250,8 +252,12 @@ class BackupScreen(StatusMixin, Container):
         except Exception as e:
             self._set_status(f"Delete failed: {e}", "error")
 
-    def action_refresh(self) -> None:
+    # Silent re-read used by the app when this screen is shown (F5/F8).
+    def _reload_view(self) -> None:
         self._load_backups()
+
+    def action_refresh(self) -> None:
+        self._reload_view()
         self._set_status("Backup list refreshed.", "info")
 
     # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback).

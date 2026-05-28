@@ -7,12 +7,14 @@ Catppuccin Mocha themed throughout.
 import os
 from pathlib import Path
 
-from textual import events
+from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Static
 from textual.containers import Container, Vertical
 
+from grubforge.config_manager import regenerate_grub
+from grubforge.widgets.confirm_dialog import ConfirmDialog
 from grubforge.screens.dashboard     import DashboardScreen
 from grubforge.screens.config_editor import ConfigEditorScreen
 from grubforge.screens.themes        import ThemesScreen
@@ -208,13 +210,65 @@ class GrubForgeApp(App):
         self._dispatch(["action_save_changes", "action_save_order"], "Save")
 
     def action_global_apply(self) -> None:
-        self._dispatch(["action_apply_theme"], "Apply")
+        # F13: include the Config Editor's apply method so keyboard `A` mirrors
+        # its "Apply Edit" button (previously only action_apply_theme was tried,
+        # so A was rejected on the Config Editor while the button worked).
+        self._dispatch(["action_apply_edit", "action_apply_theme"], "Apply")
 
     def action_global_refresh(self) -> None:
         self._dispatch(["action_refresh"], "Refresh")
 
-    def action_global_regen(self) -> None:
-        self._dispatch(["action_regen_grub"], "Regenerate grub.cfg")
+    # F7/F11: grub.cfg regeneration is a universal app action, not a screen-
+    # local one. Run grub-mkconfig directly at app level so Ctrl+R works from
+    # ANY screen (previously it dispatched to a screen-local action_regen_grub
+    # that only the Config Editor implemented — silent/no-op elsewhere, and the
+    # Dashboard's own Sync prompt told users to press Ctrl+R but nothing fired).
+    @work
+    async def action_global_regen(self) -> None:
+        if self.read_only_mode:
+            self.notify(
+                "Read-only mode — relaunch with sudo to regenerate grub.cfg.",
+                severity="warning", timeout=4,
+            )
+            return
+        confirmed = await self.push_screen_wait(
+            ConfirmDialog(
+                title="Regenerate grub.cfg",
+                message=(
+                    "This will run:\n"
+                    "  grub-mkconfig -o /boot/grub/grub.cfg\n\n"
+                    "Make sure all changes are saved first."
+                ),
+                confirm_label="Regenerate",
+                confirm_variant="warning",
+            )
+        )
+        if not confirmed:
+            return
+
+        self.notify("Running grub-mkconfig…", severity="information", timeout=4)
+        success, output = regenerate_grub()
+        if success:
+            self.notify(
+                "grub-mkconfig succeeded! Boot menu updated.",
+                severity="information", timeout=4,
+            )
+        else:
+            self.notify(
+                f"grub-mkconfig failed: {output[:80]}",
+                severity="error", timeout=6,
+            )
+        # Reflect the regen on whatever screen is active (e.g. Dashboard sync).
+        self._reload_active()
+
+    def _reload_active(self) -> None:
+        """Silently re-read the active screen's view (post global action)."""
+        sid = SCREEN_WIDGET_IDS.get(self._active)
+        if not sid:
+            return
+        fn = getattr(self.query_one(f"#{sid}"), "_reload_view", None)
+        if callable(fn):
+            fn()
 
     # Textual 8.x removed `Static.Clicked` (the v1.0.1 F16 break — see GitHub
     # Issue #1). Use the generic `events.Click` and filter by widget id; this

@@ -22,7 +22,6 @@ from grubforge.config_manager import (
     validate_changes,
     GrubConfig,
     GrubEntry,
-    regenerate_grub,
 )
 from grubforge.backup_manager import create_backup
 from grubforge.widgets.confirm_dialog import ConfirmDialog
@@ -168,6 +167,12 @@ class ConfigEditorScreen(StatusMixin, Container):
     def action_start_edit(self) -> None:
         self.query_one("#edit-input", Input).focus()
 
+    def action_apply_edit(self) -> None:
+        # Mirror the "Apply Edit" button so the global `A` binding stages the
+        # edit here too (F13: keyboard A previously rejected while the button
+        # worked — the dispatcher only looked for action_apply_theme).
+        self._stage_edit()
+
     def on_input_changed(self, event: Input.Changed) -> None:
         if not self._selected_key:
             return
@@ -291,34 +296,9 @@ class ConfigEditorScreen(StatusMixin, Container):
         except Exception as e:
             self._set_status(f"Error: {e}", "error")
 
-    # ── grub-mkconfig ─────────────────────────────────────────────────────────
-    
-    @work
-    async def action_regen_grub(self) -> None:
-        if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to regenerate grub.cfg.", "warn")
-            return
-        confirmed = await self.app.push_screen_wait(
-            ConfirmDialog(
-                title="Regenerate grub.cfg",
-                message=(
-                    "This will run:\n"
-                    "  grub-mkconfig -o /boot/grub/grub.cfg\n\n"
-                    "Make sure all changes are saved first."
-                ),
-                confirm_label="Regenerate",
-                confirm_variant="warning",
-            )
-        )
-        if not confirmed:
-            return
-
-        self._set_status("Running grub-mkconfig…", "info")
-        success, output = regenerate_grub()
-        if success:
-            self._set_status("grub-mkconfig succeeded! Boot menu updated.", "ok")
-        else:
-            self._set_status(f"grub-mkconfig failed: {output[:80]}", "error")
+    # grub.cfg regeneration (Ctrl+R) is handled app-level for every screen —
+    # see GrubForgeApp.action_global_regen (v1.0.3 F7). It used to live here as
+    # a screen-local action_regen_grub that only this screen implemented.
 
     # ── Refresh ───────────────────────────────────────────────────────────────
 

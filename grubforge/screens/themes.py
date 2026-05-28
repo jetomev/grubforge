@@ -224,7 +224,7 @@ class ThemesScreen(StatusMixin, Container):
      [dim]sudo tar -xzf catppuccin-mocha.tar.gz -C /boot/grub/themes/[/dim]
   3. Press F5 in grubForge to refresh the theme list
   4. Select the theme and press A to apply
-  5. Go to Config Editor (press 2) and press Ctrl+R to regenerate grub.cfg
+  5. Press Ctrl+R to regenerate grub.cfg (works from any screen)
 
 [bold #a6adc8]Where to find themes:[/bold #a6adc8]
 
@@ -298,8 +298,7 @@ class ThemesScreen(StatusMixin, Container):
                     f"Apply theme: {theme.name}\n\n"
                     f"This will set GRUB_THEME in /etc/default/grub.\n"
                     f"A backup will be created first.\n\n"
-                    f"Go to Config Editor and press Ctrl+R\n"
-                    f"to regenerate grub.cfg after applying."
+                    f"Press Ctrl+R afterwards to regenerate grub.cfg."
                 ),
                 confirm_label="Apply",
                 confirm_variant="success",
@@ -311,7 +310,7 @@ class ThemesScreen(StatusMixin, Container):
         try:
             apply_theme(theme)
             self._set_status(
-                f"Theme '{theme.name}' applied. Go to Config Editor and press Ctrl+R.",
+                f"Theme '{theme.name}' applied. Press Ctrl+R to regenerate grub.cfg.",
                 "ok",
             )
             self._load_themes()

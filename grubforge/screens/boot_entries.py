@@ -374,7 +374,7 @@ class BootEntriesScreen(StatusMixin, Container):
 
         self.query_one("#os-prober-results", Static).update("\n".join(display))
         self._set_status(
-            f"Found {len(parsed)} OS(es). Press Ctrl+R in Config Editor to add them to GRUB.",
+            f"Found {len(parsed)} OS(es). Press Ctrl+R to regenerate grub.cfg and add them.",
             "ok"
         )
 
@@ -420,8 +420,7 @@ class BootEntriesScreen(StatusMixin, Container):
                     "  GRUB_DISABLE_OS_PROBER=false\n\n"
                     "in /etc/default/grub.\n"
                     "A backup will be created first.\n\n"
-                    "Then press Ctrl+R in Config Editor\n"
-                    "to regenerate grub.cfg."
+                    "Then press Ctrl+R to regenerate grub.cfg."
                 ),
                 confirm_label="Enable",
                 confirm_variant="success",
@@ -433,7 +432,7 @@ class BootEntriesScreen(StatusMixin, Container):
         try:
             enable_os_prober()
             self._set_status(
-                "os-prober enabled. Go to Config Editor and press Ctrl+R to regenerate grub.cfg.",
+                "os-prober enabled. Press Ctrl+R to regenerate grub.cfg.",
                 "ok"
             )
             self._refresh_os_prober_status()

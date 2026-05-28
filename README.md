@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.0.2](https://img.shields.io/badge/Version-1.0.2-purple.svg)
+![Version: 1.0.3](https://img.shields.io/badge/Version-1.0.3-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
 ---
@@ -231,13 +231,25 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 - [x] Dashboard `grub.cfg` sync indicator (v1.0.1)
 - [x] Backup retention cap with FIFO rotation (v1.0.1)
 - [x] Textual 8.x `events.Click` API compat (v1.0.2 — unblocks anyone on `python-textual ≥ 8.2.7`)
-- [ ] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings, milestone v1.0.3 on GitHub Issues)
+- [x] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings closed)
 - [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
 - [ ] Configurable preferences (custom backup retention, theme paths, etc.)
 
 ---
 
 ## Changelog
+
+### v1.0.3 — May 27, 2026
+**UX hotfix batch — 15 findings from the v1.0.1-stable retest (F1–F15)**
+
+Closes the full milestone of findings from the deep v1.0.1-stable retest (see `testing/20260526 - Test Results for grubForge v1-0-1-stable.md`). Shipped in four thematic groups:
+
+- 🔄 **Refresh-on-show + Dashboard sync states** *(F3, F4, F5, F8, F10)* — every screen now re-reads disk state when shown, so a Config Editor save, a new backup, or a theme apply is reflected without a manual refresh. The Dashboard gains a distinct yellow "⚠ pending changes" sync state (separate from "grub.cfg older" drift and "✓ in sync"), and pressing **R** on the Dashboard now confirms with a toast instead of firing silently.
+- 🧭 **Ctrl+R is a true app-level action** *(F7, F11, F12, F13)* — `grub-mkconfig` regeneration now runs from **any** screen, not just the Config Editor. The global **A** binding mirrors the Config Editor's "Apply Edit" button, and the old "go to Config Editor and press Ctrl+R" cross-screen instructions are gone.
+- 💬 **Unified feedback surface** *(F9)* — a shared `StatusMixin` routes all action feedback through one consistent channel (persistent status line + toast popup), replacing five near-identical per-screen helpers and a divergent ASCII/unicode icon set.
+- 🐛 **Discrete widget fixes** *(F1, F2, F6, F14, F15)* — the **DEMO** badge renders again in read-only mode; **?** opens a real toggleable help modal (Esc/q/? to close) instead of a stacking toast; the backup preview scrolls; **E** with no row selected auto-selects the first key; and **N/X/D** (Backup), **K/J/N/X** (Boot Entries) fire on screen entry without a panel click first.
+
+No dependency or install-layout changes. Same `python`, `python-textual`, `python-rich`.
 
 ### v1.0.2 — May 26, 2026
 **Hotfix — Textual 8.x API compatibility (BLOCKER)**

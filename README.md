@@ -214,26 +214,26 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 
 ## Roadmap
 
-- [x] Dashboard with system overview
-- [x] Config editor with live validation
-- [x] Automatic backup and restore
-- [x] grub-mkconfig integration
-- [x] Theme browser with help guide
-- [x] Boot entry reordering
-- [x] Boot entry renaming
-- [x] Custom boot entry creation
-- [x] OS detection and os-prober integration
-- [x] Screenshots in README
-- [x] Man page
-- [x] Packaged installer (AUR)
-- [x] Universal action bindings architecture (v1.0.1)
-- [x] Read-only demo-mode indicator (v1.0.1)
-- [x] Dashboard `grub.cfg` sync indicator (v1.0.1)
-- [x] Backup retention cap with FIFO rotation (v1.0.1)
-- [x] Textual 8.x `events.Click` API compat (v1.0.2 — unblocks anyone on `python-textual ≥ 8.2.7`)
-- [x] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings closed)
 - [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
 - [ ] Configurable preferences (custom backup retention, theme paths, etc.)
+- [x] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings closed)
+- [x] Textual 8.x `events.Click` API compat (v1.0.2 — unblocks anyone on `python-textual ≥ 8.2.7`)
+- [x] Backup retention cap with FIFO rotation (v1.0.1)
+- [x] Dashboard `grub.cfg` sync indicator (v1.0.1)
+- [x] Read-only demo-mode indicator (v1.0.1)
+- [x] Universal action bindings architecture (v1.0.1)
+- [x] Packaged installer (AUR)
+- [x] Man page
+- [x] Screenshots in README
+- [x] OS detection and os-prober integration
+- [x] Custom boot entry creation
+- [x] Boot entry renaming
+- [x] Boot entry reordering
+- [x] Theme browser with help guide
+- [x] grub-mkconfig integration
+- [x] Automatic backup and restore
+- [x] Config editor with live validation
+- [x] Dashboard with system overview
 
 ---
 

@@ -214,6 +214,7 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 
 ## Roadmap
 
+- [ ] Config regeneration / stale-state behavior — document guarantees when `/etc/default/grub` changes outside the session ([#17](https://github.com/jetomev/grubforge/issues/17))
 - [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
 - [ ] Configurable preferences (custom backup retention, theme paths, etc.)
 - [x] v1.0.3 UX hotfix batch — Dashboard refresh, feedback surface unification, Ctrl+R as true app-level binding, discrete widget bugs (15 findings closed)

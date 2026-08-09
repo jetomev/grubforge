@@ -9,6 +9,8 @@
 ![Version: 1.0.3](https://img.shields.io/badge/Version-1.0.3-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
+> 🛡 **Security:** every release is GPG-signed and every commit GitHub-Verified. Read **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** — our response to the 2026 AUR supply-chain attacks, what is current during the AUR freeze, and how to verify us instead of trusting us.
+
 ---
 
 ## Why grubForge?

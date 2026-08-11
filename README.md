@@ -216,6 +216,8 @@ When reordering boot entries, grubForge disables the auto-generate scripts in `/
 
 ## Roadmap
 
+- [ ] **[#19](https://github.com/jetomev/grubforge/issues/19) — frozen entries vs. Config Editor** *(field-found 2026-08-10; queued for the forgekit cycle)*: when boot entries are frozen into `40_custom`, `GRUB_CMDLINE_LINUX_DEFAULT` and `GRUB_DISTRIBUTOR` silently have no effect. Warn, and offer to apply to the frozen entries or unfreeze. Also: make save→regenerate consistent between Config Editor and Theme Browser.
+
 - [ ] Config regeneration / stale-state behavior — document guarantees when `/etc/default/grub` changes outside the session ([#17](https://github.com/jetomev/grubforge/issues/17))
 - [ ] Coherent v2 layout pass — fix small-terminal cramping across Boot Entries, Config Editor, Theme Browser
 - [ ] Configurable preferences (custom backup retention, theme paths, etc.)

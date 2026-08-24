@@ -191,10 +191,22 @@ def run(
         return HelperResult(ok=False, cancelled=True)
 
     if cap.level is Privilege.POLKIT and result.returncode == 127:
-        detail = result.stderr.strip()
+        # 127 covers both "you typed the wrong password" and "there was no
+        # authentication agent to ask" — pkexec does not distinguish them, so
+        # neither do we. Guessing would be worse than saying both.
+        #
+        # Left raw, this is where the user meets pkexec's "Not authorized. This
+        # incident has been reported.", which sounds like a security event and
+        # explains nothing. On a text console or over SSH it just means there is
+        # no window to show a dialog in, and sudo is the answer.
         return HelperResult(
             ok=False,
-            output=detail or "Authentication failed — nothing was changed.",
+            output=(
+                "Permission was not granted, so nothing was changed.\n"
+                "Either the password was not accepted, or this session has no "
+                "authentication agent to ask — which is normal over SSH or on a "
+                "text console. There, run grubForge with sudo instead."
+            ),
         )
 
     if result.returncode != 0:

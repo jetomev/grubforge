@@ -128,7 +128,9 @@ Confirmation dialogs tell you in advance when a password is coming, so it never 
 >
 > *Changed in v1.1.0, after [#18](https://github.com/jetomev/grubforge/issues/18).*
 
-`sudo grubforge` still works if you prefer it, and skips the prompts entirely. On a machine with no desktop session — over SSH, or a plain console — that's the way to make changes, because there's no window to show a password dialog in. grubForge tells you so instead of failing mysteriously.
+`sudo grubforge` still works if you prefer it, and skips the prompts entirely.
+
+On a machine with no desktop session — over SSH, or a plain text console — `sudo` is the way to make changes, because there's no window a password dialog could appear in. If you try without it, grubForge says exactly that and points you at `sudo`, rather than leaving you with polkit's rather alarming *"Not authorized. This incident has been reported."*
 
 ---
 

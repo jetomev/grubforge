@@ -61,7 +61,13 @@ This release moves grubForge off `sudo`. The application now runs as an ordinary
 
 ### 10.E — Degrading honestly
 
-- [ ] **10.29** **No desktop session.** Connect over SSH (or switch to a text console) and run `grubforge`. The sidebar shows the red **READ-ONLY** badge. Attempting any change reports a reason that **names the fix** — it does not print a password prompt into the terminal and corrupt the display.
+- [ ] **10.29** **No desktop session.** Connect over SSH (or switch to a text console) and run `grubforge`.
+
+  The sidebar shows **no badge** — grubForge cannot tell at startup whether an authentication *agent* is running, only that polkit, the helper and the policy all exist, which they do here. Detecting agent presence is not something polkit exposes cheaply, so grubForge does not pretend to know.
+
+  The check is that the failure is **honest when it happens**: attempt a change, and grubForge reports *"Permission was not granted, so nothing was changed… this session has no authentication agent to ask — which is normal over SSH or on a text console. There, run grubForge with sudo instead."*
+
+  It must **not** show pkexec's raw *"Not authorized. This incident has been reported."*, which sounds like a security incident and explains nothing. And it must not print a password prompt into the terminal, which would corrupt the Textual display.
 - [ ] **10.30** In that same session, `sudo grubforge` works fully, with a ROOT badge and no prompts.
 - [ ] **10.31** **Running from a source checkout** (helper not installed): grubForge launches read-only and explains that the privileged helper is not installed, suggesting installing the package or using sudo.
 - [ ] **10.32** `sudo python main.py` from the checkout works fully, and uses the checkout's helper rather than the installed one — so development tests the code being edited.

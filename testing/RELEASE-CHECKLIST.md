@@ -35,6 +35,14 @@ Before tagging, all of these must agree on the version string:
 - `README.md` Version badge
 - `~/Programs/aur-grubforge/PKGBUILD` `pkgver` + `pkgrel`
 - AUR `.SRCINFO` (regenerate with `makepkg --printsrcinfo > .SRCINFO`)
+- `README.md` AUR badge cache-buster — `.../aur/version/grubforge?v=X.Y.Z`
+
+> The cache-buster is not cosmetic pedantry. GitHub proxies external images
+> through camo, which serves them with `cache-control: max-age=432000` — **five
+> days** — and ignores the shorter `max-age=3600` shields.io actually sends. So
+> after a release the README can advertise the *previous* AUR version for most of
+> a week. Changing the query string changes camo's cache key, which is the only
+> reliable way to force a refresh. Bump it with the version.
 
 > `__init__.py` is the one that gets forgotten. It was stale at 1.0.3 during
 > the v1.1.0 cut and this gate is what caught it. v1.0.3 shipped after fixing

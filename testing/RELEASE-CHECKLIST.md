@@ -33,9 +33,51 @@ Before tagging, all of these must agree on the version string:
 - `grubforge/app.py` `VERSION`
 - `grubforge.1` `.TH` header
 - `README.md` Version badge
-- `pkg/PKGBUILD` `pkgver`
 - `~/Programs/aur-grubforge/PKGBUILD` `pkgver` + `pkgrel`
-- Local + AUR `.SRCINFO`
+- AUR `.SRCINFO` (regenerate with `makepkg --printsrcinfo > .SRCINFO`)
+
+> `__init__.py` is the one that gets forgotten. It was stale at 1.0.3 during
+> the v1.1.0 cut and this gate is what caught it. v1.0.3 shipped after fixing
+> the same class of bug in `app.py`, so it has now happened twice.
+
+## Privilege model — the three-way path agreement (v1.1.0+)
+
+pkexec runs **only** the exact path named in the polkit policy. If these three
+disagree, authorisation fails at runtime with an error that does not obviously
+point at a packaging mistake:
+
+```bash
+grep exec.path polkit/org.kognogos.grubforge.policy
+grep 'INSTALLED_HELPER' grubforge/privilege.py
+grep 'grubforge-helper' ~/Programs/aur-grubforge/PKGBUILD
+```
+
+All three must read `/usr/lib/grubforge/grubforge-helper`.
+
+Also verify after installing the package:
+
+```bash
+pkaction --action-id org.kognogos.grubforge.manage --verbose
+ls -l /usr/lib/grubforge/grubforge-helper     # must be root:root, not user-writable
+```
+
+A root helper writable by an unprivileged user defeats the entire model.
+
+## Privilege model — constants duplicated in the helper
+
+`helper/grubforge-helper` is deliberately self-contained: root-owned code must
+never import from a user-writable path. The cost is duplicated constants, and
+silent drift between the two copies is a **security** bug, not a cosmetic one —
+the app would offer something the helper refuses, or worse, the helper would
+accept something the app never intended to allow.
+
+```bash
+grep -n 'MAX_BACKUPS' grubforge/backup_manager.py helper/grubforge-helper
+grep -n 'MANAGED_SCRIPTS' grubforge/boot_entries_manager.py helper/grubforge-helper
+grep -n 'BACKUP_DIR\|GRUB_CONFIG_PATH\|CUSTOM_40' grubforge/*.py helper/grubforge-helper
+```
+
+The retention cap stated in the man page must match both copies.
 
 ## Doc coverage
 
@@ -47,7 +89,6 @@ Before tagging, all of these must agree on the version string:
 
 Every release artifact must carry the human + AI credit:
 
-- `pkg/PKGBUILD` co-developer line
 - `~/Programs/aur-grubforge/PKGBUILD` co-developer line
 - `README.md` Authors / Credits section
 - GitHub release body

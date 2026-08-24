@@ -173,8 +173,8 @@ class BackupScreen(StatusMixin, Container):
                     "Create a new backup of\n"
                     "/etc/default/grub right now?\n\n"
                     "(This is always safe to do.)"
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Create",
                 confirm_variant="success",
             )
@@ -212,8 +212,8 @@ class BackupScreen(StatusMixin, Container):
                     f"  {backup.display_name}\n\n"
                     f"This will overwrite /etc/default/grub.\n"
                     f"Your current config will be auto-backed-up first."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Restore",
                 confirm_variant="warning",
             )
@@ -252,8 +252,8 @@ class BackupScreen(StatusMixin, Container):
                     f"Permanently delete:\n"
                     f"  {backup.path.name}\n\n"
                     f"This cannot be undone."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Delete",
                 confirm_variant="danger",
             )

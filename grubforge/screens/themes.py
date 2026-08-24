@@ -300,8 +300,8 @@ class ThemesScreen(StatusMixin, Container):
                     f"This will set GRUB_THEME in /etc/default/grub.\n"
                     f"A backup will be created first.\n\n"
                     f"Press Ctrl+R afterwards to regenerate grub.cfg."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Apply",
                 confirm_variant="success",
             )

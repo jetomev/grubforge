@@ -3,6 +3,8 @@ grubForge — ConfirmDialog Widget
 A modal confirmation dialog used before any destructive or system-level action.
 """
 
+from rich.markup import escape
+
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
@@ -39,6 +41,15 @@ class ConfirmDialog(ModalScreen):
 
     #confirm-dialog-body {
         color: #cdd6f4;
+        margin-bottom: 1;
+        width: 100%;
+        text-align: center;
+    }
+
+    /* The heads-up line — same yellow as the title, because it is a warning
+       about what is coming, not part of the description. */
+    #confirm-dialog-note {
+        color: #f9e2af;
         margin-bottom: 2;
         width: 100%;
         text-align: center;
@@ -65,6 +76,7 @@ class ConfirmDialog(ModalScreen):
         self,
         title:           str = "Confirm",
         message:         str = "Are you sure?",
+        note:            str = "",
         confirm_label:   str = "Confirm",
         cancel_label:    str = "Cancel",
         confirm_variant: str = "primary",
@@ -72,6 +84,7 @@ class ConfirmDialog(ModalScreen):
         super().__init__()
         self._title           = title
         self._message         = message
+        self._note            = note
         self._confirm_label   = confirm_label
         self._cancel_label    = cancel_label
         self._confirm_variant = confirm_variant
@@ -79,7 +92,14 @@ class ConfirmDialog(ModalScreen):
     def compose(self) -> ComposeResult:
         with Container(id="confirm-dialog-container"):
             yield Label(f"⚠  {self._title}", id="confirm-dialog-title")
-            yield Static(self._message, id="confirm-dialog-body")
+            # Escaped: the message carries real data — backup labels like
+            # "[pre-edit]", entry titles, config values. Rich would read those
+            # square brackets as markup and silently swallow them, so the
+            # backup you are about to restore over your bootloader would show
+            # without the label identifying it.
+            yield Static(escape(self._message), id="confirm-dialog-body")
+            if self._note:
+                yield Static(escape(self._note), id="confirm-dialog-note")
             with Horizontal(id="confirm-dialog-buttons"):
                 yield Button(
                     self._confirm_label,

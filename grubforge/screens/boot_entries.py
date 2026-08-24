@@ -413,8 +413,8 @@ class BootEntriesScreen(StatusMixin, Container):
                     "in /etc/default/grub.\n"
                     "A backup will be created first.\n\n"
                     "Then press Ctrl+R to regenerate grub.cfg."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Enable",
                 confirm_variant="success",
             )
@@ -493,8 +493,8 @@ class BootEntriesScreen(StatusMixin, Container):
                     f"- Write order to /etc/grub.d/40_custom\n"
                     f"- Disable auto-generate scripts\n"
                     f"- Regenerate grub.cfg"
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Save & Apply",
                 confirm_variant="success",
             )
@@ -554,8 +554,8 @@ class BootEntriesScreen(StatusMixin, Container):
                     "- Clear your custom 40_custom order\n"
                     "- Regenerate grub.cfg automatically\n\n"
                     "Your current custom order will be lost."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Restore",
                 confirm_variant="warning",
             )

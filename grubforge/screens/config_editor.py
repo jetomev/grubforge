@@ -257,8 +257,8 @@ class ConfigEditorScreen(StatusMixin, Container):
                     f"/etc/default/grub:\n\n"
                     f"{changes_summary}\n\n"
                     f"A backup will be created first."
-                    f"{self.app.privilege.prompt_note}"
                 ),
+                note=self.app.privilege.prompt_note,
                 confirm_label="Apply",
                 confirm_variant="primary",
             )

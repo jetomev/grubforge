@@ -244,10 +244,6 @@ class GrubForgeApp(App):
             self.notify(self.privilege.reason, severity="warning", timeout=6)
             return
 
-        prompt_note = (
-            "\n\nYou will be asked for your password."
-            if self.privilege.will_prompt else ""
-        )
         confirmed = await self.push_screen_wait(
             ConfirmDialog(
                 title="Regenerate grub.cfg",
@@ -255,8 +251,8 @@ class GrubForgeApp(App):
                     "This will run:\n"
                     "  grub-mkconfig -o /boot/grub/grub.cfg\n\n"
                     "Make sure all changes are saved first."
-                    f"{prompt_note}"
                 ),
+                note=self.privilege.prompt_note,
                 confirm_label="Regenerate",
                 confirm_variant="warning",
             )

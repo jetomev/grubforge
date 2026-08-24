@@ -64,15 +64,14 @@ class Capability:
     @property
     def prompt_note(self) -> str:
         """
-        A line to append to a confirmation dialog when a password is coming.
+        The heads-up shown in a confirmation dialog when a password is coming.
 
         Being asked for a password you were not expecting looks like something
-        went wrong. Saying so in advance turns it into a normal step.
+        went wrong. Saying so in advance turns it into a normal step. Passed to
+        ConfirmDialog as `note=`, which renders it in the title's yellow — it
+        is a warning about what happens next, not part of the description.
         """
-        return (
-            "\n\nYou will be asked for your password."
-            if self.will_prompt else ""
-        )
+        return "You will be asked for your password." if self.will_prompt else ""
 
 
 @dataclass

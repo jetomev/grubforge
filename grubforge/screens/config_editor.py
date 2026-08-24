@@ -19,6 +19,7 @@ from grubforge.config_manager import (
     KEY_DESCRIPTIONS,
     parse_grub_config,
     write_grub_config,
+    save_grub_config,
     validate_changes,
     GrubConfig,
     GrubEntry,
@@ -242,7 +243,7 @@ class ConfigEditorScreen(StatusMixin, Container):
             self._set_status("No pending changes to save.", "info")
             return
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to save config changes.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
 
         changes_summary = "\n".join(
@@ -256,6 +257,7 @@ class ConfigEditorScreen(StatusMixin, Container):
                     f"/etc/default/grub:\n\n"
                     f"{changes_summary}\n\n"
                     f"A backup will be created first."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Apply",
                 confirm_variant="primary",
@@ -268,45 +270,41 @@ class ConfigEditorScreen(StatusMixin, Container):
         await self._write_changes()
 
     async def _write_changes(self) -> None:
-        try:
-            try:
-                create_backup(label="pre-edit")
-                self._set_status("Backup created…", "info")
-            except Exception as e:
-                self._set_status(f"Backup failed: {e} — aborting.", "error")
-                return
+        if not self._config:
+            return
 
-            if not self._config:
-                return
-
-            new_lines = write_grub_config(self._config, self._pending)
-
-            if GRUB_CONFIG_PATH.exists():
-                GRUB_CONFIG_PATH.write_text("".join(new_lines), encoding="utf-8")
+        # Back up before touching anything. If the snapshot fails there is no
+        # safety net, so the edit does not happen either.
+        backup = await create_backup("pre-edit", capability=self.app.privilege)
+        if not backup.ok:
+            if backup.cancelled:
+                self._set_status(backup.message, "warn")
             else:
-                self.app.notify(
-                    "Demo mode: config not written (no /etc/default/grub).",
-                    severity="warning",
-                )
+                self._set_status(f"Backup failed: {backup.message} — aborting.", "error")
+            return
+        self._set_status("Backup created…", "info")
 
-            self._pending.clear()
-            self._load_config()
-            self._build_table()
-            self._update_raw_view()
-            if self._selected_key:
-                self._show_detail(self._selected_key)
+        new_lines = write_grub_config(self._config, self._pending)
+        result    = await save_grub_config(new_lines, capability=self.app.privilege)
 
-            self._set_status(
-                "Changes applied. Press Ctrl+R to regenerate grub.cfg.",
-                "ok",
-            )
+        if not result.ok:
+            if result.cancelled:
+                self._set_status(result.message, "warn")
+            else:
+                self._set_status(f"Save failed: {result.message}", "error")
+            return
 
-        except PermissionError:
-            self._set_status(
-                "Permission denied — run grubForge with sudo.", "error"
-            )
-        except Exception as e:
-            self._set_status(f"Error: {e}", "error")
+        self._pending.clear()
+        self._load_config()
+        self._build_table()
+        self._update_raw_view()
+        if self._selected_key:
+            self._show_detail(self._selected_key)
+
+        self._set_status(
+            "Changes applied. Press Ctrl+R to regenerate grub.cfg.",
+            "ok",
+        )
 
     # grub.cfg regeneration (Ctrl+R) is handled app-level for every screen —
     # see GrubForgeApp.action_global_regen (v1.0.3 F7). It used to live here as

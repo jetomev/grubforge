@@ -132,22 +132,29 @@ def _normalize_color(color: str) -> str:
         return "#888888"  # fallback for named colors
 
 
-def apply_theme(theme: GrubTheme) -> None:
+async def apply_theme(theme: GrubTheme, capability=None):
     """
-    Write GRUB_THEME to /etc/default/grub pointing to this theme.
-    Caller must have write permission (run as root).
-    Creates a backup before writing.
+    Point GRUB_THEME in /etc/default/grub at this theme.
+
+    Takes a backup first, so a theme you dislike is one Restore away. Both
+    steps are privileged; polkit remembers the authorisation between them, so
+    you are asked for your password once rather than twice.
+
+    Returns a HelperResult. If the backup fails, the config is left untouched.
     """
-    from grubforge.config_manager import GRUB_CONFIG_PATH, parse_grub_config, write_grub_config
+    from grubforge.config_manager import (
+        GRUB_CONFIG_PATH, parse_grub_config, write_grub_config, save_grub_config,
+    )
     from grubforge.backup_manager import create_backup
 
-    create_backup(label=f"pre-theme-{theme.name}")
+    backup = await create_backup(label=f"pre-theme-{theme.name}", capability=capability)
+    if not backup.ok:
+        return backup
 
     config    = parse_grub_config(GRUB_CONFIG_PATH)
     new_lines = write_grub_config(config, {"GRUB_THEME": str(theme.theme_txt)})
 
-    if GRUB_CONFIG_PATH.exists():
-        GRUB_CONFIG_PATH.write_text("".join(new_lines), encoding="utf-8")
+    return await save_grub_config(new_lines, capability=capability)
 
 
 def get_color_palette(theme: GrubTheme) -> list:

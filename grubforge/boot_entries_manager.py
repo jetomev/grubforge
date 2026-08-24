@@ -2,14 +2,20 @@
 grubForge — Boot Entries Manager
 Reads boot entries from grub.cfg, allows reordering and grouping,
 writes custom order to /etc/grub.d/40_custom, and manages script permissions.
+
+Reading grub.cfg and working out the new order happen here, as your user.
+Writing the result, changing script permissions and scanning for other
+operating systems all go through the privileged helper — see
+grubforge/privilege.py.
 """
 
 import re
-import os
 import stat
-import subprocess
 from pathlib import Path
 from dataclasses import dataclass, field
+
+from grubforge import privilege
+from grubforge.privilege import HelperResult
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -161,10 +167,12 @@ def _guess_source(title: str, entry_type: str) -> str:
 
 # ── Writer ────────────────────────────────────────────────────────────────────
 
-def write_custom_order(entries: list) -> None:
+def render_custom_order(entries: list) -> str:
     """
-    Write the given entries to /etc/grub.d/40_custom in order.
-    Requires root privileges.
+    Build the text of /etc/grub.d/40_custom for the given entries.
+
+    Pure — produces the content without writing anything, so it can be shown,
+    tested or diffed before it is ever handed to the helper.
     """
     lines = [CUSTOM_40_HEADER]
 
@@ -173,60 +181,37 @@ def write_custom_order(entries: list) -> None:
             lines.append(entry.raw_block)
             lines.append("")
 
-    content = "\n".join(lines)
-    CUSTOM_40.write_text(content, encoding="utf-8")
+    return "\n".join(lines)
 
-    # Make sure 40_custom is executable
-    current = CUSTOM_40.stat().st_mode
-    CUSTOM_40.chmod(current | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+async def write_custom_order(entries: list, capability=None) -> HelperResult:
+    """Write the given entries to /etc/grub.d/40_custom, in order."""
+    return await privilege.run_async(
+        "write-custom-40",
+        content=render_custom_order(entries),
+        capability=capability,
+    )
 
 
 # ── Script permission management ──────────────────────────────────────────────
 
-def disable_script(script_name: str) -> None:
+async def disable_script(script_name: str, capability=None) -> HelperResult:
     """
-    Remove execute permission from a grub.d script so grub-mkconfig skips it.
-    Backs up original permissions first.
+    Take away a grub.d script's execute bit, so grub-mkconfig skips it.
+
+    The helper records the original permissions first, so enable_script() can
+    put them back exactly rather than guessing.
     """
-    script = GRUB_D_PATH / script_name
-    if not script.exists():
-        return
-
-    # Save original permissions as a sidecar
-    perm_backup = script.with_suffix(".grubforge_perms")
-    if not perm_backup.exists():
-        original_mode = oct(script.stat().st_mode)
-        perm_backup.write_text(original_mode, encoding="utf-8")
-
-    # Remove execute bits
-    current = script.stat().st_mode
-    script.chmod(
-        current & ~stat.S_IXUSR & ~stat.S_IXGRP & ~stat.S_IXOTH
+    return await privilege.run_async(
+        "script-disable", argument=script_name, capability=capability
     )
 
 
-def enable_script(script_name: str) -> None:
-    """
-    Restore execute permission to a grub.d script.
-    Restores original permissions if backup exists.
-    """
-    script = GRUB_D_PATH / script_name
-    if not script.exists():
-        return
-
-    perm_backup = script.with_suffix(".grubforge_perms")
-    if perm_backup.exists():
-        try:
-            original_mode = int(perm_backup.read_text().strip(), 8)
-            script.chmod(original_mode)
-            perm_backup.unlink()
-            return
-        except Exception:
-            pass
-
-    # Fallback: just add execute bits back
-    current = script.stat().st_mode
-    script.chmod(current | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+async def enable_script(script_name: str, capability=None) -> HelperResult:
+    """Give a grub.d script its execute bit back, restoring the saved mode."""
+    return await privilege.run_async(
+        "script-enable", argument=script_name, capability=capability
+    )
 
 
 def get_script_status() -> dict:
@@ -244,24 +229,32 @@ def get_script_status() -> dict:
     return status
 
 
-def restore_original_order() -> None:
+STOCK_CUSTOM_40 = (
+    "#!/bin/sh\nexec tail -n +3 $0\n"
+    "# This file provides an easy way to add custom menu entries.\n"
+    "# Simply type the menu entries you want to add after this comment.\n"
+    "# Be careful not to change the 'exec tail' line above.\n"
+)
+
+
+async def restore_original_order(capability=None) -> HelperResult:
     """
-    Re-enable all managed scripts and clear 40_custom back to default.
-    This restores the fully auto-generated grub.cfg behaviour.
+    Hand the boot menu back to GRUB.
+
+    Re-enables every managed script and resets 40_custom to Arch's stock
+    template, so grub.cfg is fully auto-generated again. Stops at the first
+    failure rather than half-restoring.
     """
     for name in MANAGED_SCRIPTS:
-        enable_script(name)
+        if not (GRUB_D_PATH / name).is_file():
+            continue  # not installed on this system
+        result = await enable_script(name, capability=capability)
+        if not result.ok:
+            return result
 
-    # Reset 40_custom to the stock empty template
-    CUSTOM_40.write_text(
-        "#!/bin/sh\nexec tail -n +3 $0\n"
-        "# This file provides an easy way to add custom menu entries.\n"
-        "# Simply type the menu entries you want to add after this comment.\n"
-        "# Be careful not to change the 'exec tail' line above.\n",
-        encoding="utf-8",
+    return await privilege.run_async(
+        "write-custom-40", content=STOCK_CUSTOM_40, capability=capability
     )
-    current = CUSTOM_40.stat().st_mode
-    CUSTOM_40.chmod(current | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
 # ── Mock data (dev mode) ──────────────────────────────────────────────────────
@@ -415,78 +408,57 @@ def is_os_prober_enabled() -> bool:
         return False
 
 
-def install_os_prober() -> tuple:
-    """
-    Install os-prober via pacman.
-    Returns (success: bool, output: str).
-    Requires root privileges.
-    """
-    try:
-        result = subprocess.run(
-            ["pacman", "-S", "--noconfirm", "os-prober"],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        output = result.stdout + result.stderr
-        return result.returncode == 0, output
-    except FileNotFoundError:
-        return False, "pacman not found. Is this an Arch-based system?"
-    except subprocess.TimeoutExpired:
-        return False, "pacman timed out after 120 seconds."
-    except Exception as e:
-        return False, str(e)
+# grubForge no longer installs os-prober for you.
+#
+# It used to run `pacman -S --noconfirm os-prober` as root. Installing packages
+# is a far wider power than editing a bootloader config, and it is your package
+# manager's job, not grubForge's. We show the command instead; you run it.
+OS_PROBER_INSTALL_HINT = (
+    "os-prober is not installed.\n\n"
+    "Install it with your package manager, then come back:\n\n"
+    "    sudo pacman -S os-prober\n\n"
+    "On KognogOS:\n\n"
+    "    nog install os-prober"
+)
 
 
-def enable_os_prober() -> None:
+async def enable_os_prober(capability=None) -> HelperResult:
     """
     Set GRUB_DISABLE_OS_PROBER=false in /etc/default/grub.
-    Creates a backup first.
-    Requires root privileges.
+
+    Backs up first. Both steps are privileged, but polkit remembers the
+    authorisation, so you are asked once.
     """
-    from grubforge.config_manager import GRUB_CONFIG_PATH, parse_grub_config, write_grub_config
+    from grubforge.config_manager import (
+        GRUB_CONFIG_PATH, parse_grub_config, write_grub_config, save_grub_config,
+    )
     from grubforge.backup_manager import create_backup
 
-    create_backup(label="pre-os-prober-enable")
+    backup = await create_backup(label="pre-os-prober-enable", capability=capability)
+    if not backup.ok:
+        return backup
+
     config    = parse_grub_config(GRUB_CONFIG_PATH)
     new_lines = write_grub_config(config, {"GRUB_DISABLE_OS_PROBER": "false"})
 
-    if GRUB_CONFIG_PATH.exists():
-        GRUB_CONFIG_PATH.write_text("".join(new_lines), encoding="utf-8")
+    return await save_grub_config(new_lines, capability=capability)
 
 
-def run_os_prober() -> tuple:
+async def run_os_prober(capability=None) -> tuple:
     """
-    Run os-prober to detect other operating systems.
-    Returns (success: bool, detected: list of str).
-    Each detected item is a line like:
+    Scan for other operating systems installed on this machine.
+
+    Returns (result, detected) where detected holds lines like
       /dev/sdb2:Windows 11:Windows:chain
-    Requires root privileges.
+    Scanning every disk needs root, so this goes through the helper — but it
+    only reads; nothing is changed by looking.
     """
-    try:
-        result = subprocess.run(
-            ["os-prober"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        output = result.stdout.strip()
-        if not output:
-            return True, []
+    result = await privilege.run_async("os-prober-run", capability=capability)
+    if not result.ok:
+        return result, []
 
-        detected = []
-        for line in output.splitlines():
-            line = line.strip()
-            if line:
-                detected.append(line)
-
-        return True, detected
-    except FileNotFoundError:
-        return False, ["os-prober not found."]
-    except subprocess.TimeoutExpired:
-        return False, ["os-prober timed out after 30 seconds."]
-    except Exception as e:
-        return False, [str(e)]
+    detected = [line.strip() for line in result.output.splitlines() if line.strip()]
+    return result, detected
 
 
 def parse_os_prober_output(lines: list) -> list:

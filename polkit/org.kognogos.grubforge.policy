@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<!--
+  grubForge — polkit action
+
+  grubForge runs as your normal user. When it needs to change the bootloader
+  configuration, it asks polkit for permission, and polkit — not grubForge —
+  asks you to authenticate. grubForge never handles your password.
+
+  auth_admin_keep: you authenticate as an administrator (on Arch, a member of
+  the wheel group, using your own password — not root's). The authorisation is
+  then remembered for a few minutes, so saving a change and regenerating the
+  boot menu asks once rather than twice. Being asked repeatedly for the same
+  task teaches people to type their password without reading the prompt, which
+  is its own kind of vulnerability.
+
+  The helper named below accepts a fixed set of verbs. It cannot be asked to
+  run an arbitrary command.
+-->
+
+<policyconfig>
+
+  <vendor>grubForge</vendor>
+  <vendor_url>https://github.com/jetomev/grubforge</vendor_url>
+
+  <action id="org.kognogos.grubforge.manage">
+    <description>Manage the GRUB bootloader configuration</description>
+    <description xml:lang="es">Administrar la configuración del gestor de arranque GRUB</description>
+
+    <message>grubForge needs permission to change your bootloader settings.</message>
+    <message xml:lang="es">grubForge necesita permiso para cambiar la configuración de su gestor de arranque.</message>
+
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/grubforge/grubforge-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+</policyconfig>

@@ -24,7 +24,7 @@ from grubforge.boot_entries_manager import (
     get_template_preview,
     is_os_prober_installed,
     is_os_prober_enabled,
-    install_os_prober,
+    OS_PROBER_INSTALL_HINT,
     enable_os_prober,
     run_os_prober,
     parse_os_prober_output,
@@ -107,7 +107,7 @@ class BootEntriesScreen(StatusMixin, Container):
                 yield Static("", id="os-prober-status")
                 with Horizontal(id="os-prober-buttons"):
                     yield Button("Scan for OSes",    id="btn-scan-os",    classes="-primary")
-                    yield Button("Install os-prober", id="btn-install-os", classes="-warning")
+                    yield Button("How to install os-prober", id="btn-install-os", classes="-warning")
                     yield Button("Enable os-prober",  id="btn-enable-os",  classes="-success")
                 yield Static("", id="os-prober-results")
 
@@ -327,15 +327,16 @@ class BootEntriesScreen(StatusMixin, Container):
         self.app.run_worker(self._scan_os_worker(), exclusive=True)
 
     def action_install_os_prober(self) -> None:
-        self.app.run_worker(self._install_os_prober_worker(), exclusive=True)
+        self.app.run_worker(self._show_os_prober_install(), exclusive=True)
 
     def action_enable_os_prober(self) -> None:
         self.app.run_worker(self._enable_os_prober_worker(), exclusive=True)
 
     async def _scan_os_worker(self) -> None:
         if not is_os_prober_installed():
-            self._set_status(
-                "os-prober is not installed. Click 'Install os-prober' first.", "warn"
+            self._set_status("os-prober is not installed — see the panel for how to get it.", "warn")
+            self.query_one("#os-prober-results", Static).update(
+                f"[#f9e2af]{OS_PROBER_INSTALL_HINT}[/#f9e2af]"
             )
             return
 
@@ -345,15 +346,22 @@ class BootEntriesScreen(StatusMixin, Container):
             )
             return
 
+        if self.app.read_only_mode:
+            self._set_status(self.app.privilege.reason, "warn")
+            return
+
         self._set_status("Scanning for other operating systems...", "info")
         self.query_one("#os-prober-results", Static).update("[dim]Scanning...[/dim]")
 
-        success, lines = run_os_prober()
+        result, lines = await run_os_prober(capability=self.app.privilege)
 
-        if not success:
-            self._set_status(f"os-prober failed: {lines[0]}", "error")
+        if not result.ok:
+            self._set_status(
+                result.message if result.cancelled else f"os-prober failed: {result.message}",
+                "warn" if result.cancelled else "error",
+            )
             self.query_one("#os-prober-results", Static).update(
-                f"[red]Error: {lines[0]}[/red]"
+                f"[red]{result.message}[/red]"
             )
             return
 
@@ -379,39 +387,22 @@ class BootEntriesScreen(StatusMixin, Container):
             "ok"
         )
 
-    async def _install_os_prober_worker(self) -> None:
-        if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to install os-prober.", "warn")
-            return
-        confirmed = await self.app.push_screen_wait(
-            ConfirmDialog(
-                title="Install os-prober",
-                message=(
-                    "This will run:\n"
-                    "  pacman -S os-prober\n\n"
-                    "os-prober scans for other operating\n"
-                    "systems and adds them to GRUB."
-                ),
-                confirm_label="Install",
-                confirm_variant="primary",
-            )
+    async def _show_os_prober_install(self) -> None:
+        """
+        Explain how to install os-prober, rather than doing it.
+
+        v1.1.0 removed the button that ran `pacman -S --noconfirm os-prober` as
+        root. Installing packages is a much broader power than editing a
+        bootloader config, and it belongs to your package manager.
+        """
+        self.query_one("#os-prober-results", Static).update(
+            f"[#f9e2af]{OS_PROBER_INSTALL_HINT}[/#f9e2af]"
         )
-        if not confirmed:
-            return
-
-        self._set_status("Installing os-prober...", "info")
-        success, output = install_os_prober()
-
-        if success:
-            self._set_status("os-prober installed successfully!", "ok")
-        else:
-            self._set_status(f"Install failed: {output[:80]}", "error")
-
-        self._refresh_os_prober_status()
+        self._set_status("os-prober must be installed with your package manager.", "info")
 
     async def _enable_os_prober_worker(self) -> None:
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to enable os-prober.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
@@ -422,6 +413,7 @@ class BootEntriesScreen(StatusMixin, Container):
                     "in /etc/default/grub.\n"
                     "A backup will be created first.\n\n"
                     "Then press Ctrl+R to regenerate grub.cfg."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Enable",
                 confirm_variant="success",
@@ -430,19 +422,17 @@ class BootEntriesScreen(StatusMixin, Container):
         if not confirmed:
             return
 
-        try:
-            enable_os_prober()
+        result = await enable_os_prober(capability=self.app.privilege)
+        if result.ok:
             self._set_status(
                 "os-prober enabled. Press Ctrl+R to regenerate grub.cfg.",
                 "ok"
             )
             self._refresh_os_prober_status()
-        except PermissionError:
-            self._set_status(
-                "Permission denied - run grubForge with sudo.", "error"
-            )
-        except Exception as e:
-            self._set_status(f"Failed to enable os-prober: {e}", "error")
+        elif result.cancelled:
+            self._set_status(result.message, "warn")
+        else:
+            self._set_status(f"Failed to enable os-prober: {result.message}", "error")
 
     # Buttons
 
@@ -487,7 +477,7 @@ class BootEntriesScreen(StatusMixin, Container):
             self._set_status("No entries to save.", "warn")
             return
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to save boot order.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
 
         order_summary = "\n".join(
@@ -503,6 +493,7 @@ class BootEntriesScreen(StatusMixin, Container):
                     f"- Write order to /etc/grub.d/40_custom\n"
                     f"- Disable auto-generate scripts\n"
                     f"- Regenerate grub.cfg"
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Save & Apply",
                 confirm_variant="success",
@@ -511,33 +502,39 @@ class BootEntriesScreen(StatusMixin, Container):
         if not confirmed:
             return
 
-        try:
-            write_custom_order(self._entries)
-            self._set_status("Written to 40_custom...", "info")
+        cap = self.app.privilege
 
-            scripts_to_disable = set(
-                e.source for e in self._entries
-                if e.source in MANAGED_SCRIPTS
-            )
-            for script in scripts_to_disable:
-                disable_script(script)
-
-            success, output = regenerate_grub()
-            if success:
-                self._set_status(
-                    "Boot order saved and grub.cfg regenerated successfully!", "ok"
-                )
-            else:
-                self._set_status(
-                    f"grub-mkconfig failed: {output[:80]}", "error"
-                )
-
-        except PermissionError:
+        written = await write_custom_order(self._entries, capability=cap)
+        if not written.ok:
             self._set_status(
-                "Permission denied - run grubForge with sudo.", "error"
+                written.message if written.cancelled else f"Save failed: {written.message}",
+                "warn" if written.cancelled else "error",
             )
-        except Exception as e:
-            self._set_status(f"Error: {e}", "error")
+            return
+        self._set_status("Written to 40_custom...", "info")
+
+        scripts_to_disable = set(
+            e.source for e in self._entries
+            if e.source in MANAGED_SCRIPTS
+        )
+        for script in scripts_to_disable:
+            disabled = await disable_script(script, capability=cap)
+            if not disabled.ok:
+                self._set_status(f"Could not disable {script}: {disabled.message}", "error")
+                return
+
+        result = await regenerate_grub(capability=cap)
+        if result.ok:
+            self._set_status(
+                "Boot order saved and grub.cfg regenerated successfully!", "ok"
+            )
+        elif result.cancelled:
+            self._set_status(
+                "Order saved, but grub.cfg was not regenerated — press Ctrl+R when ready.",
+                "warn",
+            )
+        else:
+            self._set_status(f"grub-mkconfig failed: {result.message[:120]}", "error")
 
     # Restore original order
 
@@ -546,7 +543,7 @@ class BootEntriesScreen(StatusMixin, Container):
 
     async def _restore_order_worker(self) -> None:
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to restore boot order.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
@@ -557,6 +554,7 @@ class BootEntriesScreen(StatusMixin, Container):
                     "- Clear your custom 40_custom order\n"
                     "- Regenerate grub.cfg automatically\n\n"
                     "Your current custom order will be lost."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Restore",
                 confirm_variant="warning",
@@ -565,28 +563,31 @@ class BootEntriesScreen(StatusMixin, Container):
         if not confirmed:
             return
 
-        try:
-            restore_original_order()
-            self._set_status("Scripts restored...", "info")
+        cap = self.app.privilege
 
-            success, output = regenerate_grub()
-            if success:
-                self._set_status(
-                    "Original order restored and grub.cfg regenerated!", "ok"
-                )
-            else:
-                self._set_status(
-                    f"grub-mkconfig failed: {output[:80]}", "error"
-                )
-
-            self._load_entries()
-
-        except PermissionError:
+        restored = await restore_original_order(capability=cap)
+        if not restored.ok:
             self._set_status(
-                "Permission denied - run grubForge with sudo.", "error"
+                restored.message if restored.cancelled else f"Restore failed: {restored.message}",
+                "warn" if restored.cancelled else "error",
             )
-        except Exception as e:
-            self._set_status(f"Error: {e}", "error")
+            return
+        self._set_status("Scripts restored...", "info")
+
+        result = await regenerate_grub(capability=cap)
+        if result.ok:
+            self._set_status(
+                "Original order restored and grub.cfg regenerated!", "ok"
+            )
+        elif result.cancelled:
+            self._set_status(
+                "Scripts restored, but grub.cfg was not regenerated — press Ctrl+R when ready.",
+                "warn",
+            )
+        else:
+            self._set_status(f"grub-mkconfig failed: {result.message[:120]}", "error")
+
+        self._load_entries()
 
     # Refresh
 

@@ -164,7 +164,7 @@ class BackupScreen(StatusMixin, Container):
 
     async def _create_backup_worker(self) -> None:
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to create backups.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
         confirmed = await self.app.push_screen_wait(
             ConfirmDialog(
@@ -173,6 +173,7 @@ class BackupScreen(StatusMixin, Container):
                     "Create a new backup of\n"
                     "/etc/default/grub right now?\n\n"
                     "(This is always safe to do.)"
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Create",
                 confirm_variant="success",
@@ -180,12 +181,15 @@ class BackupScreen(StatusMixin, Container):
         )
         if not confirmed:
             return
-        try:
-            backup = create_backup(label="manual")
-            self._set_status(f"Backup created: {backup.path.name}", "ok")
+
+        result = await create_backup("manual", capability=self.app.privilege)
+        if result.ok:
+            self._set_status(f"Backup created: {result.output.strip()}", "ok")
             self._load_backups()
-        except Exception as e:
-            self._set_status(f"Backup failed: {e}", "error")
+        elif result.cancelled:
+            self._set_status(result.message, "warn")
+        else:
+            self._set_status(f"Backup failed: {result.message}", "error")
 
     def action_restore_backup(self) -> None:
         self.app.run_worker(self._restore_backup_worker(), exclusive=True)
@@ -196,7 +200,7 @@ class BackupScreen(StatusMixin, Container):
             self._set_status("No backup selected.", "warn")
             return
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to restore backups.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
 
         backup    = self._backups[idx]
@@ -208,6 +212,7 @@ class BackupScreen(StatusMixin, Container):
                     f"  {backup.display_name}\n\n"
                     f"This will overwrite /etc/default/grub.\n"
                     f"Your current config will be auto-backed-up first."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Restore",
                 confirm_variant="warning",
@@ -215,14 +220,17 @@ class BackupScreen(StatusMixin, Container):
         )
         if not confirmed:
             return
-        try:
-            restore_backup(backup)
+
+        result = await restore_backup(backup, capability=self.app.privilege)
+        if result.ok:
             self._set_status(
                 f"Restored: {backup.path.name} → /etc/default/grub", "ok"
             )
             self._load_backups()
-        except Exception as e:
-            self._set_status(f"Restore failed: {e}", "error")
+        elif result.cancelled:
+            self._set_status(result.message, "warn")
+        else:
+            self._set_status(f"Restore failed: {result.message}", "error")
 
     def action_delete_backup(self) -> None:
         self.app.run_worker(self._delete_backup_worker(), exclusive=True)
@@ -233,7 +241,7 @@ class BackupScreen(StatusMixin, Container):
             self._set_status("No backup selected.", "warn")
             return
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to delete backups.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
 
         backup    = self._backups[idx]
@@ -244,6 +252,7 @@ class BackupScreen(StatusMixin, Container):
                     f"Permanently delete:\n"
                     f"  {backup.path.name}\n\n"
                     f"This cannot be undone."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Delete",
                 confirm_variant="danger",
@@ -251,12 +260,15 @@ class BackupScreen(StatusMixin, Container):
         )
         if not confirmed:
             return
-        try:
-            delete_backup(backup)
+
+        result = await delete_backup(backup, capability=self.app.privilege)
+        if result.ok:
             self._set_status(f"Deleted: {backup.path.name}", "ok")
             self._load_backups()
-        except Exception as e:
-            self._set_status(f"Delete failed: {e}", "error")
+        elif result.cancelled:
+            self._set_status(result.message, "warn")
+        else:
+            self._set_status(f"Delete failed: {result.message}", "error")
 
     # Silent re-read used by the app when this screen is shown (F5/F8).
     def _reload_view(self) -> None:

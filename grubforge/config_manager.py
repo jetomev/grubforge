@@ -1,12 +1,18 @@
 """
 grubForge — Config Manager
 Handles reading, parsing, validating, and writing /etc/default/grub safely.
+
+Reading and validating happen here, as your user. Writing does not: it goes
+through the privileged helper, with polkit asking for your password. See
+grubforge/privilege.py.
 """
 
 import re
-import subprocess
 from pathlib import Path
 from dataclasses import dataclass, field
+
+from grubforge import privilege
+from grubforge.privilege import HelperResult
 
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -138,7 +144,7 @@ def parse_grub_config(path: Path) -> GrubConfig:
 def write_grub_config(config: GrubConfig, new_values: dict) -> list:
     """
     Apply new_values to config.raw_lines and return the updated lines.
-    Does NOT write to disk — caller handles that.
+    Does NOT write to disk — pass the result to save_grub_config().
     """
     updated_lines = list(config.raw_lines)
     handled = set()
@@ -223,29 +229,29 @@ def validate_changes(changes: dict) -> ValidationResult:
     return result
 
 
-# ── grub-mkconfig ─────────────────────────────────────────────────────────────
+# ── Privileged operations ─────────────────────────────────────────────────────
+#
+# /etc/default/grub belongs to root, so grubForge does not write it directly.
+# These hand the work to the privileged helper, which polkit authorises. See
+# grubforge/privilege.py.
 
-def regenerate_grub(output_path: str = "/boot/grub/grub.cfg") -> tuple:
+async def save_grub_config(lines: list, capability=None) -> HelperResult:
     """
-    Run grub-mkconfig to regenerate grub.cfg.
-    Returns (success: bool, output: str).
-    Requires root privileges.
+    Write the given lines to /etc/default/grub.
+
+    The content travels on the helper's stdin rather than as an argument, so
+    your configuration never appears in the system process list.
     """
-    try:
-        result = subprocess.run(
-            ["grub-mkconfig", "-o", output_path],
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        output = result.stdout + result.stderr
-        return result.returncode == 0, output
-    except FileNotFoundError:
-        return False, "grub-mkconfig not found. Is GRUB installed?"
-    except subprocess.TimeoutExpired:
-        return False, "grub-mkconfig timed out after 60 seconds."
-    except Exception as e:
-        return False, str(e)
+    return await privilege.run_async(
+        "write-config",
+        content="".join(lines),
+        capability=capability,
+    )
+
+
+async def regenerate_grub(capability=None) -> HelperResult:
+    """Rebuild /boot/grub/grub.cfg from the current configuration."""
+    return await privilege.run_async("regenerate", capability=capability)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

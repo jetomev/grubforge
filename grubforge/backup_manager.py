@@ -1,12 +1,18 @@
 """
 grubForge — Backup Manager
 Creates timestamped backups of /etc/default/grub and restores them safely.
+
+Listing and reading backups needs no special rights. Creating, restoring and
+deleting them do, so those go through the privileged helper — see
+grubforge/privilege.py.
 """
 
-import shutil
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
+
+from grubforge import privilege
+from grubforge.privilege import HelperResult
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -45,38 +51,16 @@ class Backup:
 
 # ── Core functions ────────────────────────────────────────────────────────────
 
-def ensure_backup_dir() -> None:
-    """Create the backup directory if it does not exist."""
-    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def create_backup(
-    source: Path = GRUB_CONFIG_PATH,
-    label:  str  = "",
-) -> Backup:
+async def create_backup(label: str = "", capability=None) -> HelperResult:
     """
-    Copy source to BACKUP_DIR with a timestamped filename.
-    Returns a Backup object describing the new backup.
-    Falls back to mock content when source does not exist.
+    Snapshot /etc/default/grub into the backup directory.
+
+    On success, HelperResult.output holds the new backup's filename. Old
+    backups beyond MAX_BACKUPS are removed by the helper in the same step.
     """
-    ensure_backup_dir()
-
-    ts     = datetime.now()
-    ts_str = ts.strftime(_TS_FORMAT)
-    dest   = BACKUP_DIR / f"{BACKUP_PREFIX}{ts_str}{BACKUP_SUFFIX}"
-
-    if source.exists():
-        shutil.copy2(source, dest)
-    else:
-        dest.write_text(_mock_backup_content(ts_str), encoding="utf-8")
-
-    if label:
-        _label_path(dest).write_text(label, encoding="utf-8")
-
-    _rotate_old_backups()
-
-    stat = dest.stat()
-    return Backup(path=dest, timestamp=ts, size_bytes=stat.st_size, label=label)
+    return await privilege.run_async(
+        "backup-create", argument=label, capability=capability
+    )
 
 
 def list_backups() -> list:
@@ -108,25 +92,23 @@ def list_backups() -> list:
     return backups
 
 
-def restore_backup(
-    backup: Backup,
-    dest:   Path = GRUB_CONFIG_PATH,
-) -> None:
+async def restore_backup(backup: Backup, capability=None) -> HelperResult:
     """
-    Restore a backup over dest.
-    Auto-creates a safety backup of the current file first.
+    Put a backup back over /etc/default/grub.
+
+    The helper snapshots the current config first, so restoring is itself
+    undoable, and re-checks the backup's contents before writing.
     """
-    if dest.exists():
-        create_backup(source=dest, label="auto (pre-restore)")
-
-    if dest.parent.exists():
-        shutil.copy2(backup.path, dest)
+    return await privilege.run_async(
+        "backup-restore", argument=backup.path.name, capability=capability
+    )
 
 
-def delete_backup(backup: Backup) -> None:
+async def delete_backup(backup: Backup, capability=None) -> HelperResult:
     """Delete a backup file and its label sidecar."""
-    backup.path.unlink(missing_ok=True)
-    _label_path(backup.path).unlink(missing_ok=True)
+    return await privilege.run_async(
+        "backup-delete", argument=backup.path.name, capability=capability
+    )
 
 
 def read_backup_content(backup: Backup) -> str:
@@ -135,13 +117,6 @@ def read_backup_content(backup: Backup) -> str:
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
-
-def _rotate_old_backups() -> None:
-    """Remove oldest backups when count exceeds MAX_BACKUPS."""
-    all_backups = list_backups()
-    for old in all_backups[MAX_BACKUPS:]:
-        delete_backup(old)
-
 
 def _label_path(backup_path: Path) -> Path:
     return backup_path.with_suffix(backup_path.suffix + ".label")
@@ -159,19 +134,3 @@ def _read_label(backup_path: Path) -> str:
     if p.exists():
         return p.read_text(encoding="utf-8").strip()
     return ""
-
-
-def _mock_backup_content(ts: str) -> str:
-    return f"""\
-# grubForge mock backup — {ts}
-# (Demo mode: no real /etc/default/grub found on this system)
-GRUB_DEFAULT=0
-GRUB_TIMEOUT=5
-GRUB_TIMEOUT_STYLE=menu
-GRUB_DISTRIBUTOR="Arch Linux"
-GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
-GRUB_CMDLINE_LINUX=""
-GRUB_GFXMODE=auto
-GRUB_GFXPAYLOAD_LINUX=keep
-GRUB_DISABLE_OS_PROBER=false
-"""

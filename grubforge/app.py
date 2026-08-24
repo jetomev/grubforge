@@ -4,7 +4,6 @@ Textual TUI shell: sidebar navigation + screen router.
 Catppuccin Mocha themed throughout.
 """
 
-import os
 from pathlib import Path
 
 from textual import events, work
@@ -13,6 +12,7 @@ from textual.binding import Binding
 from textual.widgets import Static
 from textual.containers import Container, Vertical
 
+from grubforge import privilege
 from grubforge.config_manager import regenerate_grub
 from grubforge.widgets.confirm_dialog import ConfirmDialog
 from grubforge.widgets.help_screen import HelpScreen
@@ -62,7 +62,12 @@ class GrubForgeApp(App):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.read_only_mode = os.geteuid() != 0
+        # Worked out once at startup. Since v1.1.0 the question is no longer
+        # "are we root?" but "can we ask for permission?" — running as your
+        # normal user is the expected way to use grubForge, and polkit handles
+        # the elevation when a change actually needs it.
+        self.privilege     = privilege.detect()
+        self.read_only_mode = not self.privilege.can_write
 
     BINDINGS = [
         Binding("1",      "show_dashboard",  "Dashboard",     show=False),
@@ -87,7 +92,7 @@ class GrubForgeApp(App):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="sidebar"):
-            yield Static(_logo(self.read_only_mode), id="sidebar-logo")
+            yield Static(_logo(self.privilege), id="sidebar-logo")
             with Vertical(id="nav-list"):
                 for key, sid, label in NAV_ITEMS:
                     active_cls = "nav-item active" if sid == "dashboard" else "nav-item"
@@ -236,11 +241,13 @@ class GrubForgeApp(App):
     @work
     async def action_global_regen(self) -> None:
         if self.read_only_mode:
-            self.notify(
-                "Read-only mode — relaunch with sudo to regenerate grub.cfg.",
-                severity="warning", timeout=4,
-            )
+            self.notify(self.privilege.reason, severity="warning", timeout=6)
             return
+
+        prompt_note = (
+            "\n\nYou will be asked for your password."
+            if self.privilege.will_prompt else ""
+        )
         confirmed = await self.push_screen_wait(
             ConfirmDialog(
                 title="Regenerate grub.cfg",
@@ -248,6 +255,7 @@ class GrubForgeApp(App):
                     "This will run:\n"
                     "  grub-mkconfig -o /boot/grub/grub.cfg\n\n"
                     "Make sure all changes are saved first."
+                    f"{prompt_note}"
                 ),
                 confirm_label="Regenerate",
                 confirm_variant="warning",
@@ -257,15 +265,17 @@ class GrubForgeApp(App):
             return
 
         self.notify("Running grub-mkconfig…", severity="information", timeout=4)
-        success, output = regenerate_grub()
-        if success:
+        result = await regenerate_grub(capability=self.privilege)
+        if result.ok:
             self.notify(
                 "grub-mkconfig succeeded! Boot menu updated.",
                 severity="information", timeout=4,
             )
+        elif result.cancelled:
+            self.notify(result.message, severity="warning", timeout=4)
         else:
             self.notify(
-                f"grub-mkconfig failed: {output[:80]}",
+                f"grub-mkconfig failed: {result.message[:120]}",
                 severity="error", timeout=6,
             )
         # Reflect the regen on whatever screen is active (e.g. Dashboard sync).
@@ -292,11 +302,27 @@ class GrubForgeApp(App):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _logo(read_only: bool = False) -> str:
-    badge = (
-        "\n[bold #f38ba8 reverse] DEMO [/bold #f38ba8 reverse] [dim #6c7086]read-only[/dim #6c7086]"
-        if read_only else ""
-    )
+def _logo(capability=None) -> str:
+    """
+    The sidebar banner, badged with what grubForge can currently do.
+
+    Three states, and the badge only appears when it tells you something you
+    would not otherwise know. Running as your user with polkit available is
+    the normal case, so it stays quiet.
+    """
+    badge = ""
+    if capability is not None:
+        if capability.level is privilege.Privilege.NONE:
+            badge = (
+                "\n[bold #f38ba8 reverse] READ-ONLY [/bold #f38ba8 reverse]"
+                " [dim #6c7086]cannot make changes[/dim #6c7086]"
+            )
+        elif capability.level is privilege.Privilege.ROOT:
+            badge = (
+                "\n[bold #f9e2af reverse] ROOT [/bold #f9e2af reverse]"
+                " [dim #6c7086]no prompts[/dim #6c7086]"
+            )
+
     return (
         "[bold #89b4fa]⚡ grubForge[/bold #89b4fa]\n"
         f"[dim #6c7086]GRUB TUI Manager {VERSION}[/dim #6c7086]"

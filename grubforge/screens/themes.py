@@ -288,7 +288,7 @@ class ThemesScreen(StatusMixin, Container):
             self._set_status("No theme selected.", "warn")
             return
         if self.app.read_only_mode:
-            self._set_status("Read-only mode — relaunch with sudo to apply themes.", "warn")
+            self._set_status(self.app.privilege.reason, "warn")
             return
 
         theme     = self._themes[idx]
@@ -300,6 +300,7 @@ class ThemesScreen(StatusMixin, Container):
                     f"This will set GRUB_THEME in /etc/default/grub.\n"
                     f"A backup will be created first.\n\n"
                     f"Press Ctrl+R afterwards to regenerate grub.cfg."
+                    f"{self.app.privilege.prompt_note}"
                 ),
                 confirm_label="Apply",
                 confirm_variant="success",
@@ -308,19 +309,17 @@ class ThemesScreen(StatusMixin, Container):
         if not confirmed:
             return
 
-        try:
-            apply_theme(theme)
+        result = await apply_theme(theme, capability=self.app.privilege)
+        if result.ok:
             self._set_status(
                 f"Theme '{theme.name}' applied. Press Ctrl+R to regenerate grub.cfg.",
                 "ok",
             )
             self._load_themes()
-        except PermissionError:
-            self._set_status(
-                "Permission denied - run grubForge with sudo.", "error"
-            )
-        except Exception as e:
-            self._set_status(f"Failed to apply theme: {e}", "error")
+        elif result.cancelled:
+            self._set_status(result.message, "warn")
+        else:
+            self._set_status(f"Failed to apply theme: {result.message}", "error")
 
     # Silent re-read used by the app when this screen is shown (F8).
     def _reload_view(self) -> None:

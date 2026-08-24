@@ -271,6 +271,8 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ### After that
 
+- [ ] **Stop duplicating entries from generators grubForge doesn't manage** ([#20](https://github.com/jetomev/grubforge/issues/20)) — saving a custom order copies entries from scripts like `41_snapshots-btrfs` into `40_custom` without switching those scripts off, so they appear twice in the boot menu
+- [ ] **Be readable on a plain text console** ([#21](https://github.com/jetomev/grubforge/issues/21), tracking [forgekit#1](https://github.com/jetomev/forgekit/issues/1)) — a console offers 8 colours and no icon glyphs, and a console is exactly where you end up when the desktop won't start
 - [ ] **Warn when boot entries are frozen** ([#19](https://github.com/jetomev/grubforge/issues/19)) — while a custom boot order is saved, some settings in the Config Editor silently have no effect. grubForge should say so, and offer to apply them to the frozen entries or unfreeze. Also: make saving and rebuilding behave consistently across screens.
 - [ ] **Document what happens when the config changes outside the app** ([#17](https://github.com/jetomev/grubforge/issues/17))
 - [ ] **A layout pass for small terminals** — Boot Entries, Config Editor and Theme Browser get cramped

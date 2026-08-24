@@ -1,6 +1,6 @@
 .\" grubforge.1 — grubForge man page
 .\" GNU GPL v3 — see LICENSE
-.TH GRUBFORGE 1 "May 2026" "grubForge v1.0.3" "User Commands"
+.TH GRUBFORGE 1 "August 2026" "grubForge v1.1.0" "User Commands"
 .
 .SH NAME
 grubforge \- terminal UI for managing the GRUB bootloader
@@ -23,17 +23,35 @@ via
 .PP
 Every write operation creates an automatic backup first.
 Every destructive action requires confirmation before proceeding.
-grubForge can be run without
-.B sudo
-in read-only demo mode for safe exploration.
+.PP
+grubForge runs as an ordinary user and does not require
+.BR sudo (8).
+When an action needs to modify
+.I /etc
+or
+.IR /boot ,
+grubForge asks
+.BR polkit (8)
+for authorisation and the desktop's own authentication agent prompts for
+the user's password. grubForge never receives, stores, or forwards that
+password.
+.PP
+The only component running as root is
+.IR /usr/lib/grubforge/grubforge-helper ,
+which accepts a fixed set of named operations and cannot be given an
+arbitrary command to execute. It independently re-validates every
+argument and every file it is asked to write.
 .
 .SH USAGE
 .TP
-.B sudo grubforge
-Run grubForge with full write access.
-.TP
 .B grubforge
-Run in demo mode (read-only, no system files modified).
+Run grubForge. Changes are authorised individually via polkit.
+.TP
+.B sudo grubforge
+Run with root privileges directly. No authorisation prompts occur.
+Use this on systems with no active desktop session, such as a text
+console or an SSH connection, where no authentication agent can display
+a dialog.
 .
 .SH SCREENS
 grubForge is organised into five screens, each accessible by pressing
@@ -206,7 +224,17 @@ Custom boot entry script written when saving a custom boot order.
 .I /var/lib/grubforge/backups/
 Directory where timestamped backups of
 .I /etc/default/grub
-are stored. Created automatically on first run.
+are stored. Created automatically on first use.
+.TP
+.I /usr/lib/grubforge/grubforge-helper
+Privileged helper. The only part of grubForge that runs as root, invoked
+through
+.BR pkexec (1).
+.TP
+.I /usr/share/polkit-1/actions/org.kognogos.grubforge.policy
+polkit action definition. Declares the authorisation grubForge requests
+.RB ( org.kognogos.grubforge.manage )
+and names the helper permitted to run under it.
 .
 .SH REQUIREMENTS
 .IP \(bu 2
@@ -220,12 +248,14 @@ python-rich >= 13.0.0
 .IP \(bu 2
 GRUB bootloader installed
 .IP \(bu 2
-Root privileges for write operations
+polkit, for authorising changes without running as root
 .
 .SH SEE ALSO
 .BR grub-mkconfig (8),
 .BR grub-install (8),
-.BR os-prober (8)
+.BR os-prober (8),
+.BR pkexec (1),
+.BR polkit (8)
 .
 .SH AUTHORS
 .B jetomev

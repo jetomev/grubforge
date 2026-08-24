@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.0.3](https://img.shields.io/badge/Version-1.0.3-purple.svg)
+![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
@@ -39,7 +39,7 @@ It came out of a simple frustration: why is one of the most critical parts of a 
 - 🗂 **Backup & Restore** — a timestamped backup before every change, kept to the 10 most recent, restorable from inside the app
 - 🔄 **Rebuild the boot menu** in one keystroke after any change
 - ⌨️ **Consistent keys** — Edit, Save, Apply, Refresh and Regenerate work from every screen. Screen-specific keys never clash with them.
-- 🚦 **Read-only unless you elevate** — launch without `sudo` and you can explore everything safely. Nothing can be written until you have the rights to write it.
+- 🔐 **Runs as you, not as root** — grubForge never needs `sudo`. When a change genuinely needs permission, your desktop asks for your password and grubForge never sees it.
 - 🌙 **Catppuccin Mocha** throughout
 
 ---
@@ -68,6 +68,7 @@ It came out of a simple frustration: why is one of the most critical parts of a 
 - Linux, with GRUB installed (developed and tested on Arch)
 - Python 3.10 or newer
 - `python-textual` and `python-rich`
+- **`polkit`** — how grubForge asks for permission without running as root. Almost every desktop Linux install already has it.
 
 ---
 
@@ -84,10 +85,14 @@ yay -S grubforge
 ### Arch Linux, from source
 
 ```bash
-sudo pacman -S python-textual python-rich
+sudo pacman -S python-textual python-rich polkit
 git clone https://github.com/jetomev/grubforge.git
 cd grubforge
 ```
+
+Running from a clone, grubForge is read-only: the privileged helper has to be
+installed system-wide before polkit will run it. Install the package, or use
+`sudo python main.py` while developing.
 
 ### Other distributions
 
@@ -96,6 +101,9 @@ pip install textual rich
 git clone https://github.com/jetomev/grubforge.git
 cd grubforge
 ```
+
+You'll also want `polkit` from your distribution's packages. Without it grubForge
+still runs, but read-only — and it says so rather than failing silently.
 
 ---
 
@@ -106,17 +114,21 @@ grubforge              # installed from the AUR
 python main.py         # running from source
 ```
 
-Run it normally and everything is browsable, but nothing can be saved — writing to GRUB's configuration needs root.
+**No `sudo`.** Run it as yourself.
 
-To make changes today, you have to start the whole application with `sudo`:
+grubForge browses and edits everything as your normal user. The moment you do something that actually changes the bootloader — saving a setting, applying a theme, rebuilding the boot menu — your desktop shows its own password dialog, you type **your** password, and the change goes through.
 
-```bash
-sudo grubforge
-```
+Confirmation dialogs tell you in advance when a password is coming, so it never arrives as a surprise.
 
-> **We're changing this.** Starting the entire application as root means every part of it — and every Python library it depends on — runs with full system privileges just to write one file. That's more power than the job needs.
+> **Why grubForge doesn't ask for your password itself.**
 >
-> In **v1.1.0**, grubForge will stay unprivileged and ask for your password only at the moment a specific change needs it, through your desktop's own authentication dialog. See the [roadmap](#roadmap).
+> If the application collected your password, the application would be holding your password — in the memory of a Python program with a stack of third-party libraries behind it. Instead we use **polkit**, the permission system your desktop already uses. The prompt belongs to the system. grubForge never sees, stores, or forwards what you type.
+>
+> Only a small, fixed helper runs as root, and it accepts a short list of specific jobs. It cannot be handed a command to run.
+>
+> *Changed in v1.1.0, after [#18](https://github.com/jetomev/grubforge/issues/18).*
+
+`sudo grubforge` still works if you prefer it, and skips the prompts entirely. On a machine with no desktop session — over SSH, or a plain console — that's the way to make changes, because there's no window to show a password dialog in. grubForge tells you so instead of failing mysteriously.
 
 ---
 
@@ -171,6 +183,7 @@ grubforge/
 |-- grubforge.1                  # Man page
 |-- grubforge/
 |   |-- app.py                   # The application shell and key dispatch
+|   |-- privilege.py             # The one place grubForge asks for permission
 |   |-- config_manager.py        # Reads, validates and writes GRUB settings
 |   |-- backup_manager.py        # Create, list, restore and delete backups
 |   |-- theme_manager.py         # Finds themes and reads their colours
@@ -178,6 +191,10 @@ grubforge/
 |   |-- grubforge.css            # Catppuccin Mocha styling
 |   |-- screens/                 # One file per screen
 |   |-- widgets/                 # Shared components
+|-- helper/
+|   |-- grubforge-helper         # The only part that runs as root
+|-- polkit/
+|   |-- org.kognogos.grubforge.policy   # What permission is asked for, and how
 |-- docs/                        # Changelog, and how this project is built
 |-- screenshots/
 |-- testing/                     # Test matrix, results and release checklist per version
@@ -190,13 +207,37 @@ grubforge/
 
 grubForge is built around one rule: **never break the bootloader.**
 
-Every change passes three checks:
+Every change passes four checks:
 
 1. **Validation** — your input is checked before it's staged
 2. **Confirmation** — a dialog asks before anything is written
 3. **Backup** — your current configuration is saved automatically first
+4. **Permission** — the change is authorised by polkit, one action at a time
 
 Backups live in `/var/lib/grubforge/backups` and can be restored from inside the app at any time.
+
+### How permission works
+
+grubForge runs as your user. It cannot write to `/etc` or `/boot` at all — it doesn't have the rights, and doesn't ask for them up front.
+
+When you make a change, it hands the job to a small helper that runs as root, and **polkit** decides whether that's allowed. Your desktop draws the password dialog. grubForge never touches your password.
+
+The helper accepts a **fixed list of jobs** and nothing else:
+
+| Job | What it does |
+|-----|--------------|
+| `write-config` | Save `/etc/default/grub` |
+| `write-custom-40` | Save your custom boot order |
+| `regenerate` | Rebuild the boot menu |
+| `backup-create` / `-restore` / `-delete` | Manage backups |
+| `script-enable` / `script-disable` | Turn GRUB's generator scripts on and off |
+| `os-prober-run` | Scan for other operating systems |
+
+That list is the point. **You cannot hand the helper a command to run** — if you could, it would be a way to run anything as root, which is exactly what it exists to prevent. It also re-checks everything it's given: settings files must contain only `KEY=value` lines, backup names must match the exact pattern grubForge generates, and only the four GRUB scripts it manages can be touched, by name.
+
+Once you authenticate, polkit remembers for a few minutes, so saving a change and rebuilding the boot menu asks once rather than twice. Being asked repeatedly for one task is how people learn to type their password without reading the dialog.
+
+> **grubForge no longer installs packages for you.** It used to offer to install `os-prober` by running `pacman` as root. Installing software is a much wider power than editing a bootloader config, and it belongs to your package manager. grubForge now shows you the command and you run it.
 
 When you reorder boot entries, grubForge switches off GRUB's auto-generating scripts rather than editing generated files directly. This is the same approach grub-customizer uses, and one keypress reverses it.
 
@@ -220,26 +261,22 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ## Roadmap
 
-### Next — v1.1.0: ask for permission properly ([#18](https://github.com/jetomev/grubforge/issues/18))
+### Next — v2.0.0: rebuild on forgekit
 
-- [ ] **Stop requiring `sudo` for the whole application.** Today the only way to save anything is to launch the entire program as root, so grubForge and every library it depends on run with full system privileges in order to write one file.
+- [ ] **Move onto [forgekit](https://github.com/jetomev/forgekit)**, the shared foundation the other Forge apps already use. grubForge is the last one still carrying its own hand-built menus, dialogs and styling — several hundred lines that exist in one form here and a better form in the shared library.
 
-  In v1.1.0 grubForge runs as your own user. The handful of actions that genuinely need root — writing the config, rebuilding the boot menu, managing backups, installing a theme, toggling OS detection — are each authorised individually through **polkit**, at the moment you trigger them. You get your desktop's own password dialog and enter *your* password, not root's.
-
-  We chose polkit over showing our own password box on purpose: if grubForge collected your password itself, grubForge would be holding it in memory. This way the prompt belongs to the system, and the application never sees it.
-
-  *Reported by [@marco-gallegos](https://github.com/marco-gallegos). Targeting 28 August 2026.*
+  It also brings grubForge the in-place editing style that alacrittyForge invented: one table per section, values edited where they live, staged changes marked and a fixed footer where the only button that writes anything sits.
 
 ### After that
 
 - [ ] **Warn when boot entries are frozen** ([#19](https://github.com/jetomev/grubforge/issues/19)) — while a custom boot order is saved, some settings in the Config Editor silently have no effect. grubForge should say so, and offer to apply them to the frozen entries or unfreeze. Also: make saving and rebuilding behave consistently across screens.
 - [ ] **Document what happens when the config changes outside the app** ([#17](https://github.com/jetomev/grubforge/issues/17))
-- [ ] **Rebuild on [forgekit](https://github.com/jetomev/forgekit)** — the shared foundation the other Forge apps now use
 - [ ] **A layout pass for small terminals** — Boot Entries, Config Editor and Theme Browser get cramped
 - [ ] **Configurable preferences** — backup retention, theme paths, and similar
 
 ### Done
 
+- [x] **v1.1.0** — runs as your user and asks permission through polkit, instead of needing `sudo` for the whole application ([#18](https://github.com/jetomev/grubforge/issues/18))
 - [x] **v1.0.3** — UX batch closing 15 findings from the v1.0.1 retest
 - [x] **v1.0.2** — Textual 8.x compatibility, unblocking anyone on a rolling distribution
 - [x] **v1.0.1** — backup retention cap, boot-menu sync indicator, read-only indicator, consistent key bindings
@@ -248,6 +285,27 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 ---
 
 ## Changelog
+
+### v1.1.0 — August 2026
+
+**grubForge stopped needing `sudo`.**
+
+Until now, saving anything meant launching the whole application as root. Every screen, every widget, and every third-party library underneath it ran with full system privileges — in order to write one text file. [@marco-gallegos](https://github.com/marco-gallegos) filed [#18](https://github.com/jetomev/grubforge/issues/18) saying so, and was right.
+
+grubForge now runs as your normal user and asks for permission one action at a time, through **polkit**. Your desktop draws the password dialog; you type your own password, not root's; and grubForge never sees it.
+
+- 🔐 **A privileged helper with a fixed vocabulary.** The only part that runs as root is a small standalone script accepting nine specific jobs — save the config, rebuild the boot menu, create/restore/delete a backup, enable/disable a generator script, scan for other systems. It cannot be handed a command to run, because a helper that could would just be a way to run anything as root.
+- 🛡 **It re-checks everything it's given.** Settings files must contain only `KEY=value` lines — `grub-mkconfig` *sources* that file as shell, so anything else would mean running arbitrary code as root. Backup names must match the exact pattern grubForge generates and must still resolve inside the backup directory after symlinks. Only the four GRUB scripts grubForge manages can be touched, by name.
+- ✍️ **Config writes are atomic.** Written to a temporary file, then renamed into place, so an interrupted save can never leave you with half a `/etc/default/grub` — which is a machine that doesn't boot.
+- 💬 **You're told before you're asked.** Confirmation dialogs say when a password is coming, so it never arrives as a surprise. Cancelling the dialog reports *"Cancelled — nothing was changed"* rather than an error, because nothing did go wrong.
+- ⏳ **One prompt per job.** polkit remembers for a few minutes, so saving a setting and rebuilding the boot menu asks once, not twice. Repeated prompting for one task teaches people to type their password without reading it.
+- 🖥 **The interface stays alive while you type.** Privileged work now runs off the event loop. Previously the whole TUI froze during `grub-mkconfig`; with a password dialog on screen for twenty seconds, a frozen interface would read as a crash.
+- 📦 **grubForge no longer installs packages for you.** The "Install os-prober" button used to run `pacman -S --noconfirm os-prober` as root. Installing software is far broader than editing a bootloader config, and it's your package manager's job. The button now shows you the command.
+- 🚦 **The read-only badge means something new.** It used to mean "you aren't root". It now means "permission cannot be requested here" — no polkit, no helper installed, or no desktop session — and it tells you which, and what to do about it.
+
+`sudo grubforge` still works and skips the prompts. On a console or over SSH, where there's no window to show a dialog in, that's the way to make changes — and grubForge says so instead of failing mysteriously.
+
+New dependency: `polkit`.
 
 ### v1.0.3 — May 27, 2026
 
@@ -259,26 +317,6 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 - 🐛 **Widget fixes.** The read-only badge renders again, `?` opens a real help window instead of stacking toasts, the backup preview scrolls, `E` selects the first setting if none is chosen, and screen keys work on entry without needing a click first.
 
 No dependency or install changes.
-
-### v1.0.2 — May 26, 2026
-
-**A blocker fix: compatibility with Textual 8.x.**
-
-Fixes [issue #1](https://github.com/jetomev/grubforge/issues/1), filed by `@jfp42`. grubForge crashed on startup with `AttributeError: type object 'Static' has no attribute 'Clicked'`. Textual had removed that event type between the version grubForge was written against and 8.2.7 — so every install on a rolling distribution broke the moment Textual updated.
-
-```python
-# Before (broken on Textual ≥ 8.2.7):
-def on_static_click(self, event: Static.Clicked) -> None:
-
-# After (works on both):
-def on_click(self, event: events.Click) -> None:
-```
-
-`events.Click` is the underlying event the removed one was built on, so behaviour is identical.
-
-Also added: a build-time import check in the AUR package, so we can never again ship a version that won't start.
-
-**Credit:** this release exists because `@jfp42` filed a detailed report from a Debian Sid install. Thank you.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 

@@ -2,6 +2,60 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v1.1.0 — August 2026
+
+**grubForge stopped needing `sudo`.**
+
+Until now, saving anything meant launching the whole application as root. Every screen, every widget, and every third-party library underneath it ran with full system privileges — in order to write one text file. [@marco-gallegos](https://github.com/marco-gallegos) filed [#18](https://github.com/jetomev/grubforge/issues/18) saying so, and was right.
+
+grubForge now runs as your normal user and asks for permission one action at a time, through **polkit**. Your desktop draws the password dialog; you type your own password, not root's; and grubForge never sees it.
+
+- 🔐 **A privileged helper with a fixed vocabulary.** The only part that runs as root is a small standalone script accepting nine specific jobs — save the config, rebuild the boot menu, create/restore/delete a backup, enable/disable a generator script, scan for other systems. It cannot be handed a command to run, because a helper that could would just be a way to run anything as root.
+- 🛡 **It re-checks everything it's given.** Settings files must contain only `KEY=value` lines — `grub-mkconfig` *sources* that file as shell, so anything else would mean running arbitrary code as root. Backup names must match the exact pattern grubForge generates and must still resolve inside the backup directory after symlinks. Only the four GRUB scripts grubForge manages can be touched, by name.
+- ✍️ **Config writes are atomic.** Written to a temporary file, then renamed into place, so an interrupted save can never leave you with half a `/etc/default/grub` — which is a machine that doesn't boot.
+- 💬 **You're told before you're asked.** Confirmation dialogs say when a password is coming, so it never arrives as a surprise. Cancelling the dialog reports *"Cancelled — nothing was changed"* rather than an error, because nothing did go wrong.
+- ⏳ **One prompt per job.** polkit remembers for a few minutes, so saving a setting and rebuilding the boot menu asks once, not twice. Repeated prompting for one task teaches people to type their password without reading it.
+- 🖥 **The interface stays alive while you type.** Privileged work now runs off the event loop. Previously the whole TUI froze during `grub-mkconfig`; with a password dialog on screen for twenty seconds, a frozen interface would read as a crash.
+- 📦 **grubForge no longer installs packages for you.** The "Install os-prober" button used to run `pacman -S --noconfirm os-prober` as root. Installing software is far broader than editing a bootloader config, and it's your package manager's job. The button now shows you the command.
+- 🚦 **The read-only badge means something new.** It used to mean "you aren't root". It now means "permission cannot be requested here" — no polkit, no helper installed, or no desktop session — and it tells you which, and what to do about it.
+
+`sudo grubforge` still works and skips the prompts. On a console or over SSH, where there's no window to show a dialog in, that's the way to make changes — and grubForge says so instead of failing mysteriously.
+
+New dependency: `polkit`.
+
+### v1.0.3 — May 27, 2026
+
+**A UX batch closing all 15 findings from the v1.0.1 retest.**
+
+- 🔄 **Screens refresh themselves.** Every screen now re-reads from disk when you open it, so a save, a new backup or an applied theme shows up without a manual refresh. The Dashboard gained a distinct yellow "pending changes" state, separate from "your boot menu is older than your settings" and "everything is in sync".
+- 🧭 **Rebuilding works from anywhere.** `Ctrl+R` regenerates the boot menu from any screen, not just the Config Editor — so the old "go to the Config Editor and press Ctrl+R" instructions are gone.
+- 💬 **One consistent way of talking to you.** All feedback now goes through a single channel — a status line plus a toast — replacing five near-identical per-screen versions with their own inconsistent icons.
+- 🐛 **Widget fixes.** The read-only badge renders again, `?` opens a real help window instead of stacking toasts, the backup preview scrolls, `E` selects the first setting if none is chosen, and screen keys work on entry without needing a click first.
+
+No dependency or install changes.
+
+### v1.0.2 — May 26, 2026
+
+**A blocker fix: compatibility with Textual 8.x.**
+
+Fixes [issue #1](https://github.com/jetomev/grubforge/issues/1), filed by `@jfp42`. grubForge crashed on startup with `AttributeError: type object 'Static' has no attribute 'Clicked'`. Textual had removed that event type between the version grubForge was written against and 8.2.7 — so every install on a rolling distribution broke the moment Textual updated.
+
+```python
+# Before (broken on Textual ≥ 8.2.7):
+def on_static_click(self, event: Static.Clicked) -> None:
+
+# After (works on both):
+def on_click(self, event: events.Click) -> None:
+```
+
+`events.Click` is the underlying event the removed one was built on, so behaviour is identical.
+
+Also added: a build-time import check in the AUR package, so we can never again ship a version that won't start.
+
+**Credit:** this release exists because `@jfp42` filed a detailed report from a Debian Sid install. Thank you.
+
+*The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
+
 ### v1.0.1 — May 5, 2026
 **Hotfix Batch — Stability + UX Polish (15 findings closed + backup retention cap)**
 

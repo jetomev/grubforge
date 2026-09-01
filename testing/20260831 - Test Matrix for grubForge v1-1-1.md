@@ -13,9 +13,25 @@ This matrix covers four things: that an unreadable file no longer looks like an 
 3. Section **11.E** is the regression slice: on a normal Arch box nothing about this release should be visible to the user.
 4. Tick each `[ ]` as verified. **A failure in 11.C blocks the release** — that section is the security boundary.
 
-> **11.D was already run** on 2026-08-31, on a purpose-built Debian 13 VM (`debian13-grubforge`), and its evidence is recorded in the companion results document. Re-run it only if the code changes again. The work still outstanding is **11.A, 11.B, 11.C and 11.E on Arch** — in particular **11.9**, which nothing has covered yet, and the 11.E regression slice, which matters because this release rewrote a path every user walks on every launch.
+> **11.D was already run** on 2026-08-31, on a purpose-built Debian 13 VM (`debian13-grubforge`), and its evidence is recorded in the companion results document. Re-run it only if the code changes again. **11.9 has since been run and passed** (2026-09-01, on the Debian VM — see the F5 warning below for why it could not be run on Arch). The work still outstanding is **11.C and the 11.E regression slice**, which matters because this release rewrote a path every user walks on every launch.
 
 > **11.A changes permissions on your real `/boot/grub/grub.cfg`.** Note the original mode before you start and put it back afterwards. Getting this wrong does not stop the machine booting — GRUB reads the file as firmware, long before permissions apply — but leaving it world-readable is exactly the exposure this release exists to avoid.
+
+> ⚠ **STOP — 11.A and 11.B cannot be run on a UEFI Arch machine, and they fail *silently*.** (F5, found 2026-09-01.)
+>
+> If `/boot` is the EFI System Partition it is FAT32, which stores no Unix permissions at all. The mode `stat` reports is invented from the `fmask` mount option. So:
+>
+> - `sudo chmod 600 /boot/grub/grub.cfg` **exits 0 and changes nothing.** `stat` still reports the old mode.
+> - `sudo mount -o remount,fmask=0177 /boot` **also succeeds and is also ignored** — the FAT driver refuses mask changes on remount. `/proc/mounts` still shows the original `fmask`.
+>
+> grubForge only uses the privileged helper when reading `grub.cfg` raises `PermissionError`. On a world-readable FAT32 file that read never fails, so **the code under test is never executed** — while every step appears to pass.
+>
+> **Before running 11.A, prove the setup actually took:**
+> ```
+> findmnt -no FSTYPE /boot          # vfat here means STOP, use the Debian VM
+> head -1 /boot/grub/grub.cfg       # must fail with Permission denied as your normal user
+> ```
+> If that `head` succeeds, the unreadable condition was never created and 11.A–11.B are invalid on this machine. Run them on `debian13-grubforge` instead, where `grub.cfg` is genuinely `600` on a real filesystem and no simulation is needed.
 
 ---
 
@@ -36,7 +52,7 @@ Record the starting mode first: `stat -c '%a %U:%G' /boot/grub/grub.cfg`
 
 - [ ] **11.7** With `grub.cfg` still at `600`, open Boot Entries and **authenticate**. The full boot menu loads, and the status line reports the number of entries loaded.
 - [ ] **11.8** The entries match what `sudo grep -c '^menuentry' /boot/grub/grub.cfg` reports for top-level entries — same titles, same order, submenus with their children.
-- [ ] **11.9** Select an entry and reorder it (**K**/**J**), then **S** to save. The custom order writes correctly, proving the blocks returned by the helper are complete enough to rewrite `40_custom`. *(This is the check that a "titles only" fix would have failed.)*
+- [x] **11.9** Select an entry and reorder it (**K**/**J**), then **S** to save. The custom order writes correctly, proving the blocks returned by the helper are complete enough to rewrite `40_custom`. *(This is the check that a "titles only" fix would have failed.)* — **PASSED 2026-09-01 on the Debian VM**, not on Arch, for the reason in the F5 warning above. `40_custom` went from empty to 5 complete blocks and the VM rebooted from the regenerated menu with an identical kernel command line. Evidence: `20260901 - Test Results for grubForge v1-1-1-aur.md`.
 - [ ] **11.10** `sudo chmod 644 /boot/grub/grub.cfg` and relaunch. No password is requested for the boot menu any more. **Restore your original mode now.**
 
 ### 11.C — The security boundary *(failures here block the release)*

@@ -115,7 +115,7 @@ Debian ships Textual 2.1.2; grubForge is developed against 8.x. It ran correctly
 | Matrix item | Reason |
 |---|---|
 | 11.1–11.10 (Arch, interactive) | Covered by automated tests against the real `grub.cfg` and a `chmod 000` copy — the raising of `GrubCfgUnreadable`, the `None` vs `0` distinction, and raw-block equality. Nobody drove the TUI on Arch by hand. |
-| **11.9** (reorder and save a menu read through the helper) | **Not run anywhere.** Raw-block equality was proven structurally, so the data needed to rewrite `40_custom` is present, but no save was performed from a helper-read menu. This is the highest-value remaining check. |
+| ~~**11.9** (reorder and save a menu read through the helper)~~ | **RUN AND PASSED on 2026-09-01**, on the Debian VM — see `20260901 - Test Results for grubForge v1-1-1-aur.md`. `40_custom` was rewritten with complete blocks and the machine rebooted from the regenerated menu. Note it was run on Debian, not Arch: the Arch instruction below is not performable (F5). |
 | 11.26–11.28 (Arch regression slice) | Not run. The read path changed for everyone, and only the Debian path was exercised interactively. |
 | 11.29 (AUR `PKGBUILD` / `.SRCINFO`) | AUR cut deferred; version synced across the six in-repo surfaces only. |
 
@@ -123,8 +123,8 @@ Debian ships Textual 2.1.2; grubForge is developed against 8.x. It ran correctly
 
 ## Next-session handoff (read this first)
 
-1. **Run 11.9 first.** Lock `grub.cfg` to `600` on Arch, open Boot Entries, authenticate, reorder an entry, save, and confirm `40_custom` is written correctly. It is the one check that would catch the helper returning blocks that look right but are not complete. Restore the original mode afterwards.
+1. ~~**Run 11.9 first.** Lock `grub.cfg` to `600` on Arch…~~ — **DONE 2026-09-01, PASS.** Run on Debian, not Arch. **The Arch instruction as written is impossible and fails silently:** `/boot` is FAT32, which stores no Unix permissions, so `chmod` exits 0 and changes nothing and a `remount` with a new `fmask` is ignored too. A tester following it would record a pass without ever executing the code under test. Recorded as F5.
 2. **Then the Arch regression slice (11.26–11.28)** — this release touched a path every user goes through.
-3. **Then the AUR cut**: bump `PKGBUILD`, regenerate `.SRCINFO`, `makepkg -si` smoke, push, verify with a fresh helper install.
+3. ~~**Then the AUR cut**…~~ — **DONE 2026-09-01**, v1.1.1-1 pushed after 11.9 passed.
 4. ~~File F3 as its own issue~~ — filed as **[#24](https://github.com/jetomev/grubforge/issues/24)**, scheduled for after 2026-09-14.
 5. The Debian VM (`debian13-grubforge`, user `grubforge`) is kept — it is the only place the non-Arch path can be tested, and it will be needed again for F3.

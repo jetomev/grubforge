@@ -12,7 +12,9 @@ from textual.binding import Binding
 
 from grubforge.boot_entries_manager import (
     BootEntry,
+    GrubCfgUnreadable,
     parse_boot_entries,
+    parse_boot_entries_privileged,
     write_custom_order,
     disable_script,
     enable_script,
@@ -54,6 +56,11 @@ class BootEntriesScreen(StatusMixin, Container):
 
     _entries: list = []
     _selected_idx: int = 0
+    # True when grub.cfg is present but root-only, so the list is empty because
+    # we could not look — not because there is nothing there.
+    _unreadable: bool = False
+    # A permission request is already in flight; do not stack a second dialog.
+    _asking: bool = False
 
     def compose(self) -> ComposeResult:
         with Container(id="backup-split"):
@@ -116,7 +123,11 @@ class BootEntriesScreen(StatusMixin, Container):
     def on_mount(self) -> None:
         self._load_entries()
         self._refresh_os_prober_status()
-        # Passive mount-time hint — status line only, no startup popup.
+        # Deliberately does NOT ask for permission here. Every screen mounts at
+        # startup, so this runs before the user has opened anything — a password
+        # dialog from here would arrive unbidden, for a screen they may never
+        # visit. _reload_view() is the hook that fires when a screen is actually
+        # shown, and that is where the asking belongs.
         self._set_status(
             f"Loaded {len(self._entries)} boot entries from {GRUB_CFG_PATH}", "info",
             popup=False,
@@ -126,17 +137,59 @@ class BootEntriesScreen(StatusMixin, Container):
 
     def _load_entries(self) -> None:
         """Pure data load — no status emission (callers announce as needed)."""
-        self._entries = parse_boot_entries()
+        self._unreadable = False
+        try:
+            self._entries = parse_boot_entries()
+        except GrubCfgUnreadable:
+            self._entries    = []
+            self._unreadable = True
         self._rebuild_list()
         if self._entries:
             self._show_detail(0)
+
+    async def _load_entries_privileged(self) -> None:
+        """
+        Re-read the boot menu through the privileged helper.
+
+        Reached only when the plain read was refused, so on a system where
+        grub.cfg is world-readable this never runs and nobody is ever asked for
+        a password just to look at the boot menu.
+        """
+        try:
+            entries, result = await parse_boot_entries_privileged(
+                capability=self.app.privilege
+            )
+        finally:
+            self._asking = False
+
+        if not result.ok:
+            self._set_status(result.message, "warn")
+            self._rebuild_list()
+            return
+
+        self._entries    = entries
+        self._unreadable = False
+        self._rebuild_list()
+        if self._entries:
+            self._show_detail(0)
+        self._set_status(
+            f"Loaded {len(self._entries)} boot entries from {GRUB_CFG_PATH}", "info",
+            popup=False,
+        )
 
     def _rebuild_list(self) -> None:
         lv = self.query_one("#entries-list", ListView)
         lv.clear()
 
         if not self._entries:
-            lv.append(ListItem(Static("[dim]No boot entries found.[/dim]")))
+            if self._unreadable:
+                lv.append(ListItem(Static(
+                    f"[#f9e2af]Cannot read {GRUB_CFG_PATH}[/#f9e2af]\n"
+                    "[dim]It is readable only by root on this system.\n"
+                    "Press F5 to ask for permission again.[/dim]"
+                )))
+            else:
+                lv.append(ListItem(Static("[dim]No boot entries found.[/dim]")))
             return
 
         for i, entry in enumerate(self._entries):
@@ -595,10 +648,32 @@ class BootEntriesScreen(StatusMixin, Container):
     def _reload_view(self) -> None:
         self._load_entries()
         self._refresh_os_prober_status()
+        if self._unreadable:
+            self._ask_to_read()
+
+    def _ask_to_read(self) -> None:
+        """
+        grub.cfg is root-only here, so ask — showing a boot menu we never managed
+        to read is what this release exists to stop. Called when the screen is
+        opened and on refresh, never at startup.
+        """
+        if self._asking:
+            return
+        self._asking = True
+        self._set_status(
+            f"{GRUB_CFG_PATH} is readable only by root — asking for permission.",
+            "warn", popup=False,
+        )
+        # On self.app like every other worker here, and in its own group so it
+        # neither cancels nor is cancelled by an os-prober scan.
+        self.app.run_worker(
+            self._load_entries_privileged(), exclusive=True, group="grubcfg-read"
+        )
 
     def action_refresh(self) -> None:
-        self._reload_view()
-        self._set_status("Boot entries refreshed.", "info")
+        self._reload_view()          # asks for permission itself if it needs to
+        if not self._unreadable:
+            self._set_status("Boot entries refreshed.", "info")
 
     # _set_status is provided by StatusMixin (v1.0.3 F9 — unified feedback;
     # also consolidates this screen's old ASCII icons onto the unicode set).

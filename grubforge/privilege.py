@@ -111,15 +111,18 @@ def detect() -> Capability:
     if not INSTALLED_HELPER.is_file():
         return Capability(
             Privilege.NONE,
-            "grubForge's privileged helper is not installed. This happens when "
-            "running from a source checkout — install the package, or run with sudo.",
+            "grubForge's privileged helper is not installed, so permission cannot "
+            "be requested. On Arch, install the package. On any other distribution, "
+            "run  sudo sh install-helper.sh  from the checkout — it copies two files "
+            "and nothing else. Or run grubForge with sudo.",
         )
 
     if not POLICY_FILE.is_file():
         return Capability(
             Privilege.NONE,
             "grubForge's polkit rule is not installed, so permission cannot be "
-            "requested. Reinstall the package, or run with sudo.",
+            "requested. Reinstall the package, or run  sudo sh install-helper.sh  "
+            "from the checkout. Or run grubForge with sudo.",
         )
 
     return Capability(

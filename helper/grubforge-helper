@@ -26,6 +26,7 @@ Verbs:
     script-enable <name>     restore execute permission on a grub.d script
     script-disable <name>    remove execute permission from a grub.d script
     os-prober-run            scan for other installed operating systems
+    read-entries             print grub.cfg's menuentry/submenu blocks
 
 Exit status is 0 on success. Anything else means nothing was changed, and the
 reason is on stderr.
@@ -63,6 +64,10 @@ _BACKUP_RE = re.compile(r"^grub_\d{8}_\d{6}_\d{6}\.bak$")
 
 # Every meaningful line of /etc/default/grub is SHELL_STYLE=value.
 _GRUB_KEY_RE = re.compile(r"^[A-Z_][A-Z0-9_]*=")
+
+# A top-level boot menu block. Mirrors the pattern in
+# grubforge/boot_entries_manager.py, which parses what this helper returns.
+_MENUENTRY_RE = re.compile(r'^(menuentry|submenu)\s+[\'"]')
 
 # Generous next to a ~1 KB config, small enough that nothing can flood /etc.
 MAX_INPUT_BYTES = 1024 * 1024
@@ -357,6 +362,66 @@ def do_os_prober_run() -> None:
     sys.exit(result.returncode)
 
 
+def _extract_block(lines: list, start: int) -> tuple:
+    """
+    Extract one { ... } block starting at lines[start] by brace depth.
+
+    Duplicated from grubforge/boot_entries_manager.py on purpose: this helper
+    runs as root and must not import from the package, which lives on a path a
+    user could write to. The two copies must stay in step.
+    """
+    depth     = 0
+    block     = []
+    i         = start
+
+    while i < len(lines):
+        line = lines[i]
+        block.append(line)
+        depth += line.count("{") - line.count("}")
+        if depth <= 0 and i > start:
+            break
+        i += 1
+
+    return "\n".join(block), i
+
+
+def do_read_entries() -> None:
+    """
+    Print the boot menu's top-level menuentry and submenu blocks, and nothing else.
+
+    grubForge reads /boot/grub/grub.cfg as your user. Some distributions ship it
+    readable only by root, and that read then fails — so grubForge could not show
+    the boot menu at all, and reported an empty one instead. This verb is that
+    same read, performed as root.
+
+    It returns only the menu blocks, never the whole file. The part above them can
+    carry a password_pbkdf2 hash, which is one of the reasons the file is root-only
+    to begin with; drawing a list of boot entries is no reason to hand it out.
+    """
+    if not GRUB_CFG_PATH.is_file():
+        die(f"{GRUB_CFG_PATH} does not exist — run grub-mkconfig first")
+
+    try:
+        text = GRUB_CFG_PATH.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        die(f"could not read {GRUB_CFG_PATH}: {exc}")
+
+    lines  = text.splitlines()
+    blocks = []
+    i      = 0
+
+    while i < len(lines):
+        if _MENUENTRY_RE.match(lines[i].strip()):
+            block, end = _extract_block(lines, i)
+            blocks.append(block)
+            i = end + 1
+            continue
+        i += 1
+
+    if blocks:
+        sys.stdout.write("\n".join(blocks) + "\n")
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 # Verb -> (handler, takes_argument, argument_required)
@@ -370,6 +435,7 @@ VERBS = {
     "script-enable":   (do_script_enable,    True,  True),
     "script-disable":  (do_script_disable,   True,  True),
     "os-prober-run":   (do_os_prober_run,    False, False),
+    "read-entries":    (do_read_entries,     False, False),
 }
 
 

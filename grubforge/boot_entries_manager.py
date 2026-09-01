@@ -67,19 +67,57 @@ class BootEntry:
 
 # ── Parser ────────────────────────────────────────────────────────────────────
 
+class GrubCfgUnreadable(Exception):
+    """
+    grub.cfg exists, but this user is not allowed to read it.
+
+    Worth its own exception. Some distributions ship /boot/grub/grub.cfg
+    readable only by root, and reporting "0 boot entries" for a file we were
+    never able to open tells the user something that is not true. Callers catch
+    this and read the file through the privileged helper instead.
+    """
+
+    def __init__(self, path):
+        self.path = path
+        super().__init__(f"{path} is readable only by root")
+
+
 def parse_boot_entries(cfg_path: Path = GRUB_CFG_PATH) -> list:
     """
     Parse grub.cfg and return a list of BootEntry objects.
     Only returns top-level menuentry and submenu blocks.
+
+    Raises GrubCfgUnreadable when the file is present but unreadable as this
+    user, so the caller can ask for permission rather than show an empty menu.
     """
     if not cfg_path.exists():
         return _mock_entries()
 
     try:
         text = cfg_path.read_text(encoding="utf-8", errors="replace")
-    except Exception:
+    except PermissionError as exc:
+        raise GrubCfgUnreadable(cfg_path) from exc
+    except OSError:
         return []
 
+    return parse_entries_text(text)
+
+
+async def parse_boot_entries_privileged(capability=None) -> tuple:
+    """
+    Read the boot menu through the privileged helper, prompting via polkit.
+
+    Returns (entries, HelperResult). The helper hands back only the menuentry
+    and submenu blocks, so the rest of grub.cfg never reaches this process.
+    """
+    result = await privilege.run_async("read-entries", capability=capability)
+    if not result.ok:
+        return [], result
+    return parse_entries_text(result.output), result
+
+
+def parse_entries_text(text: str) -> list:
+    """Parse grub.cfg content into BootEntry objects — top-level blocks only."""
     entries = []
     lines   = text.splitlines()
     i       = 0

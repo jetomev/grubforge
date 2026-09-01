@@ -24,12 +24,24 @@ def _get_grubcfg_path() -> Path:
     return Path("/boot/grub/grub.cfg")
 
 
-def _count_boot_entries(cfg_path: Path) -> int:
+def _count_boot_entries(cfg_path: Path):
+    """
+    Count boot entries, or return None when the file cannot be read.
+
+    None and 0 are different answers. Some distributions ship grub.cfg readable
+    only by root; counting zero there would tell the user they have no boot
+    entries, when the truth is that grubForge never got to look. The dashboard
+    deliberately does not ask for a password to answer this — being prompted
+    merely for opening the app would be worse than saying so plainly. Boot
+    Entries asks when you go there to do something.
+    """
     try:
         text = cfg_path.read_text(errors="replace")
-        return text.count("menuentry ")
+    except PermissionError:
+        return None
     except Exception:
         return 0
+    return text.count("menuentry ")
 
 
 # ── Screen ────────────────────────────────────────────────────────────────────
@@ -92,6 +104,11 @@ class DashboardScreen(StatusMixin, ScrollableContainer):
         grubcfg_exists = grubcfg.exists()
         backup_count   = len(backups)
         entry_count    = _count_boot_entries(grubcfg) if grubcfg_exists else 0
+        entries_status = (
+            f"[#cdd6f4]{entry_count}[/#cdd6f4] [dim]detected[/dim]"
+            if entry_count is not None
+            else "[#f9e2af]⚠ readable only by root — open Boot Entries to unlock[/#f9e2af]"
+        )
 
         cfg_status = (
             f"[green]✓ {GRUB_CONFIG_PATH}[/green]" if config_exists
@@ -134,7 +151,7 @@ class DashboardScreen(StatusMixin, ScrollableContainer):
   [dim]Config file  [/dim]  {cfg_status}
   [dim]grub.cfg     [/dim]  {grubcfg_status}
   [dim]Sync         [/dim]  {sync_status}
-  [dim]Boot entries [/dim]  [#cdd6f4]{entry_count}[/#cdd6f4] [dim]detected[/dim]
+  [dim]Boot entries [/dim]  {entries_status}
 
 [bold #a6adc8]── Active Settings ────────────────────────────────[/bold #a6adc8]
 

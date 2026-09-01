@@ -6,8 +6,8 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-purple.svg)
-[![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.0)](https://aur.archlinux.org/packages/grubforge)
+![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-purple.svg)
+[![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
 
@@ -94,16 +94,48 @@ Running from a clone, grubForge is read-only: the privileged helper has to be
 installed system-wide before polkit will run it. Install the package, or use
 `sudo python main.py` while developing.
 
+### Debian, Ubuntu and derivatives
+
+```bash
+sudo apt install python3-textual python3-rich
+git clone https://github.com/jetomev/grubforge.git
+cd grubforge
+sudo sh install-helper.sh
+```
+
+A desktop install already has polkit and a password-dialog agent. On a minimal
+system, install your distribution's polkit package as well.
+
+**On Debian the last line is not optional.** Debian ships `/boot/grub/grub.cfg`
+readable only by root — verified on a stock Debian 13 install, with no GRUB
+password set and nothing hardened. Without the helper in place grubForge cannot
+read your boot menu at all, and before v1.1.1 it reported that as
+*"Boot entries 0 detected"* ([#23](https://github.com/jetomev/grubforge/issues/23)).
+
+Verified against Debian's `python3-textual` 2.1.2. grubForge is developed against
+Textual 8.x; the Debian package is older, so if you meet a display oddity there,
+a virtual environment with current Textual is worth trying before filing it.
+
 ### Other distributions
 
 ```bash
-pip install textual rich
 git clone https://github.com/jetomev/grubforge.git
 cd grubforge
+python3 -m venv .venv && .venv/bin/pip install textual rich
+sudo sh install-helper.sh
 ```
 
-You'll also want `polkit` from your distribution's packages. Without it grubForge
-still runs, but read-only — and it says so rather than failing silently.
+Install `polkit` from your distribution's packages too. A virtual environment is
+used here because most current distributions refuse `pip install` into the system
+Python (PEP 668) — if yours packages `textual` and `rich`, prefer those.
+
+`install-helper.sh` copies two files and nothing else — the helper to
+`/usr/lib/grubforge/` and the polkit rule to `/usr/share/polkit-1/actions/`, both
+owned by root. polkit only runs a helper installed at the exact path named in its
+policy, which is why a clone on its own leaves grubForge read-only.
+
+Without it grubForge still runs, but read-only — and it says so rather than
+failing silently.
 
 ---
 
@@ -280,6 +312,7 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ### Done
 
+- [x] **v1.1.1** — reads the boot menu through polkit when `grub.cfg` is root-only, instead of reporting it empty ([#23](https://github.com/jetomev/grubforge/issues/23))
 - [x] **v1.1.0** — runs as your user and asks permission through polkit, instead of needing `sudo` for the whole application ([#18](https://github.com/jetomev/grubforge/issues/18))
 - [x] **v1.0.3** — UX batch closing 15 findings from the v1.0.1 retest
 - [x] **v1.0.2** — Textual 8.x compatibility, unblocking anyone on a rolling distribution
@@ -289,6 +322,24 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 ---
 
 ## Changelog
+
+### v1.1.1 — August 31, 2026
+
+**grubForge could not read a boot menu it was not allowed to open — and reported that there wasn't one.**
+
+[@jfp42](https://github.com/jfp42) filed [#23](https://github.com/jetomev/grubforge/issues/23): on a laptop where `/boot/grub/grub.cfg` is readable only by root, grubForge showed **"Boot entries 0 detected"**. The file was full of boot entries. grubForge never got to look, and presented that as an answer.
+
+Checking the report on a stock Debian 13 virtual machine turned out worse than the report. Debian ships `/boot/grub/grub.cfg` as `rw-------` by default — no GRUB password configured, nothing hardened, just the default. **Every Debian user has been shown an empty boot menu and told that was the truth.** One person wrote in; the rest presumably concluded grubForge was broken and moved on.
+
+- 🔍 **"I couldn't read it" and "there's nothing there" are now different answers.** Both places that load the boot menu caught the permission error and returned an empty list, which is how a locked file came to look like an empty one. The Dashboard now says the file is readable only by root, and Boot Entries says so too instead of showing an empty menu.
+- 🔐 **The boot menu is read through the privileged helper when the ordinary read is refused.** A tenth verb, `read-entries` — the same polkit prompt you already get when saving. Where `grub.cfg` is world-readable, Arch included, nothing changes and nobody is asked for anything.
+- 🙈 **The helper hands back only the menu blocks, never the whole file.** The part above them can carry a `password_pbkdf2` hash, which is one of the reasons some distributions lock the file down to begin with. Drawing a list of boot entries is no reason to hand that to an unprivileged process.
+- 🚫 **No password prompt merely for opening the app.** The Dashboard reports the situation and leaves it there. The prompt comes when you open Boot Entries to actually do something — on opening the screen, with nothing to press.
+- 📦 **Distributions without a package can install the helper.** `install-helper.sh` puts the helper and the polkit rule where polkit requires them. Without it, everyone outside Arch was stuck read-only — which, on Debian, meant no boot menu at all. This is the part that makes the fix reach the person who reported it.
+
+The `chmod a+r /boot/grub/grub.cfg` workaround is no longer needed — and was never a good trade, since it exposes the file to every account on the machine.
+
+No new dependencies. One new file: `install-helper.sh`, for distributions that have no grubForge package.
 
 ### v1.1.0 — August 2026
 
@@ -310,17 +361,6 @@ grubForge now runs as your normal user and asks for permission one action at a t
 `sudo grubforge` still works and skips the prompts. On a console or over SSH, where there's no window to show a dialog in, that's the way to make changes — and grubForge says so instead of failing mysteriously.
 
 New dependency: `polkit`.
-
-### v1.0.3 — May 27, 2026
-
-**A UX batch closing all 15 findings from the v1.0.1 retest.**
-
-- 🔄 **Screens refresh themselves.** Every screen now re-reads from disk when you open it, so a save, a new backup or an applied theme shows up without a manual refresh. The Dashboard gained a distinct yellow "pending changes" state, separate from "your boot menu is older than your settings" and "everything is in sync".
-- 🧭 **Rebuilding works from anywhere.** `Ctrl+R` regenerates the boot menu from any screen, not just the Config Editor — so the old "go to the Config Editor and press Ctrl+R" instructions are gone.
-- 💬 **One consistent way of talking to you.** All feedback now goes through a single channel — a status line plus a toast — replacing five near-identical per-screen versions with their own inconsistent icons.
-- 🐛 **Widget fixes.** The read-only badge renders again, `?` opens a real help window instead of stacking toasts, the backup preview scrolls, `E` selects the first setting if none is chosen, and screen keys work on entry without needing a click first.
-
-No dependency or install changes.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 
@@ -356,6 +396,6 @@ grubForge is free software, released under the **GNU General Public License v3.0
 
 Contributions are welcome — open an issue or a pull request.
 
-Bug reports are genuinely valued here. Two of the releases above exist because somebody outside the project took the time to write one.
+Bug reports are genuinely valued here. Three of the releases above exist because somebody outside the project took the time to write one — two of them from the same person.
 
 If you find grubForge useful, a star helps others find it.

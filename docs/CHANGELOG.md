@@ -2,6 +2,24 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v1.1.1 — August 31, 2026
+
+**grubForge could not read a boot menu it was not allowed to open — and reported that there wasn't one.**
+
+[@jfp42](https://github.com/jfp42) filed [#23](https://github.com/jetomev/grubforge/issues/23): on a laptop where `/boot/grub/grub.cfg` is readable only by root, grubForge showed **"Boot entries 0 detected"**. The file was full of boot entries. grubForge never got to look, and presented that as an answer.
+
+Checking the report on a stock Debian 13 virtual machine turned out worse than the report. Debian ships `/boot/grub/grub.cfg` as `rw-------` by default — no GRUB password configured, nothing hardened, just the default. **Every Debian user has been shown an empty boot menu and told that was the truth.** One person wrote in; the rest presumably concluded grubForge was broken and moved on.
+
+- 🔍 **"I couldn't read it" and "there's nothing there" are now different answers.** Both places that load the boot menu caught the permission error and returned an empty list, which is how a locked file came to look like an empty one. The Dashboard now says the file is readable only by root, and Boot Entries says so too instead of showing an empty menu.
+- 🔐 **The boot menu is read through the privileged helper when the ordinary read is refused.** A tenth verb, `read-entries` — the same polkit prompt you already get when saving. Where `grub.cfg` is world-readable, Arch included, nothing changes and nobody is asked for anything.
+- 🙈 **The helper hands back only the menu blocks, never the whole file.** The part above them can carry a `password_pbkdf2` hash, which is one of the reasons some distributions lock the file down to begin with. Drawing a list of boot entries is no reason to hand that to an unprivileged process.
+- 🚫 **No password prompt merely for opening the app.** The Dashboard reports the situation and leaves it there. The prompt comes when you open Boot Entries to actually do something — on opening the screen, with nothing to press.
+- 📦 **Distributions without a package can install the helper.** `install-helper.sh` puts the helper and the polkit rule where polkit requires them. Without it, everyone outside Arch was stuck read-only — which, on Debian, meant no boot menu at all. This is the part that makes the fix reach the person who reported it.
+
+The `chmod a+r /boot/grub/grub.cfg` workaround is no longer needed — and was never a good trade, since it exposes the file to every account on the machine.
+
+No new dependencies. One new file: `install-helper.sh`, for distributions that have no grubForge package.
+
 ### v1.1.0 — August 2026
 
 **grubForge stopped needing `sudo`.**

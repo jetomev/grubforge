@@ -87,6 +87,32 @@ grep -n 'BACKUP_DIR\|GRUB_CONFIG_PATH\|CUSTOM_40' grubforge/*.py helper/grubforg
 
 The retention cap stated in the man page must match both copies.
 
+Since v1.1.1 the duplication is no longer only constants. `read-entries` has to
+find the same blocks the parser reads, so `_extract_block()` and the menu-block
+pattern exist in both copies. If they drift, the boot menu grubForge shows is not
+the boot menu on disk — and nothing errors.
+
+```bash
+diff <(sed -n '/^def _extract_block/,/^    return "..".join(block), i/p' grubforge/boot_entries_manager.py) \
+     <(sed -n '/^def _extract_block/,/^    return "..".join(block), i/p' helper/grubforge-helper)
+```
+
+Only the docstrings should differ — the code lines must match exactly.
+
+## Non-Arch install path (v1.1.1+)
+
+`install-helper.sh` is the only way a user on a distribution without a package
+gets the helper and policy in place. If it breaks, those users silently fall back
+to read-only, which on a root-only `grub.cfg` means no boot menu at all.
+
+```bash
+sh install-helper.sh          # must refuse without root, exit 1
+grep -n 'install-helper' README.md grubforge/privilege.py
+```
+
+The path named in the script, the policy, and `privilege.py` must all still read
+`/usr/lib/grubforge/grubforge-helper`.
+
 ## Doc coverage
 
 - README and man page must list every binding in `app.py` BINDINGS + every screen `BINDINGS` (excluding `show=False` aliases)

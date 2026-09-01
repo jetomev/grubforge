@@ -13,6 +13,8 @@ This matrix covers four things: that an unreadable file no longer looks like an 
 3. Section **11.E** is the regression slice: on a normal Arch box nothing about this release should be visible to the user.
 4. Tick each `[ ]` as verified. **A failure in 11.C blocks the release** — that section is the security boundary.
 
+> **11.D was already run** on 2026-08-31, on a purpose-built Debian 13 VM (`debian13-grubforge`), and its evidence is recorded in the companion results document. Re-run it only if the code changes again. The work still outstanding is **11.A, 11.B, 11.C and 11.E on Arch** — in particular **11.9**, which nothing has covered yet, and the 11.E regression slice, which matters because this release rewrote a path every user walks on every launch.
+
 > **11.A changes permissions on your real `/boot/grub/grub.cfg`.** Note the original mode before you start and put it back afterwards. Getting this wrong does not stop the machine booting — GRUB reads the file as firmware, long before permissions apply — but leaving it world-readable is exactly the exposure this release exists to avoid.
 
 ---
@@ -62,13 +64,40 @@ Run on a stock Debian 13 install. **Take no hardening steps** — the question t
 
 ### 11.E — Nothing changed where nothing should change
 
-- [ ] **11.26** On an Arch box with a world-readable `grub.cfg`, run through Boot Entries: reorder, rename, restore original, create a custom entry. No password is requested for reading at any point, and behaviour is identical to v1.1.0.
-- [ ] **11.27** Backups, Config Editor, Themes, os-prober and `Ctrl+R` regeneration all behave as in v1.1.0 — this release touched the read path only.
-- [ ] **11.28** `sudo grubforge` still works and still shows the yellow **ROOT** badge.
+The read path is walked by every user on every launch. This release rewrote it. Run this section on a **normal Arch box with a world-readable `grub.cfg`**, where the correct outcome is that you cannot tell v1.1.1 from v1.1.0.
+
+**Boot Entries — the screen that changed most**
+
+- [ ] **11.26** Open Boot Entries. Entries appear immediately, **no password is requested**, and the status line reads *"Loaded N boot entries from /boot/grub/grub.cfg"*.
+- [ ] **11.27** The count and titles match `grep -c '^menuentry' /boot/grub/grub.cfg` plus submenus, and every submenu shows its child count.
+- [ ] **11.28** Source labels are right — Arch Linux, Windows via OS Prober, UEFI, snapshots — i.e. `_guess_source()` still receives real titles.
+- [ ] **11.29** **K**/**J** reorder, then **S** to save. `/etc/grub.d/40_custom` is written with the grubForge header and the entries in the new order.
+- [ ] **11.30** **N** renames an entry; the new title survives a save and reappears after **F5**.
+- [ ] **11.31** **X** restores the original order; `40_custom` returns to its pre-grubForge state.
+- [ ] **11.32** Create a custom entry from a template. It appears in the list and writes correctly.
+- [ ] **11.33** Leave Boot Entries for another screen and come back several times. No password is ever requested, and no duplicate load or flicker — `_reload_view()` now does more than it used to.
+- [ ] **11.34** Press **F5** repeatedly. Each press reports *"Boot entries refreshed."* and nothing is asked for.
+
+**Dashboard — the other file that changed**
+
+- [ ] **11.35** The Dashboard shows **Boot entries N detected** with the real number, in the normal colour — not the yellow permission warning.
+- [ ] **11.36** With `/boot/grub/grub.cfg` temporarily renamed away, the Dashboard reports *"Not found (run grub-mkconfig)"* — the missing-file case must not be confused with the unreadable one. **Put it back.**
+- [ ] **11.37** Sync status still shows all three states correctly: pending changes, `grub.cfg` older than `/etc/default/grub`, and in sync.
+
+**Everything else this release should not have touched**
+
+- [ ] **11.38** Backup create / restore / delete, each with its password prompt, exactly as in v1.1.0.
+- [ ] **11.39** Config Editor: edit a value, save, and `Ctrl+R` regenerate. The boot menu rebuilds.
+- [ ] **11.40** Theme browser applies a theme and prompts to regenerate.
+- [ ] **11.41** os-prober scan and enable behave as before.
+- [ ] **11.42** `sudo grubforge` still works, shows the yellow **ROOT** badge, and asks for nothing.
+- [ ] **11.43** Over SSH with no authentication agent, grubForge degrades honestly — read-only, with the reason naming `sudo` — and the boot menu still **displays**, because reading never needed permission here.
 
 ## Build-time checks
 
-- [ ] **11.29** Version agrees across `grubforge/__init__.py`, `grubforge/app.py`, `grubforge.1` `.TH`, README version badge, README AUR cache-buster, and the AUR `PKGBUILD` + `.SRCINFO`.
-- [ ] **11.30** `grep -rn "run_worker(self\.action_" grubforge/` returns nothing.
-- [ ] **11.31** Constants duplicated between the package and the helper still match, `_extract_block()` included.
-- [ ] **11.32** README documents `install-helper.sh` under "Other distributions", and the path it writes matches the polkit policy and `privilege.py`.
+- [ ] **11.44** Version agrees across `grubforge/__init__.py`, `grubforge/app.py`, `grubforge.1` `.TH`, README version badge, README AUR cache-buster, and the AUR `PKGBUILD` + `.SRCINFO`.
+- [ ] **11.45** `grep -rn "run_worker(self\.action_" grubforge/` returns nothing.
+- [ ] **11.46** Constants duplicated between the package and the helper still match, `_extract_block()` included — run the drift diff in `RELEASE-CHECKLIST.md`.
+- [ ] **11.47** README documents `install-helper.sh`, and the path it writes matches the polkit policy and `privilege.py`.
+- [ ] **11.48** The signed release tarball verifies: `gpg --verify grubforge-1.1.1.tar.gz.asc grubforge-1.1.1.tar.gz`.
+- [ ] **11.49** The tarball contains `install-helper.sh`, `helper/grubforge-helper` and `polkit/`, and `__init__.py` inside it reads 1.1.1.

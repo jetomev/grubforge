@@ -98,9 +98,11 @@ Moved to `_reload_view()`, which `_switch_to()` already calls every time a scree
 
 Rewritten as a Debian/Ubuntu section using `apt`, and a generic section using a virtual environment.
 
-### F3 — Fedora and openSUSE use `/boot/grub2/`, and are unsupported *(deferred → issue to file)*
+### F3 — Fedora and openSUSE use `/boot/grub2/`, and are unsupported → **[#24](https://github.com/jetomev/grubforge/issues/24)** *(deferred to after 2026-09-14)*
 
-`GRUB_CFG_PATH` is `/boot/grub/grub.cfg` in both the package and the helper. The Dashboard alone checks `/boot/grub2/` as a fallback; nothing else does. grubForge cannot be working on Fedora or openSUSE at all. Pre-existing and app-wide, deliberately not fixed inside a read-path release — fixing it half-way would have put the two copies of the constant out of step, which `RELEASE-CHECKLIST.md` forbids for good reason.
+`GRUB_CFG_PATH` is `/boot/grub/grub.cfg` in both the package and the helper, and the theme directory and `grub-mkconfig` invocation are hardcoded the same way. The Dashboard alone resolves `/boot/grub2/` — and nothing else uses that resolver, so on Fedora the Dashboard reports a real boot-entry count while every other screen points somewhere that does not exist. A working-looking dashboard with broken screens is a worse failure than an honest one at launch.
+
+Pre-existing and app-wide, deliberately not fixed inside a read-path release: changing that constant in one copy and not the other is precisely the drift `RELEASE-CHECKLIST.md` treats as a security bug.
 
 ### F4 — Textual version skew on Debian *(noted, not a defect)*
 
@@ -124,5 +126,5 @@ Debian ships Textual 2.1.2; grubForge is developed against 8.x. It ran correctly
 1. **Run 11.9 first.** Lock `grub.cfg` to `600` on Arch, open Boot Entries, authenticate, reorder an entry, save, and confirm `40_custom` is written correctly. It is the one check that would catch the helper returning blocks that look right but are not complete. Restore the original mode afterwards.
 2. **Then the Arch regression slice (11.26–11.28)** — this release touched a path every user goes through.
 3. **Then the AUR cut**: bump `PKGBUILD`, regenerate `.SRCINFO`, `makepkg -si` smoke, push, verify with a fresh helper install.
-4. **File F3** as its own issue before it is forgotten.
+4. ~~File F3 as its own issue~~ — filed as **[#24](https://github.com/jetomev/grubforge/issues/24)**, scheduled for after 2026-09-14.
 5. The Debian VM (`debian13-grubforge`, user `grubforge`) is kept — it is the only place the non-Arch path can be tested, and it will be needed again for F3.

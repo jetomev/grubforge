@@ -35,14 +35,38 @@ Before tagging, all of these must agree on the version string:
 - `README.md` Version badge
 - `~/Programs/aur-grubforge/PKGBUILD` `pkgver` + `pkgrel`
 - AUR `.SRCINFO` (regenerate with `makepkg --printsrcinfo > .SRCINFO`)
-- `README.md` AUR badge cache-buster — `.../aur/version/grubforge?v=X.Y.Z`
+- ~~`README.md` AUR badge cache-buster~~ — **NOT here. This one is bumped AFTER the AUR push — see below.**
 
 > The cache-buster is not cosmetic pedantry. GitHub proxies external images
 > through camo, which serves them with `cache-control: max-age=432000` — **five
 > days** — and ignores the shorter `max-age=3600` shields.io actually sends. So
 > after a release the README can advertise the *previous* AUR version for most of
 > a week. Changing the query string changes camo's cache key, which is the only
-> reliable way to force a refresh. Bump it with the version.
+> reliable way to force a refresh.
+>
+> ⚠️ **Bumping it "with the version" is exactly what breaks it, and it broke on
+> v1.1.1.** The version surfaces above are all updated in the docs commit, which
+> lands *before* the AUR push. Camo then fetches the badge under the new key
+> while the AUR still serves the OLD version — and caches that for five days.
+> The buster did its job perfectly and cached the wrong answer.
+>
+> Confirmed on 2026-09-01: with `?v=1.1.1` in the README, camo served
+> `aur: v1.1.0-1` on every fetch while shields.io served `aur: v1.1.1-1` for the
+> identical URL. Order of operations, not the value, was the defect.
+>
+> **The rule: bump the cache-buster to the full `pkgver-pkgrel` (e.g. `1.1.1-1`)
+> as a separate commit AFTER the AUR push has landed and the AUR RPC confirms the
+> new version.** Then verify what is actually being served — a green
+> `git push` proves nothing here:
+>
+> ```
+> curl -s https://github.com/jetomev/grubforge \
+>   | grep -oE 'https://camo\.githubusercontent\.com/[a-f0-9]+/[a-f0-9]+' \
+>   | while read u; do python3 -c "import sys,binascii;print(binascii.unhexlify(sys.argv[1].split('/')[-1]).decode())" "$u"; done
+> ```
+>
+> Decode the camo URLs, find the AUR one, fetch it, and read the version out of
+> its `<title>`. If it does not match the AUR, the badge is lying to every visitor.
 
 > `__init__.py` is the one that gets forgotten. It was stale at 1.0.3 during
 > the v1.1.0 cut and this gate is what caught it. v1.0.3 shipped after fixing

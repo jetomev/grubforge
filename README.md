@@ -7,7 +7,7 @@
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
 ![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-purple.svg)
-[![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.1)](https://aur.archlinux.org/packages/grubforge)
+[![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.1-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
 

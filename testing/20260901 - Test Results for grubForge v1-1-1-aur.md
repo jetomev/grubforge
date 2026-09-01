@@ -12,7 +12,7 @@
 |---|---|
 | **11.9** | **PASS**, on Debian 13 — with a reboot as the final proof |
 | **AUR cut** | v1.1.1-1 pushed |
-| **New findings** | F5 (matrix step unrunnable on UEFI Arch), F6 (`nog` cannot install a local package file) |
+| **New findings** | F5 (matrix step unrunnable on UEFI Arch), F6 (`nog` cannot install a local package file), F7 (AUR badge cached the previous version — fixed same session) |
 | **Still not run** | 11.26–11.28, the Arch regression slice |
 
 ---
@@ -89,6 +89,22 @@ Because grubForge only falls back to the helper when reading `grub.cfg` raises `
 Installing a locally built `.pkg.tar.zst` is a step in the release process for every Forge package, so this gap is hit on every release, and the only way through is raw `pacman` — which the working agreement otherwise rules out on this machine.
 
 Encountered today installing `grubforge-1.1.1-1-any.pkg.tar.zst` before running 11.9. Filed against `nog`, not grubForge.
+
+---
+
+## F7 — the README AUR badge advertised 1.1.0 after 1.1.1 went live → **[#26](https://github.com/jetomev/grubforge/issues/26)** *(fixed and closed same session)*
+
+Caught by Javier asking whether the badge had been updated. It had — and that was the problem.
+
+`README.md` already carried the cache-buster `?v=1.1.1`, exactly as `RELEASE-CHECKLIST.md` required. Yet decoding the camo URL from the rendered README and fetching it three times returned `aur: v1.1.0-1` every time, while shields.io returned `aur: v1.1.1-1` for the byte-identical URL.
+
+The checklist listed the buster among the **version surfaces**, all of which are updated in the docs commit — which lands *before* the AUR push. So camo fetched the badge under the fresh `?v=1.1.1` key while the AUR still held 1.1.0, and cached that for its five-day `max-age`. The AUR push then changed the AUR but not the cache key.
+
+**The cache-buster did its job perfectly and cached the wrong answer.** The defect was the order of operations, not the value — which is precisely why a checklist gate written about this exact badge did not catch it.
+
+Fixed in `c17772e`: the badge now uses the full `pkgver-pkgrel` (`?v=1.1.1-1`) and is confirmed serving `aur: v1.1.1-1`. The checklist moves the buster to a post-push step and adds the command to read back what camo is actually serving, because a clean `git push` is not evidence here.
+
+This is the third finding today of the same shape — F5, F6 and F7 are all mechanisms that reported success while doing the wrong thing, or not running at all.
 
 ---
 

@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from grubforge import privilege
 from grubforge.privilege import HelperResult
+from grubforge.system import system_name
 
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -270,14 +271,16 @@ def _is_non_negative_int(s: str) -> bool:
 
 def _mock_grub_lines() -> list:
     """Return mock /etc/default/grub content for development and testing."""
-    return [line + "\n" for line in """\
+    # Same rule as the boot entry labels: name the machine we are on, never a
+    # distribution we assumed (issue #27).
+    return [line + "\n" for line in f"""\
 # GRUB boot loader configuration
 # (Mock config — /etc/default/grub not found on this system)
 
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=5
 GRUB_TIMEOUT_STYLE=menu
-GRUB_DISTRIBUTOR="Arch Linux"
+GRUB_DISTRIBUTOR="{system_name()}"
 GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"
 GRUB_CMDLINE_LINUX=""
 

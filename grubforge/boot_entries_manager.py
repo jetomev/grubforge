@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 from grubforge import privilege
 from grubforge.privilege import HelperResult
+from grubforge.system import system_name
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -55,8 +56,14 @@ class BootEntry:
 
     @property
     def source_label(self) -> str:
+        # 10_linux and 20_linux_xen find kernels on THIS machine, whatever it
+        # happens to be, so the label has to come from the machine rather than
+        # from an assumption. Hardcoding "Arch Linux" here labelled Debian's
+        # own boot entries as Arch for every non-Arch user (issue #27).
+        this_system = system_name()
         labels = {
-            "10_linux":           "Arch Linux",
+            "10_linux":           this_system,
+            "20_linux_xen":       f"{this_system} (Xen)",
             "30_os-prober":       "OS Prober",
             "30_uefi-firmware":   "UEFI",
             "41_snapshots-btrfs": "BTRFS Snapshots",
@@ -299,19 +306,21 @@ async def restore_original_order(capability=None) -> HelperResult:
 
 def _mock_entries() -> list:
     """Return mock boot entries when grub.cfg is not available."""
+    this_system = system_name()
     return [
         BootEntry(
-            title      = "Arch Linux",
+            title      = this_system,
             entry_type = "menuentry",
             source     = "10_linux",
-            raw_block  = 'menuentry "Arch Linux" {\n  echo "Loading Arch Linux"\n}',
+            raw_block  = f'menuentry "{this_system}" {{\n  echo "Loading {this_system}"\n}}',
         ),
         BootEntry(
-            title      = "Advanced options for Arch Linux",
+            title      = f"Advanced options for {this_system}",
             entry_type = "submenu",
             source     = "10_linux",
-            raw_block  = 'submenu "Advanced options for Arch Linux" {\n}',
-            children   = ["Arch Linux, with Linux linux-zen", "Arch Linux, with Linux linux-lts"],
+            raw_block  = f'submenu "Advanced options for {this_system}" {{\n}}',
+            children   = [f"{this_system}, with Linux linux-zen",
+                          f"{this_system}, with Linux linux-lts"],
         ),
         BootEntry(
             title      = "Windows Boot Manager",

@@ -69,6 +69,18 @@ _GRUB_KEY_RE = re.compile(r"^[A-Z_][A-Z0-9_]*=")
 # grubforge/boot_entries_manager.py, which parses what this helper returns.
 _MENUENTRY_RE = re.compile(r'^(menuentry|submenu)\s+[\'"]')
 
+# The only lines outside the menu blocks that read-entries passes through: the
+# markers saying which /etc/grub.d script produced each section, grubForge's
+# own origin lines in 40_custom, and its header mark (issue #28). Each is a
+# whole-line match against a fixed shape, so nothing else in grub.cfg can ride
+# along. Duplicated from grubforge/boot_entries_manager.py — keep in step.
+_PASSTHROUGH_RES = (
+    re.compile(r'^### BEGIN /etc/grub\.d/[A-Za-z0-9_.-]+ ###$'),
+    re.compile(r'^### END /etc/grub\.d/[A-Za-z0-9_.-]+ ###$'),
+    re.compile(r'^# grubforge-source: [A-Za-z0-9_.-]+( \(guessed\))?$'),
+    re.compile(r'^# This file is managed by grubForge\.$'),
+)
+
 # Generous next to a ~1 KB config, small enough that nothing can flood /etc.
 MAX_INPUT_BYTES = 1024 * 1024
 
@@ -387,7 +399,8 @@ def _extract_block(lines: list, start: int) -> tuple:
 
 def do_read_entries() -> None:
     """
-    Print the boot menu's top-level menuentry and submenu blocks, and nothing else.
+    Print the boot menu's top-level menuentry and submenu blocks, plus the few
+    marker lines that say where each one came from (_PASSTHROUGH_RES).
 
     grubForge reads /boot/grub/grub.cfg as your user. Some distributions ship it
     readable only by root, and that read then fails — so grubForge could not show
@@ -411,11 +424,14 @@ def do_read_entries() -> None:
     i      = 0
 
     while i < len(lines):
-        if _MENUENTRY_RE.match(lines[i].strip()):
+        stripped = lines[i].strip()
+        if _MENUENTRY_RE.match(stripped):
             block, end = _extract_block(lines, i)
             blocks.append(block)
             i = end + 1
             continue
+        if any(r.match(stripped) for r in _PASSTHROUGH_RES):
+            blocks.append(stripped)
         i += 1
 
     if blocks:

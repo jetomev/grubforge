@@ -35,6 +35,24 @@ exec tail -n +3 $0
 
 """
 
+# grub-mkconfig wraps each /etc/grub.d script's output in these markers, so
+# grub.cfg itself says which script produced every entry (issue #28).
+SECTION_BEGIN_RE = re.compile(r'^### BEGIN /etc/grub\.d/([A-Za-z0-9_.-]+) ###$')
+SECTION_END_RE   = re.compile(r'^### END /etc/grub\.d/([A-Za-z0-9_.-]+) ###$')
+
+# Saving a custom order moves every entry into 40_custom, where the markers can
+# only say "40_custom". So grubForge writes where each entry originally came
+# from on the line above it, and reads it back. 40_custom starts with
+# `exec tail -n +3 $0`, so these lines reach grub.cfg as comments, which GRUB
+# ignores. " (guessed)" marks an origin grubForge could not read.
+ORIGIN_PREFIX    = "# grubforge-source: "
+ORIGIN_RE        = re.compile(r'^# grubforge-source: ([A-Za-z0-9_.-]+)( \(guessed\))?$')
+
+# The third line of CUSTOM_40_HEADER, and the first one tail prints. Seeing it
+# in grub.cfg means grubForge wrote that 40_custom, even one saved before
+# origin lines existed.
+MANAGED_MARK     = "# This file is managed by grubForge."
+
 
 # ── Data model ────────────────────────────────────────────────────────────────
 
@@ -47,6 +65,11 @@ class BootEntry:
     raw_block:  str        # full menuentry { ... } block
     children:   list = field(default_factory=list)  # for submenus
     enabled:    bool = True
+    # Held in grubForge's saved custom order (40_custom). `source` still names
+    # where the entry originally came from: that is what "Source" means (#28).
+    in_custom_order: bool = False
+    # The source was inferred from the title, not read from grub.cfg.
+    source_guessed:  bool = False
 
     @property
     def display_title(self) -> str:
@@ -69,7 +92,12 @@ class BootEntry:
             "41_snapshots-btrfs": "BTRFS Snapshots",
             "40_custom":          "Custom",
         }
-        return labels.get(self.source, self.source)
+        label = labels.get(self.source, self.source)
+        if self.source_guessed:
+            label += " (guessed)"
+        if self.in_custom_order and self.source != "40_custom":
+            label += " · custom order"
+        return label
 
 
 # ── Parser ────────────────────────────────────────────────────────────────────
@@ -124,13 +152,42 @@ async def parse_boot_entries_privileged(capability=None) -> tuple:
 
 
 def parse_entries_text(text: str) -> list:
-    """Parse grub.cfg content into BootEntry objects — top-level blocks only."""
-    entries = []
-    lines   = text.splitlines()
-    i       = 0
+    """
+    Parse grub.cfg content into BootEntry objects — top-level blocks only.
+
+    Each entry's source is read from the section markers grub-mkconfig writes
+    around every script's output. Inside grubForge's own 40_custom it comes
+    from the origin line written above the entry. Only when neither exists (a
+    hand-written grub.cfg, or an order saved before v1.1.3) is it guessed.
+    """
+    entries    = []
+    lines      = text.splitlines()
+    i          = 0
+    section    = None    # the /etc/grub.d script whose output we are inside
+    managed_40 = False   # this 40_custom was written by grubForge
+    origin     = None    # (script, guessed) from the line above the next entry
 
     while i < len(lines):
         line = lines[i].strip()
+
+        begin = SECTION_BEGIN_RE.match(line)
+        if begin:
+            section, managed_40, origin = begin.group(1), False, None
+            i += 1
+            continue
+        if SECTION_END_RE.match(line):
+            section, managed_40, origin = None, False, None
+            i += 1
+            continue
+        mark = ORIGIN_RE.match(line)
+        if mark:
+            origin = (mark.group(1), bool(mark.group(2)))
+            i += 1
+            continue
+        if line == MANAGED_MARK:
+            managed_40 = True
+            i += 1
+            continue
 
         # Skip the menuentry_id_option lines and exports
         if line.startswith("if") or line.startswith("export") or \
@@ -146,13 +203,17 @@ def parse_entries_text(text: str) -> list:
 
             # Grab the full block
             block, end_i = _extract_block(lines, i)
-            source       = _guess_source(title, entry_type)
+            source, guessed, custom = _resolve_source(
+                title, entry_type, section, managed_40, origin)
+            origin = None
 
             entry = BootEntry(
-                title      = title,
-                entry_type = entry_type,
-                source     = source,
-                raw_block  = block,
+                title           = title,
+                entry_type      = entry_type,
+                source          = source,
+                raw_block       = block,
+                in_custom_order = custom,
+                source_guessed  = guessed,
             )
 
             # If submenu, parse children
@@ -196,10 +257,37 @@ def _parse_submenu_children(block: str) -> list:
     return children
 
 
+def _resolve_source(title, entry_type, section, managed_40, origin) -> tuple:
+    """
+    Work out where an entry came from. Returns (source, guessed, in_custom_order).
+    """
+    if section is None:
+        # No markers at all: a grub.cfg not written by grub-mkconfig.
+        return _guess_source(title, entry_type), True, False
+
+    if section != "40_custom":
+        return section, False, False
+
+    if origin:
+        script, guessed = origin
+        return script, guessed, script != "40_custom"
+
+    if managed_40:
+        # Saved by grubForge before origin lines existed. The entry did come
+        # from somewhere else, and the title is all that is left to go on.
+        return _guess_source(title, entry_type), True, True
+
+    # Someone's own hand-written 40_custom entry.
+    return "40_custom", False, False
+
+
 def _guess_source(title: str, entry_type: str) -> str:
-    """Guess which grub.d script generated this entry."""
+    """Guess which grub.d script generated this entry, from its title alone."""
     title_lower = title.lower()
     if "windows" in title_lower:
+        return "30_os-prober"
+    # os-prober titles every system it finds "<name> (on /dev/<device>)".
+    if re.search(r'\(on /dev/[^)]+\)\s*$', title):
         return "30_os-prober"
     if "uefi" in title_lower or "firmware" in title_lower:
         return "30_uefi-firmware"
@@ -223,10 +311,23 @@ def render_custom_order(entries: list) -> str:
 
     for entry in entries:
         if entry.enabled:
+            lines.append(_origin_line(entry))
             lines.append(entry.raw_block)
             lines.append("")
 
     return "\n".join(lines)
+
+
+def _origin_line(entry: BootEntry) -> str:
+    """The line above an entry in 40_custom that records where it came from."""
+    source = entry.source
+    if not re.fullmatch(r'[A-Za-z0-9_.-]+', source or ""):
+        # Never write something the reader would not accept back — and never a
+        # newline into a file that GRUB and the shell both read.
+        source, guessed = "40_custom", False
+    else:
+        guessed = entry.source_guessed
+    return ORIGIN_PREFIX + source + (" (guessed)" if guessed else "")
 
 
 async def write_custom_order(entries: list, capability=None) -> HelperResult:
@@ -363,6 +464,8 @@ def rename_entry(entry: BootEntry, new_title: str) -> BootEntry:
         raw_block  = new_raw,
         children   = entry.children,
         enabled    = entry.enabled,
+        in_custom_order = entry.in_custom_order,
+        source_guessed  = entry.source_guessed,
     )
     
 # ── Custom entry templates ────────────────────────────────────────────────────

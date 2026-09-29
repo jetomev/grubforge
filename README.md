@@ -232,6 +232,7 @@ grubforge/
 |   |-- org.kognogos.grubforge.policy   # What permission is asked for, and how
 |-- docs/                        # Changelog, and how this project is built
 |-- screenshots/
+|-- tests/                       # Automated checks — python tests/test_boot_entry_sources.py
 |-- testing/                     # Test matrix, results and release checklist per version
 |-- LICENSE
 ```

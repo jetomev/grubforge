@@ -123,6 +123,25 @@ diff <(sed -n '/^def _extract_block/,/^    return "..".join(block), i/p' grubfor
 
 Only the docstrings should differ — the code lines must match exactly.
 
+Since v1.1.3 `read-entries` also passes a few lines through besides the blocks:
+the `### BEGIN/END /etc/grub.d/… ###` markers and grubForge's own origin lines
+(#28). The helper's `_PASSTHROUGH_RES` must accept exactly what the parser's
+`SECTION_BEGIN_RE`, `SECTION_END_RE`, `ORIGIN_RE` and `MANAGED_MARK` read — and
+nothing wider, because anything it accepts leaves a root-only file.
+
+```bash
+grep -n "_RE *=\|MANAGED_MARK *=" grubforge/boot_entries_manager.py
+grep -n -A6 "_PASSTHROUGH_RES = (" helper/grubforge-helper
+python tests/test_boot_entry_sources.py      # section 8 covers the helper
+```
+
+## Tests (v1.1.3+)
+
+`python tests/test_boot_entry_sources.py` must end with *all checks passed*. It
+needs no root and no real `grub.cfg`, and the AUR `check()` runs it too. **Run it
+against the previous release as well** — a new check that also passes on the old
+code is not testing the change.
+
 ## Non-Arch install path (v1.1.1+)
 
 `install-helper.sh` is the only way a user on a distribution without a package

@@ -94,6 +94,29 @@ Memtest, Blank). Custom order is written to
 Includes OS detection via
 .BR os-prober (8).
 .PP
+Each entry shows its
+.BR source :
+the
+.I /etc/grub.d
+script it originally came from, read from the
+.B ### BEGIN
+markers
+.B grub-mkconfig
+writes into
+.IR grub.cfg .
+After a custom order is saved, entries keep their original source and
+are marked
+.BR "custom order" ;
+grubForge records the origin on a
+.B # grubforge-source:
+comment line above each entry in
+.IR 40_custom .
+Where no marker or comment exists \(em an order saved before v1.1.3, or a
+hand-written
+.I grub.cfg
+\(em the source is inferred from the title and marked
+.BR (guessed) .
+.PP
 .B Caveat \- kernel updates while custom order is active.
 While a custom boot order is saved, the auto-generate scripts
 .RI ( 10_linux ,

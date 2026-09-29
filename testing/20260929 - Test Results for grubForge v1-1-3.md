@@ -12,7 +12,7 @@
 | **§1 automated** | **PASS**, 25/25. Against v1.1.2: **fails** on the os-prober Linux case, then crashes on the new fields, as it should |
 | **§2 this desktop** | **PASS**, all four |
 | **§3 gates** | **PASS** — double-wrap, `_extract_block`, constants, pass-through ↔ parser patterns, helper refusals (non-root `read-entries` included), tests 25/25, version sync 1.1.3 |
-| **§4 installed package** | recorded after the AUR cut |
+| **§4 installed package** | **PASS**, all four — through `nog`, then again from the AUR |
 | **New findings** | none. #20 became *visible* (below) |
 
 ---
@@ -35,6 +35,17 @@ The last two rows are [#20](https://github.com/jetomev/grubforge/issues/20) on s
 - **2.2** — the helper's output parses to the identical list. The only non-block lines it passed were section markers and `# This file is managed by grubForge.`
 - **2.3** — a `40_custom` rendered from these real entries, emitted by `sh`, carries 7 origin lines; `grub-script-check` accepts it with and without them, and rejects a deliberately unterminated `menuentry` (exit 1), so the checker was genuinely checking.
 - **2.4** — screenshot reviewed: the longest label, *"BTRFS Snapshots (guessed) · custom order"*, fits the list and the detail pane.
+
+## §4 — the installed package
+
+| ID | Result |
+|---|---|
+| 4.1 | **PASS** — sha256 `3507a660…` (matches the asset downloaded back from GitHub), signature good; `check()`: headless mount OK, helper refusals OK, **25/25 tests**. |
+| 4.2 | **PASS** — `nog install ./grubforge-1.1.3-1-any.pkg.tar.zst` → `1.1.3-1`; helper `root:root 755` and byte-identical to the v1.1.3 source. |
+| 4.3 | **PASS** — the installed app shows the same sources as §2. |
+| 4.4 | **PASS** — AUR RPC `1.1.3-1` about 2 minutes after the push; README badges decoded from camo read `Version: 1.1.3` and `aur: v1.1.3-1`. |
+
+**Public install path:** reinstalled from the AUR with a clean build — signature verified, all three `check()` stages passed, `1.1.3-1` installed. (Done with `yay … --noconfirm` directly; `nog install` of an AUR package cannot run without a terminal — nog #26.)
 
 ## Not run, and why
 

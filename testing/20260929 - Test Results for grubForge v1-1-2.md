@@ -61,7 +61,7 @@ All eight **PASS**. One false alarm worth recording: a literal search for the he
 
 ### Finding in nog, not grubForge
 
-`nog install grubforge` handed off to yay correctly, but yay stopped at its *"Packages to cleanBuild?"* menu. With no terminal attached there is nobody to answer it, and nog has no way to pass yay's `--noconfirm`. In a normal terminal this is simply answered, so it is not a bug in ordinary use. It does mean an AUR install through nog cannot be scripted. The reinstall was done with `yay -S grubforge --noconfirm --rebuild --sudoflags=-A` for that reason.
+`nog install grubforge` handed off to yay correctly, but yay stopped at its *"Packages to cleanBuild?"* menu. With no terminal attached there is nobody to answer it, and nog has no way to pass yay's `--noconfirm`. In a normal terminal this is simply answered, so it is not a bug in ordinary use. It does mean an AUR install through nog cannot be scripted. The reinstall was done with `yay -S grubforge --noconfirm --rebuild --sudoflags=-A` for that reason. Filed as [nog#26](https://github.com/jetomev/nog/issues/26).
 
 ## Not run, and why
 

@@ -49,7 +49,7 @@ BREADCRUMBS = {
     "boot-entries":   "grubForge › Boot Entries",
 }
 
-VERSION = "v1.1.1"
+VERSION = "v1.1.2"
 
 
 # ── App ───────────────────────────────────────────────────────────────────────

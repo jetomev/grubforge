@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-purple.svg)
+![Version: 1.1.2](https://img.shields.io/badge/Version-1.1.2-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.1-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
@@ -222,6 +222,7 @@ grubforge/
 |   |-- backup_manager.py        # Create, list, restore and delete backups
 |   |-- theme_manager.py         # Finds themes and reads their colours
 |   |-- boot_entries_manager.py  # Boot entry parsing and reordering
+|   |-- system.py                # Which system this is, read from /etc/os-release
 |   |-- grubforge.css            # Catppuccin Mocha styling
 |   |-- screens/                 # One file per screen
 |   |-- widgets/                 # Shared components
@@ -295,7 +296,11 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ## Roadmap
 
-### Next — v2.0.0: rebuild on forgekit
+### Next — v1.1.3: say where each boot entry really comes from
+
+- [ ] **Read the source instead of guessing it** ([#28](https://github.com/jetomev/grubforge/issues/28)) — today the source is guessed from the entry's title, so another Linux found on the disk is credited to this system. `grub.cfg` already says which script produced each entry; grubForge will read that. After a custom order is saved, it will keep showing where each entry originally came from, marked as held in the custom order, rather than every line turning into "Custom".
+
+### Then — v2.0.0: rebuild on forgekit
 
 - [ ] **Move onto [forgekit](https://github.com/jetomev/forgekit)**, the shared foundation the other Forge apps already use. grubForge is the last one still carrying its own hand-built menus, dialogs and styling — several hundred lines that exist in one form here and a better form in the shared library.
 
@@ -312,6 +317,7 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ### Done
 
+- [x] **v1.1.2** — boot entries name the system they are on, read from `/etc/os-release`, instead of assuming Arch Linux ([#27](https://github.com/jetomev/grubforge/issues/27))
 - [x] **v1.1.1** — reads the boot menu through polkit when `grub.cfg` is root-only, instead of reporting it empty ([#23](https://github.com/jetomev/grubforge/issues/23))
 - [x] **v1.1.0** — runs as your user and asks permission through polkit, instead of needing `sudo` for the whole application ([#18](https://github.com/jetomev/grubforge/issues/18))
 - [x] **v1.0.3** — UX batch closing 15 findings from the v1.0.1 retest
@@ -322,6 +328,24 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 ---
 
 ## Changelog
+
+### v1.1.2 — September 29, 2026
+
+**grubForge told Debian users their own system was Arch Linux.**
+
+[@jfp42](https://github.com/jfp42) filed [#27](https://github.com/jetomev/grubforge/issues/27): on Debian, the Boot Entries screen labelled Debian's own kernels `source: Arch Linux`. The label for `10_linux` — the GRUB script that finds the kernels installed on whatever machine it runs on — was written into the code as "Arch Linux". That is only true on Arch.
+
+It was wrong closer to home too. On a KognogOS machine, which is built on Arch but is not Arch, the same entries read "Arch Linux" instead of "KognogOS".
+
+- 🏷 **The system names itself.** grubForge now reads the name from `/etc/os-release`, the same file GRUB itself uses to title the entries. Debian reads "Debian GNU/Linux", Fedora "Fedora Linux", KognogOS "KognogOS", Arch still "Arch Linux".
+- 🤷 **When it can't tell, it says so.** If `/etc/os-release` is missing or unreadable, the label is a neutral "This system" rather than a distribution grubForge has not confirmed.
+- 🧩 **Xen entries get a name too.** `20_linux_xen` had no label at all and now follows the same rule, as "<your system> (Xen)".
+
+Verified on a stock Debian 13 virtual machine before and after the change, and on a KognogOS desktop. Entries from other scripts (other systems found on the disk, firmware settings, snapshots, custom entries) are unchanged.
+
+**Known and next:** the *source* underneath the label is still guessed from the entry's title, so another Linux found on the disk is credited to this system ([#28](https://github.com/jetomev/grubforge/issues/28)). That is the next release.
+
+No new dependencies. One new file: `grubforge/system.py`.
 
 ### v1.1.1 — August 31, 2026
 
@@ -340,27 +364,6 @@ Checking the report on a stock Debian 13 virtual machine turned out worse than t
 The `chmod a+r /boot/grub/grub.cfg` workaround is no longer needed — and was never a good trade, since it exposes the file to every account on the machine.
 
 No new dependencies. One new file: `install-helper.sh`, for distributions that have no grubForge package.
-
-### v1.1.0 — August 2026
-
-**grubForge stopped needing `sudo`.**
-
-Until now, saving anything meant launching the whole application as root. Every screen, every widget, and every third-party library underneath it ran with full system privileges — in order to write one text file. [@marco-gallegos](https://github.com/marco-gallegos) filed [#18](https://github.com/jetomev/grubforge/issues/18) saying so, and was right.
-
-grubForge now runs as your normal user and asks for permission one action at a time, through **polkit**. Your desktop draws the password dialog; you type your own password, not root's; and grubForge never sees it.
-
-- 🔐 **A privileged helper with a fixed vocabulary.** The only part that runs as root is a small standalone script accepting nine specific jobs — save the config, rebuild the boot menu, create/restore/delete a backup, enable/disable a generator script, scan for other systems. It cannot be handed a command to run, because a helper that could would just be a way to run anything as root.
-- 🛡 **It re-checks everything it's given.** Settings files must contain only `KEY=value` lines — `grub-mkconfig` *sources* that file as shell, so anything else would mean running arbitrary code as root. Backup names must match the exact pattern grubForge generates and must still resolve inside the backup directory after symlinks. Only the four GRUB scripts grubForge manages can be touched, by name.
-- ✍️ **Config writes are atomic.** Written to a temporary file, then renamed into place, so an interrupted save can never leave you with half a `/etc/default/grub` — which is a machine that doesn't boot.
-- 💬 **You're told before you're asked.** Confirmation dialogs say when a password is coming, so it never arrives as a surprise. Cancelling the dialog reports *"Cancelled — nothing was changed"* rather than an error, because nothing did go wrong.
-- ⏳ **One prompt per job.** polkit remembers for a few minutes, so saving a setting and rebuilding the boot menu asks once, not twice. Repeated prompting for one task teaches people to type their password without reading it.
-- 🖥 **The interface stays alive while you type.** Privileged work now runs off the event loop. Previously the whole TUI froze during `grub-mkconfig`; with a password dialog on screen for twenty seconds, a frozen interface would read as a crash.
-- 📦 **grubForge no longer installs packages for you.** The "Install os-prober" button used to run `pacman -S --noconfirm os-prober` as root. Installing software is far broader than editing a bootloader config, and it's your package manager's job. The button now shows you the command.
-- 🚦 **The read-only badge means something new.** It used to mean "you aren't root". It now means "permission cannot be requested here" — no polkit, no helper installed, or no desktop session — and it tells you which, and what to do about it.
-
-`sudo grubforge` still works and skips the prompts. On a console or over SSH, where there's no window to show a dialog in, that's the way to make changes — and grubForge says so instead of failing mysteriously.
-
-New dependency: `polkit`.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 
@@ -396,6 +399,6 @@ grubForge is free software, released under the **GNU General Public License v3.0
 
 Contributions are welcome — open an issue or a pull request.
 
-Bug reports are genuinely valued here. Three of the releases above exist because somebody outside the project took the time to write one — two of them from the same person.
+Bug reports are genuinely valued here. Four of the releases above exist because somebody outside the project took the time to write one — three of them from the same person.
 
 If you find grubForge useful, a star helps others find it.

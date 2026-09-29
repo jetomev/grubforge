@@ -2,6 +2,24 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v1.1.2 — September 29, 2026
+
+**grubForge told Debian users their own system was Arch Linux.**
+
+[@jfp42](https://github.com/jfp42) filed [#27](https://github.com/jetomev/grubforge/issues/27): on Debian, the Boot Entries screen labelled Debian's own kernels `source: Arch Linux`. The label for `10_linux` — the GRUB script that finds the kernels installed on whatever machine it runs on — was written into the code as "Arch Linux". That is only true on Arch.
+
+It was wrong closer to home too. On a KognogOS machine, which is built on Arch but is not Arch, the same entries read "Arch Linux" instead of "KognogOS".
+
+- 🏷 **The system names itself.** grubForge now reads the name from `/etc/os-release`, the same file GRUB itself uses to title the entries. Debian reads "Debian GNU/Linux", Fedora "Fedora Linux", KognogOS "KognogOS", Arch still "Arch Linux".
+- 🤷 **When it can't tell, it says so.** If `/etc/os-release` is missing or unreadable, the label is a neutral "This system" rather than a distribution grubForge has not confirmed.
+- 🧩 **Xen entries get a name too.** `20_linux_xen` had no label at all and now follows the same rule, as "<your system> (Xen)".
+
+Verified on a stock Debian 13 virtual machine before and after the change, and on a KognogOS desktop. Entries from other scripts (other systems found on the disk, firmware settings, snapshots, custom entries) are unchanged.
+
+**Known and next:** the *source* underneath the label is still guessed from the entry's title, so another Linux found on the disk is credited to this system ([#28](https://github.com/jetomev/grubforge/issues/28)). That is the next release.
+
+No new dependencies. One new file: `grubforge/system.py`.
+
 ### v1.1.1 — August 31, 2026
 
 **grubForge could not read a boot menu it was not allowed to open — and reported that there wasn't one.**

@@ -12,8 +12,8 @@
 | **§1 on Debian** | **PASS** — run 2026-09-15 on the `debian13-grubforge` VM against `776079e`, the same code this release ships |
 | **§2 elsewhere** | **PASS** — including a finding: KognogOS was mislabelled too |
 | **§3 gates** | **PASS**, all eight |
-| **§4 installed package** | recorded after the AUR cut, below |
-| **New findings** | none |
+| **§4 installed package** | **PASS**, all five — installed through `nog`, then again from the AUR |
+| **New findings** | none in grubForge. One in nog, from installing it (below). |
 
 ---
 
@@ -42,6 +42,26 @@ Measured before and after the change on stock Debian 13:
 ## §3 — release gates
 
 All eight **PASS**. One false alarm worth recording: a literal search for the helper path found it in three of four files. `install-helper.sh` and the PKGBUILD build the same path from two parts (`HELPER_DIR=/usr/lib/grubforge` + `/grubforge-helper`; `${pkgdir}/usr/lib/${pkgname}/grubforge-helper`). All four agree.
+
+## §4 — the installed package (2026-09-29)
+
+| ID | Result |
+|---|---|
+| 4.1 | **PASS** — `makepkg` from the signed release asset: sha256 `2680d4a8…`, signature good, headless mount OK, helper refusal checks OK. The asset downloaded back from GitHub matched the local build. The recipe was first proven by rebuilding v1.1.1's asset byte-for-byte. |
+| 4.2 | **PASS** — installed with `nog install ./grubforge-1.1.2-1-any.pkg.tar.zst` (nog 1.5.1, classed Tier 2). `grubforge 1.1.2-1`, `__version__` 1.1.2, man page `grubForge v1.1.2`. |
+| 4.3 | **PASS** — helper `root:root 755`, owned by `grubforge 1.1.2-1`; `org.kognogos.grubforge.manage` registered. |
+| 4.4 | **PASS** — the installed app labels this desktop's entries `KognogOS`. |
+| 4.5 | **PASS** — AUR RPC `1.1.2-1` (the index lagged the push by several minutes); README badges decoded from camo read `Version: 1.1.2` and `aur: v1.1.2-1`. |
+
+**Public install path:** reinstalled from the AUR with a clean build — signature verified, `check()` passed, `1.1.2-1` installed.
+
+### Observed, not new
+
+- The desktop's boot menu lists **"KognogOS snapshots" twice.** This is consistent with [#20](https://github.com/jetomev/grubforge/issues/20) (unmanaged generators duplicated after a saved custom order) on a desktop known to be in frozen-entries mode. Not investigated further in this release.
+
+### Finding in nog, not grubForge
+
+`nog install grubforge` handed off to yay correctly, but yay stopped at its *"Packages to cleanBuild?"* menu. With no terminal attached there is nobody to answer it, and nog has no way to pass yay's `--noconfirm`. In a normal terminal this is simply answered, so it is not a bug in ordinary use. It does mean an AUR install through nog cannot be scripted. The reinstall was done with `yay -S grubforge --noconfirm --rebuild --sudoflags=-A` for that reason.
 
 ## Not run, and why
 

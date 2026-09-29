@@ -2,6 +2,22 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v1.1.3 — September 29, 2026
+
+**grubForge now reads where each boot entry comes from, instead of guessing.**
+
+The Boot Entries screen shows a *source* under every entry. It was guessed from the entry's title: anything without "windows", "uefi" or "snapshot" in its name was credited to this system. So a second Linux found on the disk — Ubuntu next to Debian, Fedora next to Arch — was listed as if it were your own. Found while fixing [#27](https://github.com/jetomev/grubforge/issues/27), filed as [#28](https://github.com/jetomev/grubforge/issues/28).
+
+- 📖 **Read, not guessed.** `grub-mkconfig` already writes which script produced each section of `grub.cfg`. grubForge now reads that, so the Ubuntu found by os-prober reads "OS Prober", and your own kernels read your system's name.
+- 🔁 **The source survives a custom order.** Saving an order moves every entry into one file, `40_custom`. Read literally, every entry would then say "Custom", which tells you nothing. grubForge now writes a one-line note above each entry recording where it came from, and shows it as *"OS Prober · custom order"*. GRUB treats the note as a comment and ignores it.
+- 🤷 **When it has to guess, it says so.** An order saved by an earlier grubForge carries no notes, so those entries read *"(guessed)"* until you save the order again. The guess itself is better: os-prober always names what it finds "… (on /dev/…)", and grubForge now recognises that.
+- 🛠 **Saving switches off the right scripts.** The source also decides which GRUB scripts a save turns off. A second Linux wrongly credited to this system left the os-prober script running, which could list it twice. It is now switched off with the rest.
+- 🔐 **The root helper passes the new lines, and nothing else.** On systems where `grub.cfg` is readable only by root, the helper now hands back the section markers and notes too, each matched against one fixed shape. The rest of the file, including any password hash, still never leaves.
+
+Also new: `tests/`, 25 automated checks that need no root and run during every AUR build.
+
+No new dependencies.
+
 ### v1.1.2 — September 29, 2026
 
 **grubForge told Debian users their own system was Arch Linux.**

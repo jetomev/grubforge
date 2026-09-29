@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.1.2](https://img.shields.io/badge/Version-1.1.2-purple.svg)
+![Version: 1.1.3](https://img.shields.io/badge/Version-1.1.3-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.2-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
@@ -35,7 +35,7 @@ It came out of a simple frustration: why is one of the most critical parts of a 
 - 🏠 **Dashboard** — what your GRUB setup currently looks like, and a live indicator that warns you when your boot menu is out of date with your settings
 - 🔧 **Config Editor** — every GRUB setting with an explanation, checked as you type. Required and optional settings are distinguished, so optional ones can be cleared.
 - 🎨 **Theme Browser** — browse the themes you have installed, preview their colours, apply one with a keystroke, and get help installing more
-- 🖥 **Boot Entries** — reorder, rename, and create entries, find your other operating systems, save a custom order, and restore the original whenever you want
+- 🖥 **Boot Entries** — see where every entry comes from, reorder, rename, and create entries, find your other operating systems, save a custom order, and restore the original whenever you want
 - 🗂 **Backup & Restore** — a timestamped backup before every change, kept to the 10 most recent, restorable from inside the app
 - 🔄 **Rebuild the boot menu** in one keystroke after any change
 - ⌨️ **Consistent keys** — Edit, Save, Apply, Refresh and Regenerate work from every screen. Screen-specific keys never clash with them.
@@ -297,11 +297,7 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ## Roadmap
 
-### Next — v1.1.3: say where each boot entry really comes from
-
-- [ ] **Read the source instead of guessing it** ([#28](https://github.com/jetomev/grubforge/issues/28)) — today the source is guessed from the entry's title, so another Linux found on the disk is credited to this system. `grub.cfg` already says which script produced each entry; grubForge will read that. After a custom order is saved, it will keep showing where each entry originally came from, marked as held in the custom order, rather than every line turning into "Custom".
-
-### Then — v2.0.0: rebuild on forgekit
+### Next — v2.0.0: rebuild on forgekit
 
 - [ ] **Move onto [forgekit](https://github.com/jetomev/forgekit)**, the shared foundation the other Forge apps already use. grubForge is the last one still carrying its own hand-built menus, dialogs and styling — several hundred lines that exist in one form here and a better form in the shared library.
 
@@ -318,6 +314,7 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 
 ### Done
 
+- [x] **v1.1.3** — reads where each boot entry comes from instead of guessing it, and keeps it through a custom order ([#28](https://github.com/jetomev/grubforge/issues/28))
 - [x] **v1.1.2** — boot entries name the system they are on, read from `/etc/os-release`, instead of assuming Arch Linux ([#27](https://github.com/jetomev/grubforge/issues/27))
 - [x] **v1.1.1** — reads the boot menu through polkit when `grub.cfg` is root-only, instead of reporting it empty ([#23](https://github.com/jetomev/grubforge/issues/23))
 - [x] **v1.1.0** — runs as your user and asks permission through polkit, instead of needing `sudo` for the whole application ([#18](https://github.com/jetomev/grubforge/issues/18))
@@ -329,6 +326,22 @@ grubForge is a human and AI collaboration, and we've written down how that actua
 ---
 
 ## Changelog
+
+### v1.1.3 — September 29, 2026
+
+**grubForge now reads where each boot entry comes from, instead of guessing.**
+
+The Boot Entries screen shows a *source* under every entry. It was guessed from the entry's title: anything without "windows", "uefi" or "snapshot" in its name was credited to this system. So a second Linux found on the disk — Ubuntu next to Debian, Fedora next to Arch — was listed as if it were your own. Found while fixing [#27](https://github.com/jetomev/grubforge/issues/27), filed as [#28](https://github.com/jetomev/grubforge/issues/28).
+
+- 📖 **Read, not guessed.** `grub-mkconfig` already writes which script produced each section of `grub.cfg`. grubForge now reads that, so the Ubuntu found by os-prober reads "OS Prober", and your own kernels read your system's name.
+- 🔁 **The source survives a custom order.** Saving an order moves every entry into one file, `40_custom`. Read literally, every entry would then say "Custom", which tells you nothing. grubForge now writes a one-line note above each entry recording where it came from, and shows it as *"OS Prober · custom order"*. GRUB treats the note as a comment and ignores it.
+- 🤷 **When it has to guess, it says so.** An order saved by an earlier grubForge carries no notes, so those entries read *"(guessed)"* until you save the order again. The guess itself is better: os-prober always names what it finds "… (on /dev/…)", and grubForge now recognises that.
+- 🛠 **Saving switches off the right scripts.** The source also decides which GRUB scripts a save turns off. A second Linux wrongly credited to this system left the os-prober script running, which could list it twice. It is now switched off with the rest.
+- 🔐 **The root helper passes the new lines, and nothing else.** On systems where `grub.cfg` is readable only by root, the helper now hands back the section markers and notes too, each matched against one fixed shape. The rest of the file, including any password hash, still never leaves.
+
+Also new: `tests/`, 25 automated checks that need no root and run during every AUR build.
+
+No new dependencies.
 
 ### v1.1.2 — September 29, 2026
 
@@ -347,24 +360,6 @@ Verified on a stock Debian 13 virtual machine before and after the change, and o
 **Known and next:** the *source* underneath the label is still guessed from the entry's title, so another Linux found on the disk is credited to this system ([#28](https://github.com/jetomev/grubforge/issues/28)). That is the next release.
 
 No new dependencies. One new file: `grubforge/system.py`.
-
-### v1.1.1 — August 31, 2026
-
-**grubForge could not read a boot menu it was not allowed to open — and reported that there wasn't one.**
-
-[@jfp42](https://github.com/jfp42) filed [#23](https://github.com/jetomev/grubforge/issues/23): on a laptop where `/boot/grub/grub.cfg` is readable only by root, grubForge showed **"Boot entries 0 detected"**. The file was full of boot entries. grubForge never got to look, and presented that as an answer.
-
-Checking the report on a stock Debian 13 virtual machine turned out worse than the report. Debian ships `/boot/grub/grub.cfg` as `rw-------` by default — no GRUB password configured, nothing hardened, just the default. **Every Debian user has been shown an empty boot menu and told that was the truth.** One person wrote in; the rest presumably concluded grubForge was broken and moved on.
-
-- 🔍 **"I couldn't read it" and "there's nothing there" are now different answers.** Both places that load the boot menu caught the permission error and returned an empty list, which is how a locked file came to look like an empty one. The Dashboard now says the file is readable only by root, and Boot Entries says so too instead of showing an empty menu.
-- 🔐 **The boot menu is read through the privileged helper when the ordinary read is refused.** A tenth verb, `read-entries` — the same polkit prompt you already get when saving. Where `grub.cfg` is world-readable, Arch included, nothing changes and nobody is asked for anything.
-- 🙈 **The helper hands back only the menu blocks, never the whole file.** The part above them can carry a `password_pbkdf2` hash, which is one of the reasons some distributions lock the file down to begin with. Drawing a list of boot entries is no reason to hand that to an unprivileged process.
-- 🚫 **No password prompt merely for opening the app.** The Dashboard reports the situation and leaves it there. The prompt comes when you open Boot Entries to actually do something — on opening the screen, with nothing to press.
-- 📦 **Distributions without a package can install the helper.** `install-helper.sh` puts the helper and the polkit rule where polkit requires them. Without it, everyone outside Arch was stuck read-only — which, on Debian, meant no boot menu at all. This is the part that makes the fix reach the person who reported it.
-
-The `chmod a+r /boot/grub/grub.cfg` workaround is no longer needed — and was never a good trade, since it exposes the file to every account on the machine.
-
-No new dependencies. One new file: `install-helper.sh`, for distributions that have no grubForge package.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 

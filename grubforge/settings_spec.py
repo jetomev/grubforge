@@ -172,6 +172,8 @@ def display(setting: Setting, raw: str | None, choices: list | None = None) -> s
         return "On" if switch_is_on(setting, raw) else "Off"
     if setting.key == "GRUB_TIMEOUT":
         return "wait forever" if raw.strip() == "-1" else f"{raw} second{'' if raw.strip() == '1' else 's'}"
+    if setting.key == "GRUB_THEME" and raw.endswith("theme.txt"):
+        return raw.rstrip("/").split("/")[-2]
     if setting.key == "GRUB_GFXMODE" and raw == "auto":
         return "automatic"
     if setting.key == "GRUB_DEFAULT":

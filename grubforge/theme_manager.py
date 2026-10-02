@@ -43,17 +43,20 @@ class GrubTheme:
 
 # ── Core functions ────────────────────────────────────────────────────────────
 
-def list_themes() -> list:
+def list_themes(themes_dir: Path | None = None) -> list:
     """
-    Scan THEMES_DIR and return all valid GRUB themes found.
+    Scan the themes folder and return all valid GRUB themes found.
     A valid theme is a subdirectory containing a theme.txt file.
     Returns an empty list if the directory does not exist.
+    v2.0.0: ``themes_dir`` comes from grubenv (/boot/grub2/themes on
+    Fedora/openSUSE-style systems).
     """
-    if not THEMES_DIR.exists():
+    folder = themes_dir or THEMES_DIR
+    if not folder.exists():
         return []
 
     themes = []
-    for entry in sorted(THEMES_DIR.iterdir()):
+    for entry in sorted(folder.iterdir()):
         if not entry.is_dir():
             continue
         theme_txt = entry / "theme.txt"

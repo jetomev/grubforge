@@ -31,7 +31,9 @@ from forgekit import (
 from . import __version__
 from .session import Session
 from .settings_spec import BY_KEY, GROUPS
+from .ui.backups import BackupsScreen
 from .ui.bootmenu import BootMenuScreen
+from .ui.themes import ThemesScreen
 from .ui.overview import OverviewScreen
 from .ui.settings import SettingsScreen
 
@@ -68,7 +70,7 @@ GF_CSS = FORGE_CSS + """
 #bm-table:focus { border: solid $forge-accent; }
 #bm-actions, #bm-more { padding: 1 0 0 0; align-horizontal: left; height: auto; }
 #bm-actions Button, #bm-more Button { margin: 0 2 0 0; }
-#bm-read { align-horizontal: left; }
+#bm-read, #bm-stale { align-horizontal: left; height: auto; }
 .gf-small { width: 76; }
 .gf-add { width: 96; }
 .gf-add-line { height: 3; }
@@ -78,6 +80,23 @@ GF_CSS = FORGE_CSS + """
 .gf-add-sep { margin: 1 0 0 0; }
 #os-status { padding: 1 0; }
 #os-results { height: auto; padding: 0 0 1 0; }
+#sec-themes, #sec-backups { padding: 0 2 0 0; }
+#th-left { width: 34; height: 1fr; }
+#th-list { height: 1fr; max-height: 20; }
+#th-where { height: auto; padding: 1 0 0 0; }
+#th-right { width: 1fr; height: 1fr; padding: 0 0 0 3; }
+#th-preview-title { height: auto; margin: 1 0 1 0; }
+#th-preview { height: auto; width: auto; }
+#th-info { height: auto; margin: 1 0 0 0; }
+.th-actions { padding: 1 0 0 0; align-horizontal: left; height: auto; }
+.th-actions Button { margin: 0 2 0 0; }
+#bk-left { width: 1fr; height: 1fr; }
+#bk-table { height: auto; max-height: 14; border: solid $forge-field-border; background: $forge-bg; }
+#bk-table:focus { border: solid $forge-accent; }
+#bk-where { height: auto; padding: 1 0 0 0; }
+.bk-actions { padding: 1 0 0 0; align-horizontal: left; height: auto; }
+.bk-actions Button { margin: 0 2 0 0; }
+#bk-right { width: 52; height: auto; max-height: 1fr; margin: 2 0 0 2; }
 """
 
 
@@ -120,17 +139,6 @@ class FieldHelp(ForgePanelScreen):
 
     def compose_body(self) -> ComposeResult:
         yield Static(self._text)
-
-
-class ComingSoon(Vertical, can_focus=False):
-    def __init__(self, what: str, **kw) -> None:
-        super().__init__(**kw)
-        self._what = what
-
-    def compose(self) -> ComposeResult:
-        yield Notice(f"{self._what} is being rebuilt for grubForge 2.0",
-                     ["It arrives in the next phase. grubForge 1.1.3 (on the AUR) still has it."],
-                     level="info", classes="gf-soon")
 
 
 class GrubForgeApp(ForgeApp):
@@ -197,8 +205,8 @@ class GrubForgeApp(ForgeApp):
         yield OverviewScreen(self.session, id="sec-overview")
         yield SettingsScreen(self.session, id="sec-settings")
         yield BootMenuScreen(self.session, id="sec-boot")
-        yield ComingSoon("The Themes screen", id="sec-themes")
-        yield ComingSoon("The Backups screen", id="sec-backups")
+        yield ThemesScreen(self.session, id="sec-themes")
+        yield BackupsScreen(self.session, id="sec-backups")
 
     def on_mount(self) -> None:
         super().on_mount()
@@ -217,6 +225,12 @@ class GrubForgeApp(ForgeApp):
             self.query_one(OverviewScreen).refresh_view()
         if section_id == "settings":
             self.query_one("#gf-groups").focus()
+        if section_id == "themes":
+            self.query_one(ThemesScreen).refresh_view()
+            self.query_one("#th-list").focus()
+        if section_id == "backups":
+            self.query_one(BackupsScreen).refresh_view()
+            self.query_one("#bk-table").focus()
         if section_id == "boot":
             self.query_one(BootMenuScreen).refresh_view()
             self.query_one("#bm-table").focus()
@@ -389,6 +403,15 @@ class GrubForgeApp(ForgeApp):
 
     # ── quitting ─────────────────────────────────────────────────────────────
     # ── shared between screens ───────────────────────────────────────────────
+    def after_files_changed(self) -> None:
+        """Something wrote the files (a restore): re-read and redraw everything."""
+        self.session.reload()
+        self.query_one(SettingsScreen).sync()
+        self.query_one(BackupsScreen).refresh_view()
+        self.query_one(ThemesScreen).refresh_view()
+        self.query_one(OverviewScreen).refresh_view()
+        self.refresh_state()
+
     def settings_changed_elsewhere(self, key: str) -> None:
         """A setting changed from another screen (Boot menu, Find other systems)."""
         self.query_one(SettingsScreen).sync()

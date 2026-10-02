@@ -13,7 +13,8 @@
 |---|---|---|---|---|
 | 1.1 | `tests/test_boot_entry_sources.py` (v1.1.3, #28) | 25 | **PASS** | unchanged, still green after the `+` marker fix |
 | 1.2 | `tests/test_v2_settings.py` — distributions, settings in plain words, writer, session, screens | 21 | **PASS** | the long-field test proven in the failing direction (fails without the forgekit fix) |
-| 1.3 | `tests/test_v2_bootmenu.py` — fixed entries (#20), the draft, Add an entry | 11 | **PASS** | found the `20_memtest86+` marker bug (below) |
+| 1.3 | `tests/test_v2_bootmenu.py` — fixed entries (#20), the draft, Add an entry, the UEFI guard | 12 | **PASS** | found the `20_memtest86+` marker bug (below) |
+| 1.3b | `tests/test_v2_themes_backups.py` — theme install safety (escapes, links, devices, names), packing, preview, backup differences | 11 | **PASS** | |
 | 1.4 | forgekit `tests/` (v0.5.0 pieces) | 48 | **PASS** | incl. the gallery as a real text console |
 | 1.5 | Helper refusals (not root / unknown verb / no verb) | 3 | **PASS** | |
 | 1.6 | `grep -rn "run_worker(self\.action_" grubforge/` | empty | **PASS** | |
@@ -55,11 +56,27 @@
 **Findings so far** (fixed, each with a test):
 - `20_memtest86+` (Debian) wasn't recognised as a script (`+` not allowed in the marker pattern), so its entry was guessed as `10_linux` and would have been copied into a saved order: #20 again from a different tool. Pattern widened in the parser, origin lines and the helper's pass-through, together.
 
-**Open:**
-- O-1: a UEFI-only entry (`30_uefi-firmware`) lives inside an `if [ "$grub_platform" = "efi" ]` block; copied into a saved order, the guard is not copied. Harmless on UEFI machines; to decide before release.
+**Resolved:**
+- O-1: the UEFI firmware entry now keeps its `if [ "$grub_platform" = "efi" ]` guard in a saved order (test in 1.3; no double wrap on a second save).
+- An old #20 copy on this desktop first counted as "1 change not saved" at start. Ruled out: a problem found is not a change you made. The Boot menu now offers "Drop the old copy"; it becomes a change only then (or when any other order change is saved).
 
-## 5 · Themes (Phase 4) — to fill
-## 6 · Backups (Phase 4) — to fill
+## 5 · Themes (Phase 4)
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 5.1 | Desktop: the installed themes | 8 listed, short names, kognogos "● in use"; preview in the theme's colours with the real entries | **PASS** | |
+| 5.2 | VM: an attack archive (`../../../etc/grubforge-pwned`) straight to the helper | refused; nothing written outside; no theme folder left | **PASS** | "'..' is not allowed" |
+| 5.3 | VM: Install a theme… from a downloaded folder | in `themes/My-Test-grub-theme`, root-owned, only its own files | **PASS** | a symlink in a download is left out when packing (test 1.3b) |
+| 5.4 | VM: Use this theme → Save and rebuild | review shows the theme + "Menu drawn as Graphics"; grub.cfg uses the theme and gfxterm | **PASS** | |
+
+## 6 · Backups (Phase 4)
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 6.1 | Desktop: the 10 backups | dates, plain reasons ("Before using a theme (kognogos)"), sizes; "Restoring this would change" | **PASS** | |
+| 6.2 | VM: a save makes a backup with the boot-order copy beside it | `.bak` + `.bak.40_custom` | **PASS** | |
+| 6.3 | VM: Restore… | the confirm starts on Cancel; settings back; "saved, not rebuilt"; F9 takes the theme out of grub.cfg | **PASS** | |
+| 6.4 | VM: Delete… | the backup and its boot-order copy gone | **PASS** | |
 ## 7 · Manual, help, keys (Phase 5) — to fill
 ## 8 · Text console (`TERM=linux`, real tty in the VM) — to fill
 ## 9 · Other distributions (VMs: Debian 13, Ubuntu, Fedora, openSUSE) — to fill

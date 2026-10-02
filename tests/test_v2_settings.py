@@ -119,6 +119,7 @@ class SettingsInPlainWords(unittest.TestCase):
         self.assertEqual(display(BY_KEY["GRUB_DEFAULT"], "saved"), "Last chosen")
         self.assertEqual(display(BY_KEY["GRUB_TIMEOUT_STYLE"], "countdown"), "With a countdown")
         self.assertEqual(display(BY_KEY["GRUB_THEME"], None), "not set (none)")
+        self.assertEqual(display(BY_KEY["GRUB_THEME"], "/boot/grub/themes/kognogos/theme.txt"), "kognogos")
 
 
 class Writer(unittest.TestCase):

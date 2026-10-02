@@ -89,7 +89,7 @@ class SettingsScreen(Horizontal):
             except (GrubCfgUnreadable, OSError):
                 pass
         elif key == "GRUB_THEME":
-            opts = [(UNSET, "None")] + [(str(t.path / "theme.txt"), t.name) for t in list_themes()]
+            opts = [(UNSET, "None")] + [(str(t.path / "theme.txt"), t.name) for t in list_themes(self.session.env.themes_dir)]
         elif key == "GRUB_GFXMODE":
             sizes = screen_resolutions()
             opts = [("auto", "Automatic")]

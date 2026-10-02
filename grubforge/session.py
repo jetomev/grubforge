@@ -87,6 +87,10 @@ class Session:
     def change_count(self) -> int:
         return len(self.pending) + (len(self.boot.changes()) if self.boot_changed else 0)
 
+    def record_restore(self, which: str) -> None:
+        self.events.append(Event(dt.datetime.now(), "saved", f"the backup from {which}"))
+        self.reload()
+
     async def restore_original(self, step: Step) -> bool:
         step(0, "working", "")
         r = await restore_original_order(capability=self.capability)

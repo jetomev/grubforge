@@ -28,6 +28,8 @@ Verbs:
     script-disable <name>    remove execute permission from a grub.d script
     os-prober-run            scan for other installed operating systems
     read-entries             print grub.cfg's menuentry/submenu blocks
+    theme-install <name>     install a theme: a base64 tar.gz of the theme's
+                             files on stdin, checked, into <grub dir>/themes/<name>
 
 Exit status is 0 on success. Anything else means nothing was changed, and the
 reason is on stderr.
@@ -275,6 +277,22 @@ def do_regenerate() -> None:
     sys.exit(result.returncode)
 
 
+CUSTOM_40_PATH = Path("/etc/grub.d/40_custom")
+
+
+def custom_path(backup_path: Path) -> Path:
+    """v2.0.0: the copy of 40_custom (your boot order) kept beside a backup."""
+    return backup_path.with_name(backup_path.name + ".40_custom")
+
+
+def _save_custom_copy(dest: Path) -> None:
+    if CUSTOM_40_PATH.is_file():
+        copy = custom_path(dest)
+        shutil.copy2(CUSTOM_40_PATH, copy)
+        os.chown(copy, 0, 0)
+        os.chmod(copy, 0o644)
+
+
 def do_backup_create(label: str = "") -> None:
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     os.chmod(BACKUP_DIR, 0o755)
@@ -287,6 +305,7 @@ def do_backup_create(label: str = "") -> None:
 
     shutil.copy2(GRUB_CONFIG_PATH, dest)
     os.chown(dest, 0, 0)
+    _save_custom_copy(dest)
 
     cleaned = validated_label(label)
     if cleaned:
@@ -308,6 +327,7 @@ def rotate_backups() -> None:
     for old in existing[MAX_BACKUPS:]:
         old.unlink(missing_ok=True)
         label_path(old).unlink(missing_ok=True)
+        custom_path(old).unlink(missing_ok=True)
 
 
 def do_backup_restore(name: str) -> None:
@@ -330,6 +350,7 @@ def do_backup_create_quiet(label: str = "") -> None:
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     shutil.copy2(GRUB_CONFIG_PATH, dest)
     os.chown(dest, 0, 0)
+    _save_custom_copy(dest)
     cleaned = validated_label(label)
     if cleaned:
         sidecar = label_path(dest)
@@ -343,6 +364,7 @@ def do_backup_delete(name: str) -> None:
     target = validated_backup_path(name)
     target.unlink(missing_ok=True)
     label_path(target).unlink(missing_ok=True)
+    custom_path(target).unlink(missing_ok=True)
     print(f"deleted {name}")
 
 
@@ -459,6 +481,79 @@ def do_read_entries() -> None:
         sys.stdout.write("\n".join(blocks) + "\n")
 
 
+# ── Themes (v2.0.0) ────────────────────────────────────────────────────────────
+
+THEME_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+MAX_THEME_B64 = 64 * 1024 * 1024        # what arrives on stdin
+MAX_THEME_FILES = 5000
+MAX_THEME_BYTES = 200 * 1024 * 1024     # unpacked
+
+
+def theme_member_problem(member) -> str:
+    """Why a file in a theme archive is refused, or "" when it is fine.
+    Only plain files and folders, inside the theme's own folder."""
+    name = member.name
+    if not (member.isfile() or member.isdir()):
+        return f"{name}: only plain files and folders are allowed"
+    if name.startswith("/") or "\\" in name:
+        return f"{name}: absolute paths are not allowed"
+    parts = [p for p in name.split("/") if p not in ("", ".")]
+    if any(p == ".." for p in parts):
+        return f"{name}: '..' is not allowed"
+    return ""
+
+
+def do_theme_install(name: str) -> None:
+    import base64
+    import io
+    import tarfile
+    if not THEME_NAME_RE.match(name):
+        die("a theme name may only use letters, digits, '.', '_' and '-'")
+    themes = grub_target()[1].parent / "themes"
+    target = themes / name
+    if target.exists():
+        die(f"a theme called {name!r} is already installed — remove it first")
+    raw = sys.stdin.buffer.read(MAX_THEME_B64 + 1)
+    if len(raw) > MAX_THEME_B64:
+        die("the theme is larger than 64 MB — refusing")
+    try:
+        data = base64.b64decode(raw, validate=False)
+        tar = tarfile.open(fileobj=io.BytesIO(data), mode="r:gz")
+        members = tar.getmembers()
+    except Exception as exc:
+        die(f"not a theme archive: {exc}")
+    if len(members) > MAX_THEME_FILES:
+        die(f"more than {MAX_THEME_FILES} files — refusing")
+    if sum(m.size for m in members if m.isfile()) > MAX_THEME_BYTES:
+        die("more than 200 MB unpacked — refusing")
+    for m in members:
+        problem = theme_member_problem(m)
+        if problem:
+            die(problem)
+    if not any(m.isfile() and m.name.lstrip("./") == "theme.txt" for m in members):
+        die("no theme.txt at the top of the theme")
+    themes.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=f".{name}.", dir=themes))
+    try:
+        tar.extractall(staging, members=members, filter="data")
+        for root, dirs, files in os.walk(staging):
+            for d in dirs:
+                p = Path(root) / d
+                os.chown(p, 0, 0)
+                os.chmod(p, 0o755)
+            for f in files:
+                p = Path(root) / f
+                os.chown(p, 0, 0)
+                os.chmod(p, 0o644)
+        os.chown(staging, 0, 0)
+        os.chmod(staging, 0o755)
+        os.rename(staging, target)
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    print(str(target / "theme.txt"))
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 # Verb -> (handler, takes_argument, argument_required)
@@ -473,6 +568,7 @@ VERBS = {
     "script-disable":  (do_script_disable,   True,  True),
     "os-prober-run":   (do_os_prober_run,    False, False),
     "read-entries":    (do_read_entries,     False, False),
+    "theme-install":   (do_theme_install,    True,  True),
 }
 
 

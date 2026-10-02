@@ -67,6 +67,8 @@ class BootMenuScreen(Vertical, can_focus=False):
         yield Static("[b $forge-title-accent]Boot menu[/]   [$forge-muted]the entries shown when the computer "
                      "starts, top to bottom[/]", classes="gf-group-title")
         yield Notice(id="bm-notice")
+        with Horizontal(id="bm-stale", classes="forge-buttons gf-box-buttons"):
+            yield Button("Drop the old copy", id="bm-drop", variant="primary")
         with Horizontal(id="bm-read", classes="forge-buttons gf-box-buttons"):
             yield Button("Read the boot menu (asks for your password)", id="bm-read-btn", variant="primary")
         table = DataTable(id="bm-table", cursor_type="row", zebra_stripes=False)
@@ -113,11 +115,13 @@ class BootMenuScreen(Vertical, can_focus=False):
             return
         from .overview import custom_order_in_use
         stale = s.boot.stale_copies if s.boot else []
+        self.query_one("#bm-stale").display = bool(stale) and not s.boot.drop_stale and not s.read_only
         if stale:
             names = ", ".join(sorted({f'"{it.entry.title}"' for it in stale}))
             notice.show("An old copy is stuck in your saved order", [
                 f"{escape(names)} appears twice: once from its own tool, once copied into your order by an",
-                "older grubForge (#20). Saving once drops the copy; the live entry stays."], level="warn")
+                "older grubForge (#20). Drop it and save; the live entry stays."
+                if not s.boot.drop_stale else "older grubForge (#20). It will be dropped when you save."], level="warn")
         elif custom_order_in_use():
             notice.show("Your own order is in use", [
                 "GRUB stops adding new kernels by itself while it is. A kernel update won't show here",
@@ -149,7 +153,8 @@ class BootMenuScreen(Vertical, can_focus=False):
             if it.renamed:
                 notes.append(f"[$forge-changed]{glyph('changed')} renamed[/]")
             if it.stale_copy:
-                notes.append(f"[$forge-changed]{glyph('changed')} old copy · dropped when you save[/]")
+                notes.append(f"[$forge-changed]{glyph('changed')} old copy · dropped when you save[/]"
+                             if s.boot.changed else f"[$forge-warn]{glyph('warn')} old copy (#20)[/]")
             elif not it.movable:
                 notes.append(f"[$forge-muted]{glyph('fixed')} fixed · its tool places it[/]")
             title = escape(e.title) + (" ▸" if e.entry_type == "submenu" else "")
@@ -233,6 +238,12 @@ class BootMenuScreen(Vertical, can_focus=False):
             self.session.boot.remove(it)
             self._changed()
 
+    def drop_stale(self) -> None:
+        if not self._can_edit():
+            return
+        self.session.boot.drop_stale = True
+        self._changed()
+
     def start_first(self) -> None:
         it = self.current()
         if not self._can_edit() or it is None:
@@ -267,7 +278,8 @@ class BootMenuScreen(Vertical, can_focus=False):
         handlers = {"bm-up": lambda: self.action_move(-1), "bm-down": lambda: self.action_move(1),
                     "bm-rename": self.action_rename, "bm-default": self.start_first,
                     "bm-remove": self.remove, "bm-add": self.action_add, "bm-others": self.action_others,
-                    "bm-restore": self.restore, "bm-read-btn": self.read_privileged}
+                    "bm-restore": self.restore, "bm-read-btn": self.read_privileged,
+                    "bm-drop": self.drop_stale}
         h = handlers.get(e.button.id or "")
         if h:
             e.stop()

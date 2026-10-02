@@ -134,10 +134,28 @@ submenu 'KognogOS snapshots' {
 """
         d = BootDraft.from_entries(parse_entries_text(cfg))
         self.assertEqual(len(d.stale_copies), 1)
+        # found, not changed: nothing is pending until it is dropped
+        self.assertFalse(d.changed)
+        self.assertEqual(d.changes(), [])
+        d.drop_stale = True
         self.assertTrue(d.changed)
         self.assertIn(("KognogOS snapshots (old copy)", "in your saved order", "dropped"), d.changes())
         self.assertNotIn("snapshots", d.custom_40())
         self.assertIn("KognogOS", d.custom_40())
+
+class FirmwareGuard(unittest.TestCase):
+    def test_the_uefi_entry_keeps_its_guard_in_a_saved_order(self):
+        d = BootDraft.from_entries(parse_entries_text(GRUB_CFG))
+        text = d.custom_40()
+        i = text.index("menuentry 'UEFI Firmware Settings'")
+        self.assertIn('if [ "$grub_platform" = "efi" ]; then', text[:i].splitlines()[-1])
+        back = reread_custom(text)
+        self.assertIn("UEFI Firmware Settings", [e.title for e in back])
+        # saving that order again doesn't wrap it twice
+        again = BootDraft.from_entries(back).custom_40()
+        self.assertEqual(again.count("grub_platform"), 1)
+        self.assertEqual(probe.check_entry('menuentry \'x\' {\n echo\n}'), "")
+
 
 class Draft(unittest.TestCase):
     def setUp(self):

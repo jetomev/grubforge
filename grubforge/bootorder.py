@@ -58,6 +58,9 @@ class Item:
 class BootDraft:
     original: list[BootEntry] = field(default_factory=list)
     items: list[Item] = field(default_factory=list)
+    # an old copy is a problem to fix, not something you changed: it counts
+    # as a change only once you ask to drop it (any saved order drops it too)
+    drop_stale: bool = False
 
     @classmethod
     def from_entries(cls, entries: list[BootEntry]) -> "BootDraft":
@@ -122,11 +125,13 @@ class BootDraft:
         d = BootDraft.from_entries(self.original)
         return [it.original_index for it in d.items if it.movable]
 
+    def _own_changes(self) -> bool:
+        return (self._order() != self._original_order()
+                or any(it.renamed or it.removed or it.original_index is None for it in self.items))
+
     @property
     def changed(self) -> bool:
-        return (self._order() != self._original_order()
-                or any(it.renamed or it.removed or it.original_index is None or it.stale_copy
-                       for it in self.items))
+        return self._own_changes() or (self.drop_stale and bool(self.stale_copies))
 
     def changes(self) -> list[tuple[str, str, str]]:
         """(entry, old, new) for the review, in plain words."""
@@ -137,7 +142,8 @@ class BootDraft:
             return f"{n}{'tsnrhtdd'[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4]}"
         for it in self.items:
             if it.stale_copy:
-                out.append((f"{it.entry.title} (old copy)", "in your saved order", "dropped"))
+                if self.changed:
+                    out.append((f"{it.entry.title} (old copy)", "in your saved order", "dropped"))
                 continue
             if not it.movable:
                 continue
@@ -157,8 +163,18 @@ class BootDraft:
 
     # ── saving ───────────────────────────────────────────────────────────────
     def custom_40(self) -> str:
-        """The text of 40_custom: your movable entries only, in your order (#20)."""
-        return render_custom_order([it.entry for it in self.items if it.movable and not it.removed])
+        """The text of 40_custom: your movable entries only, in your order (#20).
+        The firmware entry keeps GRUB's "only on UEFI" guard (O-1)."""
+        entries = []
+        for it in self.items:
+            if not it.movable or it.removed:
+                continue
+            e = it.entry
+            if "fwsetup" in e.raw_block and "grub_platform" not in e.raw_block:
+                e = copy.copy(e)
+                e.raw_block = ('if [ "$grub_platform" = "efi" ]; then\n' + e.raw_block + "\nfi")
+            entries.append(e)
+        return render_custom_order(entries)
 
     def scripts_to_turn_off(self) -> list[str]:
         """The managed scripts whose entries are now in your order."""

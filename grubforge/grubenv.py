@@ -17,6 +17,7 @@ Pop!_OS); grubForge then says so and stays read-only.
 
 from __future__ import annotations
 
+import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -50,6 +51,10 @@ class GrubEnv:
     mkconfig: str               # "grub-mkconfig" or "grub2-mkconfig" (name, not path)
     bls: bool                   # entries kept as separate files (Fedora style)
     themes_dir: Path = field(default_factory=lambda: Path("/boot/grub/themes"))
+    grub_d: Path = field(default_factory=lambda: GRUB_D)
+    # Debian/Ubuntu: grub-mkconfig also reads /etc/default/grub.d/*.cfg,
+    # after /etc/default/grub, so a value set there wins
+    default_d: Path | None = None
     note: str = ""              # why grubForge is read-only, when uses_grub is False
 
     @property
@@ -125,8 +130,18 @@ def detect(root: Path = Path("/"), which=shutil.which) -> GrubEnv:
         cfg_text = ""
     bls = bls_enabled(_read_default(p(str(GRUB_DEFAULT_FILE))), cfg_text) and p(str(BLS_DIR)).is_dir()
 
-    return GrubEnv(family=family, distro=distro, uses_grub=uses_grub, grub_dir=grub_dir,
-                   grub_cfg=cfg, mkconfig=mk_name, bls=bls, themes_dir=grub_dir / "themes", note=note)
+    default_d = None
+    tool = which("grub-mkconfig") or which("grub2-mkconfig")
+    if tool:
+        try:
+            if "default/grub.d" in Path(tool).read_text(errors="replace"):
+                default_d = p("etc/default/grub.d")
+        except OSError:
+            pass
+
+    return GrubEnv(family=family, distro=distro, uses_grub=uses_grub, grub_dir=grub_dir, default_d=default_d,
+                   grub_cfg=cfg, mkconfig=mk_name, bls=bls, themes_dir=grub_dir / "themes", note=note,
+                   grub_d=p(str(GRUB_D)))
 
 
 def saved_but_not_rebuilt(env: GrubEnv, sources: tuple[Path, ...] = (GRUB_DEFAULT_FILE, GRUB_D / "40_custom")) -> bool:
@@ -145,3 +160,27 @@ def saved_but_not_rebuilt(env: GrubEnv, sources: tuple[Path, ...] = (GRUB_DEFAUL
         except OSError:
             continue
     return False
+
+
+_DROPIN_RE = re.compile(r'^\s*(GRUB_[A-Z0-9_]+)=(.*)$')
+
+
+def dropin_overrides(env: GrubEnv) -> dict[str, tuple[str, str]]:
+    """KEY → (file name, value) for settings decided in /etc/default/grub.d,
+    where grub-mkconfig reads them after /etc/default/grub (the last one wins)."""
+    out: dict[str, tuple[str, str]] = {}
+    if env.default_d is None or not env.default_d.is_dir():
+        return out
+    for f in sorted(env.default_d.glob("*.cfg")):
+        try:
+            lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            m = _DROPIN_RE.match(line)
+            if m:
+                v = m.group(2).strip()
+                if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+                    v = v[1:-1]
+                out[m.group(1)] = (f.name, v)
+    return out

@@ -30,14 +30,6 @@ def _when(t: float | None) -> str:
     return f"{day} {d:%H:%M}"
 
 
-def custom_order_in_use() -> bool:
-    try:
-        text = open("/etc/grub.d/40_custom", encoding="utf-8").read()
-    except OSError:
-        return False
-    return "grubforge" in text.lower() and "menuentry" in text
-
-
 class OverviewScreen(VerticalScroll, can_focus=False):
     FORGE_HINTS = [("Tab", "next button"), ("Enter", "do it"), ("1-5", "screens"), ("F1", "help"), ("?", "all keys")]
 
@@ -76,7 +68,7 @@ class OverviewScreen(VerticalScroll, can_focus=False):
         env = s.env
         try:
             entries = parse_boot_entries(env.grub_cfg)
-            count = f"{len(entries)}" + (" · your own order" if custom_order_in_use() else "")
+            count = f"{len(entries)}" + (" · your own order" if self.session.custom_order_in_use else "")
         except GrubCfgUnreadable:
             count = "readable only by an administrator"
         except OSError:
@@ -102,9 +94,14 @@ class OverviewScreen(VerticalScroll, can_focus=False):
             items.append(f"[b $forge-warn]{glyph('warn')}[/] [b]The boot menu is older than your settings.[/]\n"
                          f"   Changes saved {_when(s.last_saved().timestamp() if s.last_saved() else None)} "
                          f"aren't in it yet.")
-        if custom_order_in_use():
+        if self.session.custom_order_in_use:
             items.append(f"[b $forge-warn]{glyph('warn')}[/] [b]Your own entry order is in use.[/]\n"
                          "   A new kernel won't show up until you restore the original order.")
+        if s.overrides:
+            names = ", ".join(sorted({f for f, _v in s.overrides.values()}))
+            items.append(f"[$forge-info]{glyph('info')}[/] {len(s.overrides)} setting"
+                         f"{'s are' if len(s.overrides) != 1 else ' is'} decided in /etc/default/grub.d "
+                         f"({escape(names)}).\n   Settings shows them, locked, with the file that sets them.")
         if env.bls:
             items.append(f"[$forge-info]{glyph('info')}[/] This system keeps its entries as separate files "
                          "(Fedora style).")
@@ -112,8 +109,8 @@ class OverviewScreen(VerticalScroll, can_focus=False):
             items.append(f"[$forge-ok]{glyph('ok')} Nothing needs attention.[/]")
         self.query_one("#ov-attention", Static).update("\n\n".join(items))
         self.query_one("#ov-rebuild").display = stale and not s.read_only
-        self.query_one("#ov-why").display = custom_order_in_use()
-        self.query_one("#ov-attention-buttons").display = (stale and not s.read_only) or custom_order_in_use()
+        self.query_one("#ov-why").display = self.session.custom_order_in_use
+        self.query_one("#ov-attention-buttons").display = (stale and not s.read_only) or self.session.custom_order_in_use
 
         backups = list_backups()
         newest = _when(backups[0].timestamp.timestamp()) if backups else "none yet"

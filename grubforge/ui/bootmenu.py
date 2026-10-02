@@ -113,7 +113,6 @@ class BootMenuScreen(Vertical, can_focus=False):
                 "which asks for your password once."], level="info")
             table.clear()
             return
-        from .overview import custom_order_in_use
         stale = s.boot.stale_copies if s.boot else []
         self.query_one("#bm-stale").display = bool(stale) and not s.boot.drop_stale and not s.read_only
         if stale:
@@ -122,7 +121,7 @@ class BootMenuScreen(Vertical, can_focus=False):
                 f"{escape(names)} appears twice: once from its own tool, once copied into your order by an",
                 "older grubForge (#20). Drop it and save; the live entry stays."
                 if not s.boot.drop_stale else "older grubForge (#20). It will be dropped when you save."], level="warn")
-        elif custom_order_in_use():
+        elif self.session.custom_order_in_use:
             notice.show("Your own order is in use", [
                 "GRUB stops adding new kernels by itself while it is. A kernel update won't show here",
                 "until you go back to the original order. F1 explains why."], level="warn")

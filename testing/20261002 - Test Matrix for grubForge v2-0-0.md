@@ -99,5 +99,18 @@
 | 8.6 | A real tty in the VM (tty8, `sudo grubforge`) | readable and usable | — | to run with Javier's §10 |
 
 Known at 100×30 only: the last timeout preset ("forever") sits past the right edge; at 128×48 everything fits.
-## 9 · Other distributions (VMs: Debian 13, Ubuntu, Fedora, openSUSE) — to fill
+## 9 · Other distributions (VMs from each distribution's cloud image, UEFI — `scripts/make-test-vms.sh`)
+
+Each VM: detection, the boot menu read, nothing pending at start, a real Save and rebuild that must show up in grub.cfg, then put back. Run as root inside the VM (`/opt/gf` venv with Textual), from snapshot `fresh`.
+
+| ID | Distribution | Detected | Boot menu | Real change lands in grub.cfg | Result | Notes |
+|---|---|---|---|---|---|---|
+| 9.1 | Debian 13 | Debian · /boot/grub · grub-mkconfig | 3 entries | **yes** (countdown style) | **PASS** | first run found F-1 and F-2 (below) |
+| 9.2 | Ubuntu 24.04 | Debian family · Ubuntu | 3 entries | **yes** | **PASS** | 4 settings decided in `50-cloudimg-settings.cfg`, locked |
+| 9.3 | Fedora 44 | — | — | — | — | building |
+| 9.4 | openSUSE Tumbleweed | — | — | — | — | building |
+
+**Findings from the distribution VMs** (fixed, each with a test):
+- **F-1 (Debian):** `GRUB_GFXMODE` not set in the file → the list fell back to "Automatic" and staged it as a change nobody made. Every list now offers "Not set (…)" when the file doesn't set it.
+- **F-2 (Debian, Ubuntu):** `/etc/default/grub.d/*.cfg` (read by Debian's grub-mkconfig *after* /etc/default/grub) decided `GRUB_TIMEOUT`; grubForge's saved change had **no effect** and nothing said so. grubForge now checks whether the system's grub-mkconfig reads that folder; settings decided there are shown with their real value and file, locked ("change it there"), and the Overview says how many. Writing into that folder is a possible follow-up.
 ## 10 · Javier's run — after everything is built

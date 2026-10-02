@@ -47,6 +47,7 @@ class Session:
     started: dt.datetime = field(default_factory=dt.datetime.now)
     boot: BootDraft | None = None          # None until the menu could be read
     boot_unreadable: bool = False          # grub.cfg is root-only: ask first
+    overrides: dict = field(default_factory=dict)   # KEY → (file, value) from /etc/default/grub.d
 
     # ── loading ──────────────────────────────────────────────────────────────
     @classmethod
@@ -81,6 +82,17 @@ class Session:
         return r
 
     @property
+    def custom_order_in_use(self) -> bool:
+        """Is a grubForge-saved boot order active on this system?"""
+        if self.boot is not None:
+            return any(it.entry.in_custom_order for it in self.boot.items)
+        try:
+            text = (self.env.grub_d / "40_custom").read_text(encoding="utf-8")
+        except OSError:
+            return False
+        return "grubforge" in text.lower() and "menuentry" in text
+
+    @property
     def boot_changed(self) -> bool:
         return bool(self.boot and self.boot.changed)
 
@@ -103,6 +115,7 @@ class Session:
         return True
 
     def _read_originals(self) -> None:
+        self.overrides = grubenv.dropin_overrides(self.env)
         self.original = {}
         for s in SETTINGS:
             e = self.config.entries.get(s.key)

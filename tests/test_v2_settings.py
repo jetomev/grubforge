@@ -87,6 +87,30 @@ class Distributions(unittest.TestCase):
             self.assertFalse(grubenv.saved_but_not_rebuilt(env, (root / "etc/default/grub",)))
 
 
+class DebianDropIns(unittest.TestCase):
+    """Found in the Debian 13 VM: /etc/default/grub.d/15_timeout.cfg set GRUB_TIMEOUT=0
+    and won over /etc/default/grub, so a saved change had no effect."""
+
+    def test_overrides_are_read_when_the_tool_reads_them(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = make_root(t, "ID=debian\n", {
+                "boot/grub/grub.cfg": "", "usr/sbin/grub-mkconfig": 'for x in ${sysconfdir}/default/grub.d/*.cfg ; do',
+                "etc/default/grub.d/10_cloud.cfg": "GRUB_DISABLE_LINUX_UUID=true\n",
+                "etc/default/grub.d/15_timeout.cfg": "GRUB_TIMEOUT=0\n",
+                "etc/default/grub.d/20_later.cfg": 'GRUB_TIMEOUT="2"\n'})
+            env = grubenv.detect(root, which=lambda n: str(root / "usr/sbin" / n) if n == "grub-mkconfig" else None)
+            o = grubenv.dropin_overrides(env)
+            self.assertEqual(o["GRUB_TIMEOUT"], ("20_later.cfg", "2"))   # the last one wins
+            self.assertIn("GRUB_DISABLE_LINUX_UUID", o)
+
+    def test_no_overrides_where_the_tool_ignores_the_folder(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = make_root(t, "ID=arch\n", {"boot/grub/grub.cfg": "", "usr/bin/grub-mkconfig": "#!/bin/sh\n",
+                                               "etc/default/grub.d/x.cfg": "GRUB_TIMEOUT=0\n"})
+            env = grubenv.detect(root, which=lambda n: str(root / "usr/bin" / n) if n == "grub-mkconfig" else None)
+            self.assertEqual(grubenv.dropin_overrides(env), {})
+
+
 class SettingsInPlainWords(unittest.TestCase):
     def test_every_setting_has_a_group_a_label_and_help(self):
         self.assertEqual(len(SETTINGS), 17)
@@ -250,6 +274,30 @@ class Screens(unittest.IsolatedAsyncioTestCase):
             app.query_one("#gf-groups").highlighted = 2
             await pilot.pause(0.5)
             self.assertIn("zswap.enabled=0", app.export_screenshot())
+
+    async def test_an_unset_list_setting_is_not_a_change(self):
+        # Debian: no GRUB_GFXMODE in the file; the list once fell back to
+        # "Automatic" and staged it
+        from grubforge.app import GrubForgeApp
+        app = GrubForgeApp(session=fake_session(SAMPLE.replace("GRUB_GFXMODE=1920x1080,auto\n", "")))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.5)
+            await pilot.press("2")
+            await pilot.pause(0.5)
+            self.assertEqual(app.session.pending, {})
+
+    async def test_an_overridden_setting_is_locked_and_says_where(self):
+        from grubforge.app import GrubForgeApp
+        s = fake_session(SAMPLE)
+        s.overrides = {"GRUB_TIMEOUT": ("15_timeout.cfg", "0")}
+        app = GrubForgeApp(session=s)
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.5)
+            await pilot.press("2")
+            await pilot.pause(0.4)
+            row = app.query_one("#row-GRUB_TIMEOUT")
+            self.assertTrue(row.control.disabled)
+            self.assertIn("15_timeout.cfg", str(row.query_one(".forge-setting-note").render()))
 
     async def test_read_only_says_why(self):
         app = await self._app()

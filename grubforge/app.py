@@ -225,6 +225,7 @@ class GrubForgeApp(ForgeApp):
         # unsaved changes stay
         self.session.reload()
         self.query_one(SettingsScreen).sync()
+        self.query_one(SettingsScreen).frozen_notice()
         self.refresh_state()
         if section_id == "overview":
             self.query_one(OverviewScreen).refresh_view()

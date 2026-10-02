@@ -104,6 +104,10 @@ class SettingsScreen(Horizontal):
             opts = [(UNSET, f"Automatic ({s.default})")] + list(s.choices)
         if raw is not None and all(v != raw for v, _l in opts):
             opts.insert(0 if key != "GRUB_DEFAULT" else 2, (raw, f"{raw}  (current)"))
+        if raw is None and all(v != UNSET for v, _l in opts):
+            # the file doesn't set it: say so, or the first choice would look
+            # like (and be staged as) a change nobody made
+            opts.insert(0, (UNSET, f"Not set ({s.default})"))
         self._choices[key] = opts
         return opts
 
@@ -121,6 +125,9 @@ class SettingsScreen(Horizontal):
                     with VerticalScroll(id=f"grp-{gid}", classes="gf-group", can_focus=False):
                         yield Static(f"[b $forge-title-accent]{label}[/]   [$forge-muted]{escape(desc)}[/]",
                                      classes="gf-group-title")
+                        if gid == "kernel":
+                            # #19: options typed here don't reach entries frozen in your own order
+                            yield Notice(id="gf-frozen")
                         for s in SETTINGS:
                             if s.group == gid:
                                 row = self._row(s)
@@ -163,10 +170,26 @@ class SettingsScreen(Horizontal):
             ctrl = Input(raw or "", placeholder=system_name(), disabled=disabled)
             ctrl.FORGE_HINTS = [("type", "a name"), ("Tab", "next"), ("F1", "help")]
         ctrl.setting_key = s.key
-        return SettingRow(s.label, ctrl, note=s.note, help=s.help, setting=s.key, id=f"row-{s.key}",
+        note = s.note
+        if s.key in self.session.overrides:
+            fname, value = self.session.overrides[s.key]
+            ctrl.disabled = True
+            note = (f"set to {display(s, value)} in /etc/default/grub.d/{fname}, which GRUB reads after "
+                    "this file: change it there")
+        return SettingRow(s.label, ctrl, note=note, help=s.help, setting=s.key, id=f"row-{s.key}",
                           stacked=s.control == "kernel")
 
+    def frozen_notice(self) -> None:
+        n = self.query_one("#gf-frozen", Notice)
+        if self.session.custom_order_in_use:
+            n.show("Your own boot order is in use", [
+                "The entries saved in it carry their own options, so changes here reach only entries",
+                "GRUB still makes by itself (and new kernels after you go back to the original order)."], level="warn")
+        else:
+            n.hide()
+
     def on_mount(self) -> None:
+        self.frozen_notice()
         self.query_one("#gf-groups", OptionList).highlighted = 0
         for key in self.session.pending:
             self._mark(key)

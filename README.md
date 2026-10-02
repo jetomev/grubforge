@@ -1,12 +1,12 @@
 # ⚡ grubForge
 
-> A terminal application for managing and customizing the GRUB bootloader on Linux — safely, clearly, and beautifully.
+> The GRUB boot menu, without editing files by hand: every setting in plain words, picked from lists, reviewed before it's written, with a backup first.
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 1.1.3](https://img.shields.io/badge/Version-1.1.3-purple.svg)
+![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.3-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
@@ -15,351 +15,225 @@
 
 ## Why grubForge?
 
-GRUB is the first program your computer runs when you turn it on. Its job is to load your operating system — and if it breaks, your machine doesn't boot.
+GRUB is the first program your computer runs when you turn it on. Its job is to load your operating system, and if it breaks, your machine doesn't start.
 
-Changing it has traditionally meant opening a terminal, editing a configuration file as root, hoping you didn't make a typo, and running a command to compile your changes. There's no safety net. One wrong character can leave you looking at a black screen.
+Changing it has traditionally meant editing a configuration file as root, hoping you didn't make a typo, and running a command to rebuild the menu. One wrong character can leave you looking at a black screen.
 
 **grubForge exists to change that.** It should be:
 
-- **Safe** — a backup before every change, and a confirmation before every action
-- **Clear** — every setting explained in plain language, and checked before it's written
-- **Good-looking** — a proper application, not a config screen from 1985
-- **Approachable** — keyboard-driven, fast, and usable if you're not a bootloader expert
-
-It came out of a simple frustration: why is one of the most critical parts of a Linux system also one of the least friendly to work with? It doesn't have to be.
+- **Safe**: a review of every change before it's written, a backup first, nothing installed or removed without asking
+- **Clear**: every setting with a plain name and an explanation, and the GRUB name shown for those who want it
+- **Easy**: known values are picked from lists; you type only names and unusual kernel options
+- **Honest**: when something you saved isn't in the boot menu yet, or a setting is decided somewhere else, it says so
 
 ---
 
 ## Features
 
-- 🏠 **Dashboard** — what your GRUB setup currently looks like, and a live indicator that warns you when your boot menu is out of date with your settings
-- 🔧 **Config Editor** — every GRUB setting with an explanation, checked as you type. Required and optional settings are distinguished, so optional ones can be cleared.
-- 🎨 **Theme Browser** — browse the themes you have installed, preview their colours, apply one with a keystroke, and get help installing more
-- 🖥 **Boot Entries** — see where every entry comes from, reorder, rename, and create entries, find your other operating systems, save a custom order, and restore the original whenever you want
-- 🗂 **Backup & Restore** — a timestamped backup before every change, kept to the 10 most recent, restorable from inside the app
-- 🔄 **Rebuild the boot menu** in one keystroke after any change
-- ⌨️ **Consistent keys** — Edit, Save, Apply, Refresh and Regenerate work from every screen. Screen-specific keys never clash with them.
-- 🔐 **Runs as you, not as root** — grubForge never needs `sudo`. When a change genuinely needs permission, your desktop asks for your password and grubForge never sees it.
-- 🌙 **Catppuccin Mocha** throughout
+- 🏠 **Overview**: "is my boot menu all right?" in four boxes. Anything that needs attention comes with the button that fixes it.
+- 🔧 **Settings**: every GRUB setting as a form, in five groups (Start-up, Look, Kernel options, Other systems, Advanced). Lists, worded On/Off switches, presets, a kernel-options checklist with an explanation per option, colours with a sample. "● changed" and "was: …" on each row you change.
+- 🖥 **Boot menu**: the menu as it shows at start-up. Move, rename, choose what starts first, remove, add an entry built from this computer (kernels, start-up images, disks, EFI loaders) and checked by GRUB's own checker, find other systems.
+- 🎨 **Themes**: a preview of *your* entries in the theme's colours; install a downloaded theme safely.
+- 🗂 **Backups**: why each was made, in plain words, and what restoring it would change, before you do.
+- 💾 **Save and Rebuild, separately**: **F10** saves (review, backup, write); **F9** rebuilds the boot menu. "Saved · not in the boot menu yet" stays visible until you rebuild, and quitting asks first.
+- 📖 **A manual inside the app** (**M**), and **F1** on anything opens its page.
+- 🖥 **Readable on a plain text console**, where you end up when the desktop won't start.
+- 🐧 **Every major distribution**: Arch, Debian/Ubuntu, Fedora/RHEL, openSUSE and more, each found automatically.
+- 🔐 **Runs as you, not as root**: your desktop asks for your password when a change needs it; grubForge never sees it.
+- 🌙 **Catppuccin Mocha**, on [forgekit](https://github.com/jetomev/forgekit), the Forge Suite's shared base.
 
 ---
 
 ## Screenshots
 
-### Dashboard
-![Dashboard](screenshots/screenshot_dashboard.png)
+### Overview
+![Overview](screenshots/v2_overview.png)
 
-### Config Editor
-![Config Editor](screenshots/screenshot_config_editor.png)
+### Settings
+![Settings](screenshots/v2_settings.png)
 
-### Theme Browser
-![Theme Browser](screenshots/screenshot_themes.png)
+### Boot menu
+![Boot menu](screenshots/v2_boot_menu.png)
 
-### Backup & Restore
-![Backup & Restore](screenshots/screenshot_backup.png)
+### Themes
+![Themes](screenshots/v2_themes.png)
 
-### Boot Entries
-![Boot Entries](screenshots/screenshot_boot_entries.png)
+### Review before saving
+![Review](screenshots/v2_review.png)
 
 ---
 
 ## Requirements
 
-- Linux, with GRUB installed (developed and tested on Arch)
+- Linux with GRUB (any major distribution; see the table below)
 - Python 3.10 or newer
-- `python-textual` and `python-rich`
-- **`polkit`** — how grubForge asks for permission without running as root. Almost every desktop Linux install already has it.
+- `python-textual`, `python-rich` and [`python-forgekit`](https://github.com/jetomev/forgekit) 0.5.0 or newer
+- **`polkit`**: how grubForge asks for permission without running as root. Almost every desktop install already has it.
 
 ---
 
 ## Installation
 
-### Arch Linux, from the AUR (recommended)
+### Arch Linux and KognogOS, from the AUR (recommended)
 
 ```bash
-yay -S grubforge
+nog install grubforge      # KognogOS
+yay -S grubforge           # any AUR helper
 ```
 
 [aur.archlinux.org/packages/grubforge](https://aur.archlinux.org/packages/grubforge)
 
-### Arch Linux, from source
-
-```bash
-sudo pacman -S python-textual python-rich polkit
-git clone https://github.com/jetomev/grubforge.git
-cd grubforge
-```
-
-Running from a clone, grubForge is read-only: the privileged helper has to be
-installed system-wide before polkit will run it. Install the package, or use
-`sudo python main.py` while developing.
-
-### Debian, Ubuntu and derivatives
-
-```bash
-sudo apt install python3-textual python3-rich
-git clone https://github.com/jetomev/grubforge.git
-cd grubforge
-sudo sh install-helper.sh
-```
-
-A desktop install already has polkit and a password-dialog agent. On a minimal
-system, install your distribution's polkit package as well.
-
-**On Debian the last line is not optional.** Debian ships `/boot/grub/grub.cfg`
-readable only by root — verified on a stock Debian 13 install, with no GRUB
-password set and nothing hardened. Without the helper in place grubForge cannot
-read your boot menu at all, and before v1.1.1 it reported that as
-*"Boot entries 0 detected"* ([#23](https://github.com/jetomev/grubforge/issues/23)).
-
-Verified against Debian's `python3-textual` 2.1.2. grubForge is developed against
-Textual 8.x; the Debian package is older, so if you meet a display oddity there,
-a virtual environment with current Textual is worth trying before filing it.
-
-### Other distributions
+### Any other distribution
 
 ```bash
 git clone https://github.com/jetomev/grubforge.git
 cd grubforge
 python3 -m venv .venv && .venv/bin/pip install textual rich
+git clone https://github.com/jetomev/forgekit.git ../forgekit
 sudo sh install-helper.sh
+PYTHONPATH=../forgekit .venv/bin/python main.py
 ```
 
-Install `polkit` from your distribution's packages too. A virtual environment is
-used here because most current distributions refuse `pip install` into the system
-Python (PEP 668) — if yours packages `textual` and `rich`, prefer those.
+`install-helper.sh` copies two files and nothing else: the helper to `/usr/lib/grubforge/` and the polkit rule to `/usr/share/polkit-1/actions/`, both owned by root. polkit only runs a helper installed at the exact path named in its policy. Without it grubForge still runs, read-only, and says so.
 
-`install-helper.sh` copies two files and nothing else — the helper to
-`/usr/lib/grubforge/` and the polkit rule to `/usr/share/polkit-1/actions/`, both
-owned by root. polkit only runs a helper installed at the exact path named in its
-policy, which is why a clone on its own leaves grubForge read-only.
+A virtual environment is used because most current distributions refuse `pip install` into the system Python. If yours packages `textual` and `rich`, prefer those.
 
-Without it grubForge still runs, but read-only — and it says so rather than
-failing silently.
+### Where GRUB lives
+
+grubForge finds these by itself and shows what it found on the Overview.
+
+| Family | Examples | GRUB lives in | Rebuilt by | Tested in a VM |
+|---|---|---|---|---|
+| Arch | Arch, KognogOS, EndeavourOS, Manjaro | /boot/grub | grub-mkconfig | KognogOS |
+| Debian | Debian, Ubuntu, Mint, Zorin | /boot/grub | grub-mkconfig | Debian 13, Ubuntu 24.04 |
+| Fedora | Fedora, RHEL, Rocky, Alma | /boot/grub2 | grub2-mkconfig | Fedora 44 |
+| openSUSE | Tumbleweed, Leap | /boot/grub2 | grub2-mkconfig | Tumbleweed |
+| Others | Gentoo, Void… | /boot/grub | grub-mkconfig | — |
+
+- **Debian and Ubuntu** also read `/etc/default/grub.d/*.cfg` after `/etc/default/grub`. A setting decided there is shown with its real value and file, locked, because changing it in the main file would have no effect.
+- **Fedora-style systems** keep each Linux entry as its own file (`/boot/loader/entries`). grubForge shows them; you choose what starts first in Settings.
+- **Systems that don't use GRUB** (Pop!_OS uses systemd-boot) open read-only, and grubForge says why.
 
 ---
 
 ## Usage
 
 ```bash
-grubforge              # installed from the AUR
-python main.py         # running from source
+grubforge               # open grubForge
+grubforge --version     # print the version
+grubforge --help        # print the usage
 ```
 
-**No `sudo`.** Run it as yourself.
+**No `sudo`.** Run it as yourself. When a change needs permission, your desktop's own password window asks; grubForge never sees what you type.
 
-grubForge browses and edits everything as your normal user. The moment you do something that actually changes the bootloader — saving a setting, applying a theme, rebuilding the boot menu — your desktop shows its own password dialog, you type **your** password, and the change goes through.
+> **Why grubForge doesn't ask for your password itself.** If the application collected your password, the application would be holding it. Instead it uses **polkit**, the permission system your desktop already uses. Only a small, fixed helper runs as root, and it accepts a short list of specific jobs. It can't be handed a command to run.
 
-Confirmation dialogs tell you in advance when a password is coming, so it never arrives as a surprise.
+On a text console or over SSH there's no window for a password dialog, so run `sudo grubforge` there.
 
-> **Why grubForge doesn't ask for your password itself.**
->
-> If the application collected your password, the application would be holding your password — in the memory of a Python program with a stack of third-party libraries behind it. Instead we use **polkit**, the permission system your desktop already uses. The prompt belongs to the system. grubForge never sees, stores, or forwards what you type.
->
-> Only a small, fixed helper runs as root, and it accepts a short list of specific jobs. It cannot be handed a command to run.
->
-> *Changed in v1.1.0, after [#18](https://github.com/jetomev/grubforge/issues/18).*
-
-`sudo grubforge` still works if you prefer it, and skips the prompts entirely.
-
-On a machine with no desktop session — over SSH, or a plain text console — `sudo` is the way to make changes, because there's no window a password dialog could appear in. If you try without it, grubForge says exactly that and points you at `sudo`, rather than leaving you with polkit's rather alarming *"Not authorized. This incident has been reported."*
+When grubForge closes, the terminal gets a short record: what you saved, whether the boot menu has it, the backup, where the run was logged (`~/.local/share/grubforge/logs/`), and a thank-you.
 
 ---
 
-## Keybindings
+## Keys
 
-Action keys work from every screen and do the right thing for whichever screen you're on. Screen-specific keys stay local and never clash. Pressing an action key on a screen that doesn't use it tells you so, rather than doing nothing.
+| Key | Does |
+|---|---|
+| Tab / Shift+Tab | next / previous field or button |
+| Enter | open a list, press a button, confirm |
+| Space | flip a switch, tick a box |
+| Esc | close a window |
+| 1 – 5, or Ctrl + the underlined letter | Overview, Settings, Boot menu, Themes, Backups |
+| F10, or S | save, with a review first |
+| F9, or Ctrl+R | rebuild the boot menu |
+| R | read the files again |
+| F1 | help on what is selected |
+| M | the manual |
+| ? | all keys |
+| Q, or Ctrl+Q | quit (asks first if something isn't finished) |
 
-### Anywhere
+In lists: **Shift+↑↓** moves an entry, **F2** renames, **+** adds, **F** finds other systems (Boot menu); **I** installs a theme (Themes); **N / R / D** back up, restore, delete (Backups). Letter keys never act while you're typing in a field.
 
-| Key | Action |
-|-----|--------|
-| `1`–`5` | Dashboard / Config Editor / Theme Browser / Backup & Restore / Boot Entries |
-| `E` | Edit |
-| `S` | Save |
-| `A` | Apply |
-| `R` | Refresh the current screen |
-| `Ctrl+R` | Rebuild the boot menu |
-| `?` | Help (`Esc` to close) |
-| `q` | Quit |
-
-### Backup & Restore
-
-| Key | Action |
-|-----|--------|
-| `N` | Create a backup |
-| `X` | Restore the selected backup |
-| `D` | Delete the selected backup |
-
-### Boot Entries
-
-| Key | Action |
-|-----|--------|
-| `K` / `J` | Move the selected entry up / down |
-| `N` | Rename it |
-| `X` | Restore the original order |
-
-### Theme Browser
-
-| Key | Action |
-|-----|--------|
-| `H` | Show or hide the theme installation guide |
-
-`F5` also refreshes on any screen.
+The full manual is in [`grubforge/manual/`](grubforge/manual/), and inside the app with **M**.
 
 ---
 
-## Project Structure
-
-```
-grubforge/
-|-- main.py                      # Entry point
-|-- grubforge.1                  # Man page
-|-- grubforge/
-|   |-- app.py                   # The application shell and key dispatch
-|   |-- privilege.py             # The one place grubForge asks for permission
-|   |-- config_manager.py        # Reads, validates and writes GRUB settings
-|   |-- backup_manager.py        # Create, list, restore and delete backups
-|   |-- theme_manager.py         # Finds themes and reads their colours
-|   |-- boot_entries_manager.py  # Boot entry parsing and reordering
-|   |-- system.py                # Which system this is, read from /etc/os-release
-|   |-- grubforge.css            # Catppuccin Mocha styling
-|   |-- screens/                 # One file per screen
-|   |-- widgets/                 # Shared components
-|-- helper/
-|   |-- grubforge-helper         # The only part that runs as root
-|-- polkit/
-|   |-- org.kognogos.grubforge.policy   # What permission is asked for, and how
-|-- docs/                        # Changelog, and how this project is built
-|-- screenshots/
-|-- tests/                       # Automated checks — python tests/test_boot_entry_sources.py
-|-- testing/                     # Test matrix, results and release checklist per version
-|-- LICENSE
-```
-
----
-
-## Safety Philosophy
+## Safety
 
 grubForge is built around one rule: **never break the bootloader.**
 
-Every change passes four checks:
+1. **Review**: before anything is written you see every change as old → new.
+2. **Backup**: your settings, and your boot-order file, are saved first. The last 10 are kept in `/var/lib/grubforge/backups`.
+3. **Permission**: polkit authorises the change; your desktop draws the password window.
+4. **Rebuild when you choose**: what you save stays saved; the boot menu changes when you rebuild.
 
-1. **Validation** — your input is checked before it's staged
-2. **Confirmation** — a dialog asks before anything is written
-3. **Backup** — your current configuration is saved automatically first
-4. **Permission** — the change is authorised by polkit, one action at a time
-
-Backups live in `/var/lib/grubforge/backups` and can be restored from inside the app at any time.
-
-### How permission works
-
-grubForge runs as your user. It cannot write to `/etc` or `/boot` at all — it doesn't have the rights, and doesn't ask for them up front.
-
-When you make a change, it hands the job to a small helper that runs as root, and **polkit** decides whether that's allowed. Your desktop draws the password dialog. grubForge never touches your password.
-
-The helper accepts a **fixed list of jobs** and nothing else:
+### The helper's fixed list of jobs
 
 | Job | What it does |
-|-----|--------------|
-| `write-config` | Save `/etc/default/grub` |
-| `write-custom-40` | Save your custom boot order |
-| `regenerate` | Rebuild the boot menu |
-| `backup-create` / `-restore` / `-delete` | Manage backups |
-| `script-enable` / `script-disable` | Turn GRUB's generator scripts on and off |
-| `os-prober-run` | Scan for other operating systems |
+|---|---|
+| `write-config` | Save `/etc/default/grub` (only `KEY=value` lines) |
+| `write-custom-40` | Save your boot order |
+| `regenerate` | Rebuild the boot menu (grub-mkconfig or grub2-mkconfig, chosen by the helper itself) |
+| `backup-create` / `-restore` / `-delete` | Manage backups (only grubForge's own backup names) |
+| `script-enable` / `script-disable` | Turn the four GRUB scripts grubForge manages on and off |
+| `os-prober-run` | Look for other operating systems |
+| `read-entries` | Read the boot menu when grub.cfg is root-only (menu entries only, never a password hash) |
+| `theme-install` | Install a theme: plain files and folders only, nothing reaching outside the theme's folder, size limits, `theme.txt` required, never overwrites |
 
-That list is the point. **You cannot hand the helper a command to run** — if you could, it would be a way to run anything as root, which is exactly what it exists to prevent. It also re-checks everything it's given: settings files must contain only `KEY=value` lines, backup names must match the exact pattern grubForge generates, and only the four GRUB scripts it manages can be touched, by name.
+**You can't hand the helper a command to run.** If you could, it would be a way to run anything as root, which is exactly what it exists to prevent.
 
-Once you authenticate, polkit remembers for a few minutes, so saving a change and rebuilding the boot menu asks once rather than twice. Being asked repeatedly for one task is how people learn to type their password without reading the dialog.
+### Your own boot order, and new kernels
 
-> **grubForge no longer installs packages for you.** It used to offer to install `os-prober` by running `pacman` as root. Installing software is a much wider power than editing a bootloader config, and it belongs to your package manager. grubForge now shows you the command and you run it.
+Saving your own order writes the entries to `/etc/grub.d/40_custom` and turns off the scripts that made them, so your order stays. **Those scripts then no longer add new kernels by themselves.** After a kernel update, go **Back to the original order**, rebuild, and arrange again if you want. grubForge says this on the Overview, the Boot menu and in Kernel options while your order is in use.
 
-When you reorder boot entries, grubForge switches off GRUB's auto-generating scripts rather than editing generated files directly. This is the same approach grub-customizer uses, and one keypress reverses it.
-
-> **⚠️ Important: kernel updates while a custom order is saved.**
->
-> While a custom boot order is active, GRUB's automatic entry generators are switched off. Any rebuild of the boot menu after that — **including the ones your system runs automatically when a kernel updates** — produces a menu *without* auto-detected Linux entries.
->
-> In practice: new kernels won't appear in your boot menu until you press **Restore Original** in the Boot Entries screen, or add them yourself as custom entries.
->
-> If your system installs kernel updates regularly, it's safer to leave grubForge in default-order mode and only save a custom order when you actually need one.
+Entries made by other tools (btrfs snapshots, Debian's memtest) are **fixed**: their tool keeps placing them, and grubForge never copies them into your order, so they can't appear twice.
 
 ---
 
 ## How this project is built
 
-grubForge is a human and AI collaboration, and we've written down how that actually works in practice — including how we keep an AI collaborator reliable when its memory gets compacted mid-project.
+grubForge is a human and AI collaboration, and we've written down how that works in practice.
 
-📖 **[Building grubForge with AI](docs/AI-COLLABORATION.md)** — the honest answer, and the reason the `testing/` folder is published rather than hidden.
+📖 **[Building grubForge with AI](docs/AI-COLLABORATION.md)**, and the screen design that 2.0 was built from: [`docs/design/v2.0.0-screens.html`](docs/design/v2.0.0-screens.html). The `testing/` folder holds every test matrix, published on purpose.
 
 ---
 
 ## Roadmap
 
-### Next — v2.0.0: rebuild on forgekit
+### Next
 
-- [ ] **Move onto [forgekit](https://github.com/jetomev/forgekit)**, the shared foundation the other Forge apps already use. grubForge is the last one still carrying its own hand-built menus, dialogs and styling — several hundred lines that exist in one form here and a better form in the shared library.
-
-  It also brings grubForge the in-place editing style that alacrittyForge invented: one table per section, values edited where they live, staged changes marked and a fixed footer where the only button that writes anything sits.
-
-### After that
-
-- [ ] **Stop duplicating entries from generators grubForge doesn't manage** ([#20](https://github.com/jetomev/grubforge/issues/20)) — saving a custom order copies entries from scripts like `41_snapshots-btrfs` into `40_custom` without switching those scripts off, so they appear twice in the boot menu
-- [ ] **Be readable on a plain text console** ([#21](https://github.com/jetomev/grubforge/issues/21), tracking [forgekit#1](https://github.com/jetomev/forgekit/issues/1)) — a console offers 8 colours and no icon glyphs, and a console is exactly where you end up when the desktop won't start
-- [ ] **Warn when boot entries are frozen** ([#19](https://github.com/jetomev/grubforge/issues/19)) — while a custom boot order is saved, some settings in the Config Editor silently have no effect. grubForge should say so, and offer to apply them to the frozen entries or unfreeze. Also: make saving and rebuilding behave consistently across screens.
-- [ ] **Document what happens when the config changes outside the app** ([#17](https://github.com/jetomev/grubforge/issues/17))
-- [ ] **A layout pass for small terminals** — Boot Entries, Config Editor and Theme Browser get cramped
-- [ ] **Configurable preferences** — backup retention, theme paths, and similar
+- [ ] **Write settings into `/etc/default/grub.d`** on Debian and Ubuntu, so settings decided there can be changed from grubForge too (today they're shown, locked, with the file to edit)
+- [ ] **Fedora-style entries**: rename and reorder entries kept as separate files
+- [ ] **Configurable preferences**: backup retention, theme folder
 
 ### Done
 
-- [x] **v1.1.3** — reads where each boot entry comes from instead of guessing it, and keeps it through a custom order ([#28](https://github.com/jetomev/grubforge/issues/28))
-- [x] **v1.1.2** — boot entries name the system they are on, read from `/etc/os-release`, instead of assuming Arch Linux ([#27](https://github.com/jetomev/grubforge/issues/27))
-- [x] **v1.1.1** — reads the boot menu through polkit when `grub.cfg` is root-only, instead of reporting it empty ([#23](https://github.com/jetomev/grubforge/issues/23))
-- [x] **v1.1.0** — runs as your user and asks permission through polkit, instead of needing `sudo` for the whole application ([#18](https://github.com/jetomev/grubforge/issues/18))
-- [x] **v1.0.3** — UX batch closing 15 findings from the v1.0.1 retest
-- [x] **v1.0.2** — Textual 8.x compatibility, unblocking anyone on a rolling distribution
-- [x] **v1.0.1** — backup retention cap, boot-menu sync indicator, read-only indicator, consistent key bindings
-- [x] **v1.0** — the full application: dashboard, config editor with validation, theme browser, boot entry management, OS detection, automatic backups, boot menu rebuilding, man page, and AUR packaging
+- [x] **v2.0.0**: rebuilt on forgekit, every screen redesigned, every major distribution ([#21](https://github.com/jetomev/grubforge/issues/21), [#20](https://github.com/jetomev/grubforge/issues/20), [#19](https://github.com/jetomev/grubforge/issues/19), [#17](https://github.com/jetomev/grubforge/issues/17), [#22](https://github.com/jetomev/grubforge/issues/22), [#24](https://github.com/jetomev/grubforge/issues/24), [#25](https://github.com/jetomev/grubforge/issues/25), [#29–#33](https://github.com/jetomev/grubforge/issues?q=is%3Aissue+F-))
+- [x] **v1.1.3**: reads where each boot entry comes from instead of guessing it ([#28](https://github.com/jetomev/grubforge/issues/28))
+- [x] Earlier releases: [docs/CHANGELOG.md](docs/CHANGELOG.md)
 
 ---
 
 ## Changelog
 
+### v2.0.0 — October 2, 2026
+
+**grubForge, rebuilt.** Every screen was redesigned from a screen-by-screen plan Javier approved before any code was written, then built on [forgekit](https://github.com/jetomev/forgekit), the base the other Forge apps share.
+
+- 🔧 **Settings is a form.** Plain names, grouped by what you want to do; lists, worded switches, presets and a kernel-options checklist instead of typing raw values. GRUB's own name is in the help line.
+- 💾 **Save and Rebuild are separate, and visible.** A review (old → new) before every save; "saved, not rebuilt" in the bar until you rebuild; quitting asks first; a closing note in the terminal.
+- 🖥 **Boot menu:** the list is the screen. Add an entry from lists read from your computer, checked by GRUB itself. Entries from other tools stay fixed (#20), and an old duplicate left by 1.x can be dropped.
+- 🎨 **Themes** with a preview of your real entries, and safe installing. 🗂 **Backups** that show what a restore would change.
+- 📖 **A manual inside the app**, and F1 on anything.
+- 🖥 **Readable on a text console** (#21), checked on every screen.
+- 🐧 **Every major distribution** (#24): Debian 13, Ubuntu 24.04, Fedora 44 and openSUSE Tumbleweed, each tested in a VM with a real save. They found four real problems, all fixed: a setting decided in `/etc/default/grub.d` made saves silently ineffective, now shown and locked ([#30](https://github.com/jetomev/grubforge/issues/30)); unset and empty settings looked like changes ([#29](https://github.com/jetomev/grubforge/issues/29), [#32](https://github.com/jetomev/grubforge/issues/32)); Fedora's Boot menu offered things that don't apply there ([#31](https://github.com/jetomev/grubforge/issues/31)).
+- 📏 **Fits a 100-column console**: nothing cut off, checked by tests on every screen ([#33](https://github.com/jetomev/grubforge/issues/33)).
+- `grubforge --version` and `--help` print instead of opening the app (#22). Changes made outside grubForge are picked up on every screen switch (#17). Kernel options warn while your own order is in use (#19).
+
+Tested by Javier on KognogOS as a real package upgrade from 1.1.3, including a restart. Tests: 25 → **78** (53 new, plus the 25 boot-entry checks); warnings 0. New dependency: `python-forgekit` ≥ 0.5.0.
+
 ### v1.1.3 — September 29, 2026
 
-**grubForge now reads where each boot entry comes from, instead of guessing.**
-
-The Boot Entries screen shows a *source* under every entry. It was guessed from the entry's title: anything without "windows", "uefi" or "snapshot" in its name was credited to this system. So a second Linux found on the disk — Ubuntu next to Debian, Fedora next to Arch — was listed as if it were your own. Found while fixing [#27](https://github.com/jetomev/grubforge/issues/27), filed as [#28](https://github.com/jetomev/grubforge/issues/28).
-
-- 📖 **Read, not guessed.** `grub-mkconfig` already writes which script produced each section of `grub.cfg`. grubForge now reads that, so the Ubuntu found by os-prober reads "OS Prober", and your own kernels read your system's name.
-- 🔁 **The source survives a custom order.** Saving an order moves every entry into one file, `40_custom`. Read literally, every entry would then say "Custom", which tells you nothing. grubForge now writes a one-line note above each entry recording where it came from, and shows it as *"OS Prober · custom order"*. GRUB treats the note as a comment and ignores it.
-- 🤷 **When it has to guess, it says so.** An order saved by an earlier grubForge carries no notes, so those entries read *"(guessed)"* until you save the order again. The guess itself is better: os-prober always names what it finds "… (on /dev/…)", and grubForge now recognises that.
-- 🛠 **Saving switches off the right scripts.** The source also decides which GRUB scripts a save turns off. A second Linux wrongly credited to this system left the os-prober script running, which could list it twice. It is now switched off with the rest.
-- 🔐 **The root helper passes the new lines, and nothing else.** On systems where `grub.cfg` is readable only by root, the helper now hands back the section markers and notes too, each matched against one fixed shape. The rest of the file, including any password hash, still never leaves.
-
-Also new: `tests/`, 25 automated checks that need no root and run during every AUR build.
-
-No new dependencies.
-
-### v1.1.2 — September 29, 2026
-
-**grubForge told Debian users their own system was Arch Linux.**
-
-[@jfp42](https://github.com/jfp42) filed [#27](https://github.com/jetomev/grubforge/issues/27): on Debian, the Boot Entries screen labelled Debian's own kernels `source: Arch Linux`. The label for `10_linux` — the GRUB script that finds the kernels installed on whatever machine it runs on — was written into the code as "Arch Linux". That is only true on Arch.
-
-It was wrong closer to home too. On a KognogOS machine, which is built on Arch but is not Arch, the same entries read "Arch Linux" instead of "KognogOS".
-
-- 🏷 **The system names itself.** grubForge now reads the name from `/etc/os-release`, the same file GRUB itself uses to title the entries. Debian reads "Debian GNU/Linux", Fedora "Fedora Linux", KognogOS "KognogOS", Arch still "Arch Linux".
-- 🤷 **When it can't tell, it says so.** If `/etc/os-release` is missing or unreadable, the label is a neutral "This system" rather than a distribution grubForge has not confirmed.
-- 🧩 **Xen entries get a name too.** `20_linux_xen` had no label at all and now follows the same rule, as "<your system> (Xen)".
-
-Verified on a stock Debian 13 virtual machine before and after the change, and on a KognogOS desktop. Entries from other scripts (other systems found on the disk, firmware settings, snapshots, custom entries) are unchanged.
-
-**Known and next:** the *source* underneath the label is still guessed from the entry's title, so another Linux found on the disk is credited to this system ([#28](https://github.com/jetomev/grubforge/issues/28)). That is the next release.
-
-No new dependencies. One new file: `grubforge/system.py`.
+**grubForge now reads where each boot entry comes from, instead of guessing.** `grub-mkconfig` writes which script produced each section of `grub.cfg`; grubForge reads that, keeps it through a custom order with a one-line note per entry, and says "(guessed)" when it has to guess ([#28](https://github.com/jetomev/grubforge/issues/28)). Also new: `tests/`, 25 automated checks run during every AUR build.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 
@@ -367,34 +241,34 @@ No new dependencies. One new file: `grubforge/system.py`.
 
 ## Related Projects
 
-- **[KognogOS](https://github.com/jetomev/KognogOS)** — the distribution grubForge ships with
-- **[nog](https://github.com/jetomev/nog)** — tier-aware package manager
-- **[forgekit](https://github.com/jetomev/forgekit)** — the shared foundation for the Forge apps
-- **[alacrittyForge](https://github.com/jetomev/alacrittyforge)** — terminal configurator
-- **[bitlaForge](https://github.com/jetomev/bitlaforge)** — solo Bitcoin mining, honestly framed
+- **[KognogOS](https://github.com/jetomev/KognogOS)**: the distribution grubForge ships with
+- **[nog](https://github.com/jetomev/nog)**: tier-aware package manager
+- **[forgekit](https://github.com/jetomev/forgekit)**: the shared base for the Forge apps
+- **[alacrittyForge](https://github.com/jetomev/alacrittyforge)**: terminal configurator
+- **[bitlaForge](https://github.com/jetomev/bitlaforge)**: solo Bitcoin mining, honestly framed
 
 ---
 
 ## Authors
 
-**jetomev** — idea, vision, direction, testing
+**jetomev**: idea, vision, direction, testing
 
-**Claude (Anthropic)** — co-developer, architecture, implementation
+**Claude (Anthropic)**: co-developer, architecture, implementation
 
-Built as a collaboration between a human with a good idea and an AI that helped bring it to life — one command at a time. If you're curious how that works day to day, we wrote it down: [Building grubForge with AI](docs/AI-COLLABORATION.md).
+Built as a collaboration between a human with a good idea and an AI that helped bring it to life. If you're curious how that works day to day: [Building grubForge with AI](docs/AI-COLLABORATION.md).
 
 ---
 
 ## License
 
-grubForge is free software, released under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for the full text.
+grubForge is free software, released under the **GNU General Public License v3.0**. See [LICENSE](LICENSE).
 
 ---
 
 ## Contributing
 
-Contributions are welcome — open an issue or a pull request.
+Contributions are welcome: open an issue or a pull request.
 
-Bug reports are genuinely valued here. Four of the releases above exist because somebody outside the project took the time to write one — three of them from the same person.
+Bug reports are genuinely valued here. Several releases exist because somebody outside the project took the time to write one.
 
 If you find grubForge useful, a star helps others find it.

@@ -2,6 +2,38 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v2.0.0 — October 2, 2026
+
+**grubForge, rebuilt.** Every screen was redesigned from a screen-by-screen plan Javier approved before any code was written ([`docs/design/v2.0.0-screens.html`](design/v2.0.0-screens.html)). Then it was built on [forgekit](https://github.com/jetomev/forgekit) 0.5.0, the base the Forge apps share. Javier's brief: screens with care for formatting, colour and the flow of use, and "leave as little to the user to write where options are known to select from."
+
+**Five screens**
+- 🏠 **Overview**: "is my boot menu all right?" in four boxes. Anything that needs attention comes with the button that fixes it.
+- 🔧 **Settings** is a form: 17 settings in five groups (Start-up, Look, Kernel options, Other systems, Advanced), each with a plain name and GRUB's own name in the help line. Lists read from your computer (entries, themes, screen sizes), worded On/Off switches, wait-time presets, a kernel-options checklist with an explanation per option, colours with a sample. A changed row says "● changed · was: …".
+- 🖥 **Boot menu**: the menu as it shows at start-up. Move, rename, choose what starts first, remove, find other systems. **Add an entry** from lists read from this computer (kernels, start-up images, disks, EFI loaders), checked with GRUB's own `grub-script-check` before it is saved. Entries made by other tools (btrfs snapshots, memtest) are **fixed** and never copied into your order ([#20](https://github.com/jetomev/grubforge/issues/20)); an old copy left by 1.x can be dropped.
+- 🎨 **Themes**: a preview of *your* entries in the theme's colours; installing a downloaded theme goes through a checked helper step (plain files only, nothing outside the theme's folder, size limits, never overwrites).
+- 🗂 **Backups**: why each was made, in plain words, and what restoring it would change, before you do. Your boot order is copied beside each backup.
+
+**Save and Rebuild**
+- **F10** saves: a review of every change (old → new), a backup, then the write. **F9** rebuilds the boot menu, or both happen at once with "Save and rebuild". What you save stays saved.
+- "Saved · not in the boot menu yet" stays visible until you rebuild, also across restarts and for changes made outside grubForge ([#17](https://github.com/jetomev/grubforge/issues/17)). Quitting asks first.
+- When grubForge closes, the terminal gets a record: what was saved, whether the boot menu has it, the newest backup, and the run log (`~/.local/share/grubforge/logs/`).
+
+**Also**
+- 📖 A **manual inside the app** (M, 14 pages); F1 on anything opens its page.
+- 🖥 **Readable on a plain text console** ([#21](https://github.com/jetomev/grubforge/issues/21)), and nothing cut off at 100 columns ([#33](https://github.com/jetomev/grubforge/issues/33)).
+- 🐧 **Every major distribution** ([#24](https://github.com/jetomev/grubforge/issues/24)): Arch, Debian/Ubuntu, Fedora/RHEL (`/boot/grub2`, `grub2-mkconfig`, entry files), openSUSE, found automatically; the helper picks the right tool itself. Systems that don't use GRUB open read-only and say why. Tested in VMs built from each distribution's cloud image (`scripts/make-test-vms.sh`), with a real save each. They found four problems, all fixed:
+  - [#29](https://github.com/jetomev/grubforge/issues/29): an unset list setting looked like a change;
+  - [#30](https://github.com/jetomev/grubforge/issues/30): `/etc/default/grub.d` silently overrode a save; such settings are now shown locked with their file;
+  - [#31](https://github.com/jetomev/grubforge/issues/31): Fedora's Boot menu offered things that don't apply there;
+  - [#32](https://github.com/jetomev/grubforge/issues/32): empty and unset weren't treated as the same.
+- Kernel options warn while your own order is in use, since entries in it keep their own options ([#19](https://github.com/jetomev/grubforge/issues/19)).
+- `grubforge --version` and `--help` print instead of opening the app ([#22](https://github.com/jetomev/grubforge/issues/22)).
+- The test matrix no longer simulates a root-only `grub.cfg` (impossible on a FAT32 `/boot`); the helper's read path was exercised for real on KognogOS, where the file is root-only ([#25](https://github.com/jetomev/grubforge/issues/25)).
+
+**Testing**: §1–§10 of [`testing/20261002 - Test Matrix for grubForge v2-0-0.md`](../testing/), including Javier's own run on KognogOS as a real package upgrade from 1.1.3 (built with `scripts/make-rc-packages.sh`), which ended with a restart from the menu 2.0 built. Tests: 25 → **78** (53 new); warnings 0 (the new tests first raised 32 cleanup warnings; fixed).
+
+New dependency: `python-forgekit` ≥ 0.5.0. Gone: the 1.x screens; the backup list's Size column.
+
 ### v1.1.3 — September 29, 2026
 
 **grubForge now reads where each boot entry comes from, instead of guessing.**

@@ -148,4 +148,4 @@ Read back from the VM afterwards (grubForge's own run log `~/.local/share/grubfo
 - **The VM restarted at 16:03 after his changes and came up normally** (journal boot −1): GRUB built by 2.0 boots.
 - The next start stopped at the firmware's own boot menu: the "UEFI Firmware Settings" entry did its job. Choosing KognogOS there started the system normally.
 
-Rows 10.1–10.11 and 10.13: **PASS** (his message covers every option; the log shows saves, rebuilds, the boot order, a theme and a restart). **10.12 / 8.6 (real text console): not shown in the log, so it is not marked passed here.** No findings reported.
+Rows 10.1–10.11 and 10.13: **PASS** (his message covers every option; the log shows saves, rebuilds, the boot order, a theme and a restart). **10.12 / 8.6 (real text console): PASS on Javier's word** ("Yes, go ahead!" in answer to "did the text console step happen"); it cannot be read back from the log. No findings reported.

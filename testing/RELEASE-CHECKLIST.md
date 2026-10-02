@@ -29,8 +29,7 @@ The third grep must return zero hits. Any `run_worker(self.action_X())` where `a
 
 Before tagging, all of these must agree on the version string:
 
-- `grubforge/__init__.py` `__version__`
-- `grubforge/app.py` `VERSION`
+- `grubforge/__init__.py` `__version__` (since 2.0.0 the only one in the code: `cli.py` and the banner read it; `app.py VERSION` is gone)
 - `grubforge.1` `.TH` header
 - `README.md` Version badge
 - `~/Programs/aur-grubforge/PKGBUILD` `pkgver` + `pkgrel`
@@ -170,6 +169,21 @@ Every release artifact must carry the human + AI credit:
 - `README.md` Authors / Credits section
 - GitHub release body
 - Man page AUTHORS section
+
+## v2.0.0+ gates
+
+- **All tests, no warnings:** `python tests/test_boot_entry_sources.py` and
+  `PYTHONPATH=../forgekit python -W default -m unittest tests.test_v2_settings tests.test_v2_bootmenu tests.test_v2_themes_backups`
+  (the AUR `check()` runs both). Report the count; it was 78 at 2.0.0.
+- **100 columns:** the three `*_at_100_columns` tests are the guard; also look at
+  every screen with forgekit's `tools/console-preview.py --size 100x30`.
+- **Other distributions:** `scripts/make-test-vms.sh` (Debian, Ubuntu, Fedora,
+  openSUSE; snapshot `fresh` each), and a real save in each, checked in `grub.cfg`.
+- **A real package upgrade before the tag:** `scripts/make-rc-packages.sh` builds
+  rc packages from the AUR recipes; install them over the released version in the
+  KognogOS VM for the human run. (nog cannot install a package file, so `pacman -U`.)
+- **python-forgekit first:** grubforge depends on its newest pieces; the AUR must
+  have the forgekit version before the grubforge push.
 
 ## Release-day flow
 

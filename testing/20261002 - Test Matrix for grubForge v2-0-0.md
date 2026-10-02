@@ -121,16 +121,16 @@ Each VM: detection, the boot menu read, nothing pending at start, a real Save an
 **§9 result: all four families PASS** (Debian 13, Ubuntu 24.04, Fedora 44, openSUSE Tumbleweed), each with a real save that reached the boot menu. Four findings, all fixed with tests.
 ## 10 · Javier's run (KognogOS VM, at the keyboard)
 
-Setup by Claude before the run: the VM `kognog-hypeforge` reset to `clean-install-3`, grubForge 2.0.0 and python-forgekit 0.5.0 installed as packages (built from the release tags), nothing else changed. Javier logs in and opens a terminal.
+Setup by Claude (10-02, done): the VM `kognog-hypeforge` reset to `clean-install-3` (which ships grubForge 1.1.3 and forgekit 0.3.0, as KognogOS does), then **upgraded** to grubforge **2.0.0rc1** and python-forgekit **0.5.0rc1**: packages built by `scripts/make-rc-packages.sh` from the AUR recipes and commits `716c557` / `0c767f2`; every build check passed (53 + 25 tests, helper refusals, headless mount). Installed with `pacman -U`, because nog has no way to install a package file from disk (a nog gap). Saved as snapshot **`grubforge-2.0.0rc1`**. A headless check as the VM's user: can save (through polkit), nothing pending at start. Javier logs in and opens a terminal.
 
 | ID | Task | EXPECT | Result | Notes |
 |---|---|---|---|---|
 | 10.1 | `grubforge --version`, then `grubforge` | the version; the app opens on the Overview | — | |
-| 10.2 | Overview | the VM's menu, "Nothing needs attention", Safety box | — | |
+| 10.2 | Overview | "Nothing needs attention"; Entries reads "readable only by an administrator" (KognogOS protects grub.cfg); Safety: password asked when you save or rebuild | — | |
 | 10.3 | Settings ▸ Start-up: wait 5 → 3 with a preset, **F10**, **Save** | the review (old → new); the password window; "Saved · not in the boot menu yet" | — | |
 | 10.4 | **F9** | rebuild progress; the bar clears | — | |
 | 10.5 | Kernel options: tick `nomodeset`, F10, **Save and rebuild** | one review, one password, done | — | |
-| 10.6 | Boot menu: add a "safe graphics" entry (+), move it up, F10, Save and rebuild | review lists it; the menu shows it | — | |
+| 10.6 | Boot menu: **Read the boot menu** (password once), then add a "safe graphics" entry (+), move it up, F10, Save and rebuild | the list appears after the password; review lists the new entry; the menu shows it | — | |
 | 10.7 | Reboot the VM | the menu shows the changes; waits 3 s; the new entry starts with nomodeset | — | the real proof |
 | 10.8 | Themes: pick one, Use this theme, Save and rebuild, reboot | the menu is themed | — | |
 | 10.9 | Backups: restore the oldest, F9, reboot | the original look and wait time | — | |

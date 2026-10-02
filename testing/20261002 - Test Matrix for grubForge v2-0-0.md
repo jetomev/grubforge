@@ -138,3 +138,14 @@ Setup by Claude (10-02, done): the VM `kognog-hypeforge` reset to `clean-install
 | 10.11 | **M**, and F1 on a setting | the manual opens, on the right page | — | |
 | 10.12 | `Ctrl+Alt+F3`, log in, `sudo grubforge` | readable and usable on the text console | — | real tty |
 | 10.13 | Anything that looks wrong, reads badly, or is slow | noted here as F-n | — | |
+
+**Javier's verdict (10-02, ~16:05): "WOW!!!! it works wonders!!!!! I used, pressed, every possible option and it works great!!!!"**
+
+Read back from the VM afterwards (grubForge's own run log `~/.local/share/grubforge/logs`, the backups, the journal), so the result rests on evidence, not only on the message:
+- 3 runs, 15:54–16:03. 9 settings saves, 1 boot-order save, 2 rebuilds; each run's closing record says "everything saved is in the boot menu".
+- 6 backups, one before each save, each with its boot-order copy.
+- Final state: theme `starfield`, resolution `1024x768`, kernel options `quiet splash loglevel=3`, menu always shown, wait 10 s; `40_custom` holds his saved order.
+- **The VM restarted at 16:03 after his changes and came up normally** (journal boot −1): GRUB built by 2.0 boots.
+- The next start stopped at the firmware's own boot menu: the "UEFI Firmware Settings" entry did its job. Choosing KognogOS there started the system normally.
+
+Rows 10.1–10.11 and 10.13: **PASS** (his message covers every option; the log shows saves, rebuilds, the boot order, a theme and a restart). **10.12 / 8.6 (real text console): not shown in the log, so it is not marked passed here.** No findings reported.

@@ -19,13 +19,13 @@ Javier's brief (2 Oct): *"screens done with high quality UI and easy to use stru
 - [ ] Design still to show: the Boot menu on Fedora-style (BLS) systems
 - [x] Phase 1 · forgekit v0.5.0 (2 Oct, forgekit `c13c238`, not released — proven here first): hint bar, changes bar + review window, filter list, notices, progress window, manual viewer, roles (changed, info), glyphs, styles for lists/switches/checklists/radio
 - [x] Phase 2 · frame + Overview + Settings (form), Save, Rebuild, quit warning, closing note — `f52ca05` + fixes; **real save proven in the KognogOS VM** (timeout 5→3: backup, write, rebuild, `set timeout=3`; Save-only → "saved, not rebuilt" → quit asks → F9 clears). Also #22 (--version/--help) and #24 groundwork (grubenv + helper picks the tool)
-- [ ] Phase 3 · Boot menu (+ Add an entry, Find other systems, #20 fixed entries)
+- [x] Phase 3 · Boot menu (+ Add an entry, Find other systems, #20 fixed entries + the old copy dropped) — real save and restore proven in the VM; found + fixed the `20_memtest86+` marker bug. Open O-1: the UEFI entry's `if` guard isn't copied into a saved order
 - [ ] Phase 4 · Themes + Backups (40_custom backed up too)
 - [ ] Phase 5 · manual, console, `--version`/`--help` (#22), distro detection (#24)
 - [ ] Phase 6 · tests per screen flow; VMs per distro family (need Ubuntu, Fedora, openSUSE VMs); Javier's run; release
 - [ ] In-app manual (besides the help shortcuts)
 - [ ] Console mode readable (#21)
-- [ ] Test matrix in VMs (KognogOS, Debian), then Javier's own run
+- [ ] Test matrix `testing/20261002 - Test Matrix for grubForge v2-0-0.md` — filled phase by phase; §9 needs VMs for Debian/Ubuntu/Fedora/openSUSE; §10 Javier's run
 
 ## Open issues to fold in or decide
 - [ ] #22 `grubforge --version` launches the TUI

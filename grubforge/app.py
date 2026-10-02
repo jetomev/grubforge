@@ -31,6 +31,7 @@ from forgekit import (
 from . import __version__
 from .session import Session
 from .settings_spec import BY_KEY, GROUPS
+from .ui.bootmenu import BootMenuScreen
 from .ui.overview import OverviewScreen
 from .ui.settings import SettingsScreen
 
@@ -62,6 +63,21 @@ GF_CSS = FORGE_CSS + """
 .gf-box-buttons Button { margin: 0 2 0 0; }
 .gf-soon { padding: 1 0; }
 #gf-quit-msg { height: auto; padding: 0 0 1 0; }
+#sec-boot { padding: 0 2 0 0; }
+#bm-table { height: auto; max-height: 20; margin: 1 0 0 0; border: solid $forge-field-border; background: $forge-bg; }
+#bm-table:focus { border: solid $forge-accent; }
+#bm-actions, #bm-more { padding: 1 0 0 0; align-horizontal: left; height: auto; }
+#bm-actions Button, #bm-more Button { margin: 0 2 0 0; }
+#bm-read { align-horizontal: left; }
+.gf-small { width: 76; }
+.gf-add { width: 96; }
+.gf-add-line { height: 3; }
+.gf-add-label { width: 18; height: 3; content-align: left middle; color: $forge-text; }
+.gf-add-line > Select, .gf-add-line > Input { width: 1fr; }
+#ae-block { height: 9; margin: 0 0 1 0; }
+.gf-add-sep { margin: 1 0 0 0; }
+#os-status { padding: 1 0; }
+#os-results { height: auto; padding: 0 0 1 0; }
 """
 
 
@@ -180,7 +196,7 @@ class GrubForgeApp(ForgeApp):
     def compose_sections(self) -> ComposeResult:
         yield OverviewScreen(self.session, id="sec-overview")
         yield SettingsScreen(self.session, id="sec-settings")
-        yield ComingSoon("The Boot menu screen", id="sec-boot")
+        yield BootMenuScreen(self.session, id="sec-boot")
         yield ComingSoon("The Themes screen", id="sec-themes")
         yield ComingSoon("The Backups screen", id="sec-backups")
 
@@ -201,6 +217,9 @@ class GrubForgeApp(ForgeApp):
             self.query_one(OverviewScreen).refresh_view()
         if section_id == "settings":
             self.query_one("#gf-groups").focus()
+        if section_id == "boot":
+            self.query_one(BootMenuScreen).refresh_view()
+            self.query_one("#bm-table").focus()
 
     def on_action(self, action_id: str) -> None:
         if action_id == "manual":
@@ -216,6 +235,15 @@ class GrubForgeApp(ForgeApp):
     def action_field_help(self) -> None:
         from forgekit import SettingRow
         w = self.focused
+        if w is not None and any(isinstance(a, BootMenuScreen) for a in w.ancestors_with_self):
+            self.push_screen(FieldHelp("Your own boot order", (
+                "GRUB normally builds the menu by itself every time it is rebuilt, and new kernels appear on "
+                "their own.\n\nSaving your own order writes the entries, as you arranged them, to "
+                "[b]/etc/grub.d/40_custom[/] and turns off the scripts that made them. That keeps your order, "
+                "but those scripts no longer add anything new: a kernel update won't appear until you go "
+                "[b]Back to the original order[/].\n\nEntries made by other tools (snapshots) are fixed: "
+                "their tool keeps placing them, and grubForge never copies them into your order.")))
+            return
         row = next((a for a in (w.ancestors_with_self if w else []) if isinstance(a, SettingRow)), None)
         if row is None:
             self.action_act("shortcuts")
@@ -230,7 +258,7 @@ class GrubForgeApp(ForgeApp):
     # ── state: the changes bar ───────────────────────────────────────────────
     def refresh_state(self) -> None:
         s, bar = self.session, self.changes_bar
-        n = len(s.pending)
+        n = s.change_count()
         if n:
             bar.show(f"{n} change{'s' if n != 1 else ''} not saved yet", "changed",
                      [("Save…  F10", "gf-save", True), ("Discard", "gf-discard", False)])
@@ -248,6 +276,7 @@ class GrubForgeApp(ForgeApp):
         elif bid == "gf-discard":
             self.session.discard()
             self.query_one(SettingsScreen).sync()
+            self.query_one(BootMenuScreen).refresh_view()
             self.refresh_state()
             self.notify("Changes discarded. Nothing was written.")
         elif bid in ("gf-rebuild", "ov-rebuild"):
@@ -280,7 +309,7 @@ class GrubForgeApp(ForgeApp):
         if s.read_only:
             self.notify(s.read_only_reason, title="Read-only", severity="warning", timeout=8)
             return
-        if not s.pending:
+        if not s.pending and not s.boot_changed:
             self.notify("Nothing to save: no changes.")
             return
         problems = s.problems()
@@ -288,24 +317,30 @@ class GrubForgeApp(ForgeApp):
             self.notify("\n".join(problems), title="Can't save yet", severity="error", timeout=10)
             return
         settings = self.query_one(SettingsScreen)
-        changes = s.changes(lambda k: settings.choices_for(k) if BY_KEY[k].control in ("list", "file") else None)
+        groups = []
+        if s.pending:
+            groups.append(ChangeGroup("Settings", "/etc/default/grub", s.changes(
+                lambda k: settings.choices_for(k) if BY_KEY[k].control in ("list", "file") else None)))
+        if s.boot_changed:
+            groups.append(ChangeGroup("Boot order", "/etc/grub.d/40_custom", s.boot.changes()))
+        steps = ["A backup of your settings is saved", "The changes are written"]
+        if s.boot_changed and s.boot.scripts_to_turn_off():
+            steps.append("The scripts that made these entries are turned off, so your order stays")
+        steps.append('Rebuild the boot menu: now with "Save and rebuild", or later with F9')
         note = s.capability.prompt_note or ""
         choice = await self.push_screen_wait(ReviewDialog(
-            "Review before saving",
-            [ChangeGroup("Settings", "/etc/default/grub", changes)],
-            steps=["A backup of your settings is saved", "The changes are written",
-                   f"Rebuild the boot menu: now with \"Save and rebuild\", or later with F9"],
+            "Review before saving", groups, steps=steps,
             note=note,
             buttons=[("Save", "save", True), ("Save and rebuild", "both", False)]))
         if choice is None:
             return
         rebuild = choice == "both"
-        steps = ["Back up your settings", "Write the changes"] + (["Rebuild the boot menu"] if rebuild else [])
-        dlg = ProgressDialog("Saving" if not rebuild else "Saving and rebuilding", steps)
+        dlg = ProgressDialog("Saving" if not rebuild else "Saving and rebuilding", s.save_steps(rebuild))
         self.push_screen(dlg)
         ok = await s.save(rebuild, dlg.set_step, dlg.add_line)
         dlg.finish()
         settings.sync()
+        self.query_one(BootMenuScreen).refresh_view()
         self.refresh_state()
         self.query_one(OverviewScreen).refresh_view()
         if ok and not rebuild:
@@ -353,10 +388,27 @@ class GrubForgeApp(ForgeApp):
         self.notify("Read the files again. Your unsaved changes are kept.")
 
     # ── quitting ─────────────────────────────────────────────────────────────
+    # ── shared between screens ───────────────────────────────────────────────
+    def settings_changed_elsewhere(self, key: str) -> None:
+        """A setting changed from another screen (Boot menu, Find other systems)."""
+        self.query_one(SettingsScreen).sync()
+
+    async def run_restore_original(self) -> None:
+        s = self.session
+        dlg = ProgressDialog("Going back to the original order", ["Hand the boot menu back to GRUB"])
+        self.push_screen(dlg)
+        ok = await s.restore_original(dlg.set_step)
+        dlg.finish()
+        self.query_one(BootMenuScreen).refresh_view()
+        self.refresh_state()
+        self.query_one(OverviewScreen).refresh_view()
+        self.notify("Saved. Rebuild (F9) to see the original order in the menu." if ok else
+                    "Not finished; the window shows why.", severity="information" if ok else "error", timeout=8)
+
     def before_quit(self) -> bool:
         s = self.session
-        if s.pending:
-            n = len(s.pending)
+        if s.pending or s.boot_changed:
+            n = s.change_count()
             self.push_screen(QuitDialog(
                 f"{n} change{'s are' if n != 1 else ' is'} not saved",
                 ["Quitting now loses them."],

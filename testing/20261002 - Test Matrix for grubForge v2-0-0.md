@@ -1,0 +1,66 @@
+# Test Matrix — grubForge v2-0-0
+
+**Started:** 2026-10-02, filled in phase by phase as each lands (Javier: *"Remember the Test Matrix"*).
+**Scope:** the move onto forgekit and the full redesign — design approved 2026-10-02 (`docs/design/v2.0.0-screens.html`), Javier's six rulings: form with visible controls; Save and Rebuild separate; plain names; entries from other tools fixed (#20); every major distribution (#24); closing note + quit warning.
+**Where:** this desktop (KognogOS, real files, **read-only**: nothing is saved here) and the KognogOS VM `kognog-hypeforge` from snapshot `clean-install-3` (real saves; reverted after). Other distributions: VMs still to build (§9).
+**Who:** §1–§8 Claude (headless through Textual's Pilot, screens recorded and looked at); §10 Javier, at the keyboard.
+
+---
+
+## 1 · Automated
+
+| ID | Suite | Checks | Result | Notes |
+|---|---|---|---|---|
+| 1.1 | `tests/test_boot_entry_sources.py` (v1.1.3, #28) | 25 | **PASS** | unchanged, still green after the `+` marker fix |
+| 1.2 | `tests/test_v2_settings.py` — distributions, settings in plain words, writer, session, screens | 21 | **PASS** | the long-field test proven in the failing direction (fails without the forgekit fix) |
+| 1.3 | `tests/test_v2_bootmenu.py` — fixed entries (#20), the draft, Add an entry | 11 | **PASS** | found the `20_memtest86+` marker bug (below) |
+| 1.4 | forgekit `tests/` (v0.5.0 pieces) | 48 | **PASS** | incl. the gallery as a real text console |
+| 1.5 | Helper refusals (not root / unknown verb / no verb) | 3 | **PASS** | |
+| 1.6 | `grep -rn "run_worker(self\.action_" grubforge/` | empty | **PASS** | |
+
+## 2 · Settings (Phase 2) — desktop, read-only
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 2.1 | Overview reads the real system | starts, waits, entries, theme, rebuilt, backups, GRUB family | **PASS** | "first entry · 10 seconds, always · 7 · your own order · kognogos · Sep 16 · 10 backups · Arch" |
+| 2.2 | Nothing is "changed" at start | changes bar hidden | **PASS** | was 3 false changes (kernel order, unset colours) — fixed, test 1.2 guards it |
+| 2.3 | Every group drawn: lists, worded switches, presets, choices, kernel checklist, colours + sample | readable, not clipped at 120×40 | **PASS** | screens in the design page v4 |
+| 2.4 | A value as long as its field | visible | **PASS** | was blank (forgekit scrollbar) — fixed in forgekit |
+| 2.5 | Tab order and hints | each setting in turn, then the bar; hints follow focus | **PASS** | |
+
+## 3 · Save and Rebuild (Phase 2) — VM, real saves
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 3.1 | Change "Wait before starting" 5 → 3, F10, "Save and rebuild" | backup first; `GRUB_TIMEOUT=3`; grub.cfg rebuilt with `set timeout=3`; bar gone | **PASS** | backup `grub_20261002_134916_694646.bak` |
+| 3.2 | Change "Show the menu" → countdown, F10, "Save" only | "⚠ Saved at … · not in the boot menu yet" | **PASS** | |
+| 3.3 | Quit after 3.2 | "Before you go": Rebuild and quit / Quit anyway / Stay | **PASS** | |
+| 3.4 | F9 after 3.2 | rebuilt; bar gone | **PASS** | |
+| 3.5 | Closing note | "Closed · everything saved is in the boot menu", times, newest backup | **PASS** | |
+| 3.6 | "Start this entry" list | the VM's real entries, submenu children as "Submenu ▸ entry" | **PASS** | |
+
+## 4 · Boot menu (Phase 3)
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 4.1 | Desktop, read-only: the real menu | 7 rows; Windows entries from Other systems; snapshots fixed | **PASS** | sources "(guessed)": the desktop's order predates v1.1.3 origin lines |
+| 4.2 | Desktop: the v1.x #20 duplicate | the copy inside the saved order marked "old copy · dropped when you save"; a notice says so; the review lists it | **PASS** | |
+| 4.3 | Move up/down (Shift+↑↓) | slides; both moved entries marked; fixed entries never move | **PASS** | a 2-step move swapped instead of sliding — fixed |
+| 4.4 | Add an entry: Linux kernel | kernel, image, disk and options read from the computer; GRUB's checker accepts it | **PASS** | desktop: `/boot` is the ESP (prefix ""), root btrfs `subvol=@` copied from /proc/cmdline |
+| 4.5 | Add an entry: empty | GRUB accepts the starting point | **PASS** | an entry with only a comment was rejected by GRUB — fixed |
+| 4.6 | VM: add "safe graphics", move it, rename "KognogOS Linux" → "KognogOS", Save and rebuild | real menu: KognogOS, KognogOS (safe graphics), Advanced options…; `10_linux` turned off | **PASS** | |
+| 4.7 | VM: Back to the original order, then F9 | "saved, not rebuilt" in between; then the original two entries; `10_linux` executable again; stock 40_custom | **PASS** | |
+| 4.8 | Find other systems | os-prober installed? search on? search through the helper | **PASS** (status) | the search itself not run here (no other OS in the VM) |
+
+**Findings so far** (fixed, each with a test):
+- `20_memtest86+` (Debian) wasn't recognised as a script (`+` not allowed in the marker pattern), so its entry was guessed as `10_linux` and would have been copied into a saved order: #20 again from a different tool. Pattern widened in the parser, origin lines and the helper's pass-through, together.
+
+**Open:**
+- O-1: a UEFI-only entry (`30_uefi-firmware`) lives inside an `if [ "$grub_platform" = "efi" ]` block; copied into a saved order, the guard is not copied. Harmless on UEFI machines; to decide before release.
+
+## 5 · Themes (Phase 4) — to fill
+## 6 · Backups (Phase 4) — to fill
+## 7 · Manual, help, keys (Phase 5) — to fill
+## 8 · Text console (`TERM=linux`, real tty in the VM) — to fill
+## 9 · Other distributions (VMs: Debian 13, Ubuntu, Fedora, openSUSE) — to fill
+## 10 · Javier's run — after everything is built

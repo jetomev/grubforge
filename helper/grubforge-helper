@@ -89,9 +89,9 @@ _MENUENTRY_RE = re.compile(r'^(menuentry|submenu)\s+[\'"]')
 # whole-line match against a fixed shape, so nothing else in grub.cfg can ride
 # along. Duplicated from grubforge/boot_entries_manager.py — keep in step.
 _PASSTHROUGH_RES = (
-    re.compile(r'^### BEGIN /etc/grub\.d/[A-Za-z0-9_.-]+ ###$'),
-    re.compile(r'^### END /etc/grub\.d/[A-Za-z0-9_.-]+ ###$'),
-    re.compile(r'^# grubforge-source: [A-Za-z0-9_.-]+( \(guessed\))?$'),
+    re.compile(r'^### BEGIN /etc/grub\.d/[A-Za-z0-9_.+-]+ ###$'),
+    re.compile(r'^### END /etc/grub\.d/[A-Za-z0-9_.+-]+ ###$'),
+    re.compile(r'^# grubforge-source: [A-Za-z0-9_.+-]+( \(guessed\))?$'),
     re.compile(r'^# This file is managed by grubForge\.$'),
 )
 

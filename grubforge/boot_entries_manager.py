@@ -37,8 +37,10 @@ exec tail -n +3 $0
 
 # grub-mkconfig wraps each /etc/grub.d script's output in these markers, so
 # grub.cfg itself says which script produced every entry (issue #28).
-SECTION_BEGIN_RE = re.compile(r'^### BEGIN /etc/grub\.d/([A-Za-z0-9_.-]+) ###$')
-SECTION_END_RE   = re.compile(r'^### END /etc/grub\.d/([A-Za-z0-9_.-]+) ###$')
+# v2.0.0: "+" allowed — Debian ships 20_memtest86+, whose entries were
+# unrecognised, guessed as 10_linux, and so copied into a saved order (#20).
+SECTION_BEGIN_RE = re.compile(r'^### BEGIN /etc/grub\.d/([A-Za-z0-9_.+-]+) ###$')
+SECTION_END_RE   = re.compile(r'^### END /etc/grub\.d/([A-Za-z0-9_.+-]+) ###$')
 
 # Saving a custom order moves every entry into 40_custom, where the markers can
 # only say "40_custom". So grubForge writes where each entry originally came
@@ -46,7 +48,7 @@ SECTION_END_RE   = re.compile(r'^### END /etc/grub\.d/([A-Za-z0-9_.-]+) ###$')
 # `exec tail -n +3 $0`, so these lines reach grub.cfg as comments, which GRUB
 # ignores. " (guessed)" marks an origin grubForge could not read.
 ORIGIN_PREFIX    = "# grubforge-source: "
-ORIGIN_RE        = re.compile(r'^# grubforge-source: ([A-Za-z0-9_.-]+)( \(guessed\))?$')
+ORIGIN_RE        = re.compile(r'^# grubforge-source: ([A-Za-z0-9_.+-]+)( \(guessed\))?$')
 
 # The third line of CUSTOM_40_HEADER, and the first one tail prints. Seeing it
 # in grub.cfg means grubForge wrote that 40_custom, even one saved before
@@ -321,7 +323,7 @@ def render_custom_order(entries: list) -> str:
 def _origin_line(entry: BootEntry) -> str:
     """The line above an entry in 40_custom that records where it came from."""
     source = entry.source
-    if not re.fullmatch(r'[A-Za-z0-9_.-]+', source or ""):
+    if not re.fullmatch(r'[A-Za-z0-9_.+-]+', source or ""):
         # Never write something the reader would not accept back — and never a
         # newline into a file that GRUB and the shell both read.
         source, guessed = "40_custom", False

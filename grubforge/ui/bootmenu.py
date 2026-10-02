@@ -58,6 +58,11 @@ class BootMenuScreen(Vertical, can_focus=False):
         Binding("f", "others", show=False),
     ]
 
+    EDIT_HINTS = [("↑↓", "pick"), ("Shift+↑↓", "move"), ("F2", "rename"), ("+", "add"),
+                  ("Tab", "buttons"), ("F10", "save"), ("?", "all keys")]
+    # Fedora-style entries are shown, not edited: offer only what works (found in the Fedora 44 VM)
+    VIEW_HINTS = [("↑↓", "look"), ("F1", "help"), ("1-5", "screens"), ("?", "all keys")]
+
     def __init__(self, session, **kw) -> None:
         super().__init__(**kw)
         self.session = session
@@ -72,8 +77,7 @@ class BootMenuScreen(Vertical, can_focus=False):
         with Horizontal(id="bm-read", classes="forge-buttons gf-box-buttons"):
             yield Button("Read the boot menu (asks for your password)", id="bm-read-btn", variant="primary")
         table = DataTable(id="bm-table", cursor_type="row", zebra_stripes=False)
-        table.FORGE_HINTS = [("↑↓", "pick"), ("Shift+↑↓", "move"), ("F2", "rename"), ("+", "add"),
-                             ("Tab", "buttons"), ("F10", "save"), ("?", "all keys")]
+        table.FORGE_HINTS = self.EDIT_HINTS
         yield table
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-actions"):
             yield Button("Move up  Shift+↑", id="bm-up")
@@ -101,6 +105,12 @@ class BootMenuScreen(Vertical, can_focus=False):
         for bid in ("bm-actions", "bm-more"):
             self.query_one(f"#{bid}").display = actions_ok
         read.display = s.boot_unreadable and not s.read_only
+        self.query_one("#bm-stale").display = False      # shown below only when there is an old copy
+        hints = self.EDIT_HINTS if actions_ok else self.VIEW_HINTS
+        if table.FORGE_HINTS is not hints:
+            table.FORGE_HINTS = hints
+            if self.is_mounted:
+                self.app.refresh_hints()
         if s.env.bls:
             notice.show("This system keeps its entries as separate files", [
                 "Fedora-style systems order their entries by version, and grubForge 2.0 shows them as they are.",
@@ -164,9 +174,18 @@ class BootMenuScreen(Vertical, can_focus=False):
 
     def _fill_bls(self, table: DataTable) -> None:
         table.clear()
+        self._rows = []
+        n = 0
         for n, (eid, title, version) in enumerate(probe.bls_entries(), 1):
             table.add_row(str(n), escape(title), "Entry file",
                           rich_colours(f"[$forge-muted]{escape(version)}[/]", self.app))
+        # what GRUB's own scripts add after the entry files (firmware settings, other systems)
+        boot = self.session.boot
+        for it in (boot.visible() if boot else []):
+            n += 1
+            title = escape(it.entry.title) + (" ▸" if it.entry.entry_type == "submenu" else "")
+            table.add_row(str(n), title, escape(source_label(it, self.session.env.distro)),
+                          rich_colours(f"[$forge-muted]{glyph('fixed')} fixed · its tool places it[/]", self.app))
 
     def current(self) -> Item | None:
         t = self.query_one("#bm-table", DataTable)

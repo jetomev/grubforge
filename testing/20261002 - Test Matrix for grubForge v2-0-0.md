@@ -107,10 +107,29 @@ Each VM: detection, the boot menu read, nothing pending at start, a real Save an
 |---|---|---|---|---|---|---|
 | 9.1 | Debian 13 | Debian · /boot/grub · grub-mkconfig | 3 entries | **yes** (countdown style) | **PASS** | first run found F-1 and F-2 (below) |
 | 9.2 | Ubuntu 24.04 | Debian family · Ubuntu | 3 entries | **yes** | **PASS** | 4 settings decided in `50-cloudimg-settings.cfg`, locked |
-| 9.3 | Fedora 44 | — | — | — | — | building |
+| 9.3 | Fedora 44 | Fedora · /boot/grub2 · grub2-mkconfig · entries as separate files | 1 entry file + UEFI Firmware Settings (fixed) | **yes** (wait 0 → 7, put back) | **PASS** | first run found F-3 (below); SELinux permissive in the test VM only |
 | 9.4 | openSUSE Tumbleweed | — | — | — | — | building |
 
 **Findings from the distribution VMs** (fixed, each with a test):
 - **F-1 (Debian):** `GRUB_GFXMODE` not set in the file → the list fell back to "Automatic" and staged it as a change nobody made. Every list now offers "Not set (…)" when the file doesn't set it.
 - **F-2 (Debian, Ubuntu):** `/etc/default/grub.d/*.cfg` (read by Debian's grub-mkconfig *after* /etc/default/grub) decided `GRUB_TIMEOUT`; grubForge's saved change had **no effect** and nothing said so. grubForge now checks whether the system's grub-mkconfig reads that folder; settings decided there are shown with their real value and file, locked ("change it there"), and the Overview says how many. Writing into that folder is a possible follow-up.
-## 10 · Javier's run — after everything is built
+- **F-3 (Fedora):** on the Boot menu, a "Drop the old copy" button showed with no old copy, the hint line offered move/rename/add (which don't work on entry files), and GRUB's own entries (UEFI Firmware Settings) were missing. Now: the button only with an old copy, a hint line of keys that work, and GRUB's own entries listed after the entry files as fixed. Test `FedoraStyle` fails on the old code, passes on the new.
+## 10 · Javier's run (KognogOS VM, at the keyboard)
+
+Setup by Claude before the run: the VM `kognog-hypeforge` reset to `clean-install-3`, grubForge 2.0.0 and python-forgekit 0.5.0 installed as packages (built from the release tags), nothing else changed. Javier logs in and opens a terminal.
+
+| ID | Task | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 10.1 | `grubforge --version`, then `grubforge` | the version; the app opens on the Overview | — | |
+| 10.2 | Overview | the VM's menu, "Nothing needs attention", Safety box | — | |
+| 10.3 | Settings ▸ Start-up: wait 5 → 3 with a preset, **F10**, **Save** | the review (old → new); the password window; "Saved · not in the boot menu yet" | — | |
+| 10.4 | **F9** | rebuild progress; the bar clears | — | |
+| 10.5 | Kernel options: tick `nomodeset`, F10, **Save and rebuild** | one review, one password, done | — | |
+| 10.6 | Boot menu: add a "safe graphics" entry (+), move it up, F10, Save and rebuild | review lists it; the menu shows it | — | |
+| 10.7 | Reboot the VM | the menu shows the changes; waits 3 s; the new entry starts with nomodeset | — | the real proof |
+| 10.8 | Themes: pick one, Use this theme, Save and rebuild, reboot | the menu is themed | — | |
+| 10.9 | Backups: restore the oldest, F9, reboot | the original look and wait time | — | |
+| 10.10 | Change something, then **Q** | "Before you go" asks; quitting prints the closing note | — | |
+| 10.11 | **M**, and F1 on a setting | the manual opens, on the right page | — | |
+| 10.12 | `Ctrl+Alt+F3`, log in, `sudo grubforge` | readable and usable on the text console | — | real tty |
+| 10.13 | Anything that looks wrong, reads badly, or is slow | noted here as F-n | — | |

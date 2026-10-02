@@ -59,6 +59,11 @@ for d in "${want[@]}"; do
     echo "package_update: true"
     echo "packages: [$(echo ${PKGS[$d]} | sed 's/ /, /g')]"
     echo "runcmd:"
+    # Fedora: SELinux confines the guest agent, so test commands couldn't read
+    # root's files. This throwaway test VM runs SELinux permissive (it still logs);
+    # grubForge's helper runs unconfined under the targeted policy either way.
+    echo "  - command -v setenforce >/dev/null && setenforce 0 || true"
+    echo "  - test -f /etc/selinux/config && sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config || true"
     echo "  - systemctl enable --now qemu-guest-agent || true"
     echo "  - python3 -m venv /opt/gf && /opt/gf/bin/pip install -q textual rich"
     echo "  - touch /var/lib/gf-ready"

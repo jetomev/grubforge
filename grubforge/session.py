@@ -55,7 +55,9 @@ class Session:
         env = grubenv.detect()
         s = cls(env=env, capability=privilege.detect(), config=config_manager.parse_grub_config(grubenv.GRUB_DEFAULT_FILE))
         s._read_originals()
-        if env.uses_grub and not env.bls:
+        if env.uses_grub:
+            # on Fedora-style systems too: GRUB's own entries (firmware settings,
+            # other systems) are listed after the entry files; editing stays off there
             s.load_boot()
         return s
 

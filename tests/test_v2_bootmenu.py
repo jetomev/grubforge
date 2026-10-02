@@ -207,3 +207,39 @@ class AddEntry(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FedoraStyle(unittest.IsolatedAsyncioTestCase):
+    """Found in the Fedora 44 VM: the old-copy button showed with no old copy,
+    the hint line offered move/rename/add that don't work there, and GRUB's own
+    entries (UEFI Firmware Settings) were missing from the list."""
+
+    async def test_entry_files_then_fixed_entries_and_only_working_keys(self):
+        from unittest import mock
+        from grubforge.app import GrubForgeApp
+        from grubforge.ui.bootmenu import BootMenuScreen
+        from grubforge.boot_entries_manager import parse_boot_entries
+        sys.path.insert(0, str(Path(__file__).parent))
+        from test_v2_settings import SAMPLE, fake_session
+        s = fake_session(SAMPLE)
+        s.env.bls = True
+        with tempfile.TemporaryDirectory() as t:
+            cfg = Path(t) / "grub.cfg"
+            cfg.write_text("### BEGIN /etc/grub.d/30_uefi-firmware ###\n"
+                           "menuentry 'UEFI Firmware Settings' $menuentry_id_option 'uefi-firmware' {\n\tfwsetup\n}\n"
+                           "### END /etc/grub.d/30_uefi-firmware ###\n")
+            s.boot = BootDraft.from_entries(parse_boot_entries(cfg))
+        files = [("abc-6.19", "Fedora Linux (6.19) 44", "6.19")]
+        with mock.patch("grubforge.probe.bls_entries", return_value=files):
+            app = GrubForgeApp(session=s)
+            async with app.run_test(size=(120, 40)) as pilot:
+                await pilot.pause(0.5)
+                await pilot.press("3")
+                await pilot.pause(0.5)
+                bm = app.query_one(BootMenuScreen)
+                table = bm.query_one("#bm-table")
+                self.assertEqual(table.row_count, 2)
+                self.assertIn("Firmware", str(table.get_row_at(1)[1]))
+                self.assertFalse(bm.query_one("#bm-stale").display)
+                self.assertFalse(bm.query_one("#bm-actions").display)
+                self.assertIs(table.FORGE_HINTS, BootMenuScreen.VIEW_HINTS)

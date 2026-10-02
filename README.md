@@ -7,7 +7,7 @@
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
 ![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-purple.svg)
-[![AUR](https://img.shields.io/aur/version/grubforge?v=1.1.3-1)](https://aur.archlinux.org/packages/grubforge)
+[![AUR](https://img.shields.io/aur/version/grubforge?v=2.0.0-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
 
@@ -201,8 +201,8 @@ grubForge is a human and AI collaboration, and we've written down how that works
 
 ### Next
 
-- [ ] **Write settings into `/etc/default/grub.d`** on Debian and Ubuntu, so settings decided there can be changed from grubForge too (today they're shown, locked, with the file to edit)
-- [ ] **Fedora-style entries**: rename and reorder entries kept as separate files
+- [ ] **Write settings into `/etc/default/grub.d`** on Debian and Ubuntu, so settings decided there can be changed from grubForge too (today they're shown, locked, with the file to edit) ([#34](https://github.com/jetomev/grubforge/issues/34))
+- [ ] **Fedora-style entries**: rename and reorder entries kept as separate files ([#35](https://github.com/jetomev/grubforge/issues/35))
 - [ ] **Configurable preferences**: backup retention, theme folder
 
 ### Done

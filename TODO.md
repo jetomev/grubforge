@@ -1,10 +1,16 @@
 # grubForge — the list
 
-**Current release: v1.1.3** (29 Sep 2026). **Working on: v2.0.0 — the move onto forgekit, and a full redesign of every screen** (Javier, 2 Oct 2026).
+**Current release: v2.0.0** (2 Oct 2026, GitHub + AUR). Tested by Javier: *"it works wonders!"*
 
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
-## Now — v2.0.0
+## Next
+- [ ] Javier: `nog install grubforge` on the desktop (it still runs 1.1.3); then a look at the real desktop menu (its old #20 copy should show "Drop the old copy")
+- [ ] #34 write `/etc/default/grub.d` on Debian/Ubuntu — **needs Javier's design call**: edit the file that sets it, or add a grubForge file late in the order
+- [ ] #35 rename/reorder Fedora entry files
+- [ ] Keep the test VMs (gf-debian, gf-ubuntu, gf-fedora, gf-opensuse; snapshot `fresh`) for the next release
+
+## Done — v2.0.0 (released 2 Oct 2026)
 Javier's brief (2 Oct): *"screens done with high quality UI and easy to use structure … caring for formatting, use of colors, contrasts, and following flow of use from selecting, tabbing, buttons … leave as little to the user to write where options are known to select from … besides the help shortcuts, a manual on how to use it."*
 
 - [x] Research (2 Oct): inventory of every screen/setting today; forgekit's API and gaps; how well-regarded TUIs do settings, pickers, apply/preview, manuals

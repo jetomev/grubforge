@@ -8,7 +8,9 @@ from __future__ import annotations
 import asyncio
 import os
 import sys
+import shutil
 import tempfile
+import weakref
 import unittest
 from pathlib import Path
 
@@ -173,15 +175,17 @@ class Writer(unittest.TestCase):
 def fake_session(text: str):
     """A session over a temporary /etc/default/grub, read-only for writes."""
     from grubforge.session import Session
-    tmp = tempfile.TemporaryDirectory()
-    root = make_root(tmp.name, 'NAME="KognogOS"\nID=kognogos\nID_LIKE=arch\n',
+    # removed when the session is (a TemporaryDirectory left to the end of the
+    # run raised a ResourceWarning per test)
+    tmp = tempfile.mkdtemp(prefix="gf-test-")
+    root = make_root(tmp, 'NAME="KognogOS"\nID=kognogos\nID_LIKE=arch\n',
                      {"boot/grub/grub.cfg": "menuentry 'KognogOS (linux-zen)' {\n}\nmenuentry 'KognogOS (linux-lts)' {\n}\n",
                       "etc/default/grub": text})
     env = grubenv.detect(root, which=lambda n: None)
     cap = privilege.Capability(privilege.Privilege.NONE, "test: no writes")
     s = Session(env=env, capability=cap, config=config_manager.parse_grub_config(root / "etc/default/grub"))
     s._read_originals()
-    s._tmp = tmp
+    weakref.finalize(s, shutil.rmtree, tmp, True)
     return s
 
 

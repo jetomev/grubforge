@@ -1,0 +1,545 @@
+<title>grubForge 2.0 Screen Designs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one reading column; each screen = a short brief, then a full-width terminal drawing, then the decisions it raises. */
+:root {
+  --bg: #f6f5fa;
+  --fg: #23212e;
+  --muted: #5d5a70;
+  --rule: #dcd9e8;
+  --panel: #ffffff;
+  --accent: #6c4fc7;
+  --accent-soft: #ece6fb;
+  --warn-soft: #fbf1d9;
+  --warn-ink: #7a5300;
+  --ok-ink: #1f6b3a;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+  /* Terminal drawings use grubForge's own palette (Catppuccin Mocha) in both page themes. */
+  --t-base: #1e1e2e; --t-mantle: #181825; --t-crust: #11111b;
+  --t-s0: #313244; --t-s1: #45475a; --t-s2: #585b70; --t-ov: #7f849c;
+  --t-sub: #a6adc8; --t-text: #cdd6f4; --t-blue: #89b4fa; --t-mauve: #cba6f7;
+  --t-green: #a6e3a1; --t-yellow: #f9e2af; --t-red: #f38ba8; --t-peach: #fab387; --t-box: #2b4a7a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15141c; --fg: #e6e3f2; --muted: #a29fb8; --rule: #2e2c3d; --panel: #1d1b27;
+    --accent: #b9a3ff; --accent-soft: #2a2442; --warn-soft: #3a3020; --warn-ink: #f3d49a; --ok-ink: #9fe0b2;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15141c; --fg: #e6e3f2; --muted: #a29fb8; --rule: #2e2c3d; --panel: #1d1b27;
+  --accent: #b9a3ff; --accent-soft: #2a2442; --warn-soft: #3a3020; --warn-ink: #f3d49a; --ok-ink: #9fe0b2;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 17px; line-height: 1.55; padding: 0 16px; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 40px 80px; display: grid; gap: 56px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.01em; }
+h2 { font-size: 27px; }
+h3 { font-size: 19px; }
+p { margin: 0; }
+.stack { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 19px; color: var(--muted); }
+code, kbd { font-family: var(--font-mono); font-size: 0.86em; }
+kbd { border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--panel); white-space: nowrap; }
+a { color: var(--accent); }
+ul, ol { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; }
+section { display: grid; gap: 20px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; }
+.toc a { text-decoration: none; border-bottom: 1px solid var(--rule); }
+/* Terminal drawing */
+.term { background: var(--t-base); color: var(--t-text); border-radius: 8px; overflow-x: auto; border: 1px solid #2c2c3e; }
+.term pre { margin: 0; padding: 14px 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.42; white-space: pre; }
+.cap { font-size: 14.5px; color: var(--muted); }
+.m { color: var(--t-sub); } .d { color: var(--t-ov); } .a { color: var(--t-blue); } .v { color: var(--t-mauve); }
+.ok { color: var(--t-green); } .w { color: var(--t-yellow); } .er { color: var(--t-red); } .pc { color: var(--t-peach); }
+.b { font-weight: 700; } .u { text-decoration: underline; }
+.hdr { background: var(--t-crust); } .bar { background: var(--t-mantle); }
+.sel { background: var(--t-box); color: var(--t-text); } .fld { background: var(--t-s0); } .btn { background: var(--t-s1); color: var(--t-text); }
+.pri { background: var(--t-box); color: var(--t-text); font-weight: 700; } .act { background: var(--t-box); font-weight: 700; }
+.foc { background: var(--t-s0); outline: 1px solid var(--t-blue); }
+/* Console drawing: the 8-colour Linux console */
+.con { background: #000; border-color: #333; }
+.con pre { color: #c0c0c0; }
+.c-bl { background: #0000aa; color: #fff; } .c-cy { color: #55ffff; } .c-w { color: #fff; } .c-y { color: #ffff55; } .c-g { color: #55ff55; } .c-btn { background: #aaaaaa; color: #000; } .c-pri { background: #00aaaa; color: #000; }
+/* Tables */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; }
+td code { white-space: nowrap; }
+/* Decisions */
+.decide { background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: grid; gap: 10px; }
+.decide h3 { color: var(--accent); }
+.decide ol { gap: 12px; }
+.rec { font-weight: 700; }
+.note { background: var(--warn-soft); color: var(--warn-ink); border-radius: 8px; padding: 12px 16px; font-size: 15.5px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.two > * { min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+.src { font-size: 14px; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header class="stack">
+  <div class="eyebrow">grubForge v2.0.0 · design proposal · 2 October 2026</div>
+  <h1>grubForge 2.0, screen by screen</h1>
+  <p class="lede prose">Every screen of the new grubForge, drawn before any code is written. It covers what you see, the order you move through it, which settings are picked from a list instead of typed, and the keys and buttons. The answers you give at the end decide what gets built.</p>
+  <p class="prose">Your brief: <em>"high quality UI and easy to use structure … caring for formatting, use of colors, contrasts, and following flow of use from selecting, tabbing, buttons … leave as little to the user to write where options are known … and besides the help shortcuts, a manual on how to use it."</em></p>
+  <nav class="toc" aria-label="Contents">
+    <a href="#decisions">Decisions for you</a><a href="#principles">Principles</a><a href="#shell">The frame</a><a href="#overview">Overview</a><a href="#settings">Settings</a><a href="#bootmenu">Boot menu</a><a href="#themes">Themes</a><a href="#backups">Backups</a><a href="#apply">Save &amp; rebuild</a><a href="#distros">Distributions</a><a href="#help">Help &amp; manual</a><a href="#keys">Keys</a><a href="#console">Text console</a><a href="#kit">forgekit</a><a href="#plan">Plan</a>
+  </nav>
+</header>
+
+<section id="decisions">
+  <div class="decide">
+    <h3>Decided · Javier, 2 October</h3>
+    <ol>
+      <li><b>Settings layout:</b> a form, with every control visible.</li>
+      <li><b>Save and Rebuild are two buttons.</b> Save writes your changes and keeps them. Rebuild puts them into the boot menu. grubForge always shows when something is saved but not rebuilt yet. <a href="#apply">See Save &amp; rebuild</a>.</li>
+      <li><b>Plain names</b>, with the GRUB name in the help line.</li>
+      <li><b>Entries made by other tools stay fixed</b> where their tool puts them (#20).</li>
+      <li><b>Support every major distribution</b>, not only Fedora and openSUSE. <a href="#distros">See Distributions</a>.</li>
+      <li><b>A closing note in the terminal</b>, and <b>a warning on quit when saved changes aren't rebuilt yet</b>.</li>
+    </ol>
+    <p><em>"So far, it is looking very good!"</em></p>
+  </div>
+</section>
+
+<section id="principles">
+  <h2>What the research says</h2>
+  <p class="prose">Sources: well-regarded terminal tools (htop's setup screen, lazygit, k9s, gitui, nmtui, archinstall, Posting), the two GUI tools for this exact job (Grub Customizer, KDE's GRUB settings), WCAG and clig.dev. These seven points decide everything below.</p>
+  <div class="two">
+    <div class="card"><h3>Pick, don't type</h3><p>A setting with known values is a list or a switch. Typing is only for names and unusual kernel options. Grub Customizer and KDE both work this way.</p><p class="src">phoenixnap.com/kb/grub-customizer · lxr.kde.org kcm-grub2</p></div>
+    <div class="card"><h3>Nothing to memorise</h3><p>A hint bar at the bottom always shows the keys that work right now, and <kbd>F1</kbd> explains the setting you're on. gitui calls this "context based help."</p><p class="src">github.com/extrawurst/gitui · man htop</p></div>
+    <div class="card"><h3>Words as well as colours</h3><p>A changed setting says "changed", a warning says "!" and a sentence. Colour is never the only signal, and on the 8-colour text console it may be all you get.</p><p class="src">WCAG 1.4.1 · github.blog accessible CLI</p></div>
+    <div class="card"><h3>Draft, review, apply</h3><p>Edits are a draft until you apply them. Before anything is written, a review lists every change as old → new. The password is asked once, at apply.</p><p class="src">kcm-grub2 save flow · clig.dev</p></div>
+    <div class="card"><h3>Confirm by risk</h3><p>A small change gets one review. Restoring a backup or removing an entry gets a confirmation where "No" is the default.</p><p class="src">clig.dev · k9s</p></div>
+    <div class="card"><h3>Same keys everywhere</h3><p><kbd>Tab</kbd> next, <kbd>Enter</kbd> open/confirm, <kbd>Space</kbd> toggle, <kbd>Esc</kbd> back. Every F-key has a letter alternative, because consoles can swallow F-keys.</p><p class="src">nmtui · YaST · Textual defaults</p></div>
+    <div class="card"><h3>A real manual</h3><p>Help says what this key or setting does. The manual says how to do a task, with examples first, and a contents list you can jump around in.</p><p class="src">clig.dev · Textual MarkdownViewer</p></div>
+  </div>
+</section>
+
+<section id="shell">
+  <h2>The frame around every screen</h2>
+  <p class="prose">The top two rows are forgekit's locked layout, the same as alacrittyForge and bitlaForge: a title row and a menu bar with underlined letters. New at the bottom: a <b>changes bar</b> that appears when something isn't saved yet, or saved but not rebuilt yet, and a <b>hint bar</b> that changes with what is selected.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar"> <span class="act"> <span class="u">O</span>verview </span>  S<span class="u">e</span>ttings   <span class="u">B</span>oot menu   <span class="u">T</span>hemes   Bac<span class="u">k</span>ups   <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+   (the screen you are on)
+
+<span class="bar"> <span class="pc">● 2 changes not saved yet</span>                                    <span class="pri"> Save…  F10 </span>  <span class="btn"> Discard </span> </span>
+<span class="hdr"> <span class="a">Tab</span> <span class="d">next</span>  ·  <span class="a">↑↓</span> <span class="d">move</span>  ·  <span class="a">Enter</span> <span class="d">open list</span>  ·  <span class="a">Space</span> <span class="d">switch</span>  ·  <span class="a">F1</span> <span class="d">help on this</span>  ·  <span class="a">F10</span> <span class="d">save</span>  ·  <span class="a">?</span> <span class="d">all keys</span>    </span></pre></div>
+  <p class="cap">After saving, the same bar changes, and stays until the boot menu is rebuilt:</p>
+  <div class="term"><pre><span class="bar"> <span class="w">! Saved at 09:42 · not in the boot menu yet</span>                                <span class="pri"> Rebuild boot menu  F9 </span>  <span class="btn"> Why? </span> </span></pre></div>
+  <p class="cap">The menu works by <kbd>Ctrl</kbd> + the underlined letter, or the numbers <kbd>1</kbd>–<kbd>5</kbd> as today. "Settings" uses <kbd>e</kbd>, because <kbd>Ctrl+S</kbd> freezes some terminals. The read-only and root badges from v1.x stay in the title row.</p>
+</section>
+
+<section id="overview">
+  <h2>1 · Overview</h2>
+  <p class="prose">This is the first screen. It answers "is my boot menu all right?" in four boxes, and puts the common tasks one key away. Anything that needs attention comes with the button that fixes it, instead of a sentence pointing elsewhere.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar"> <span class="act"> <span class="u">O</span>verview </span>  S<span class="u">e</span>ttings   <span class="u">B</span>oot menu   <span class="u">T</span>hemes   Bac<span class="u">k</span>ups   <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+  <span class="a">╭ Your boot menu ─────────────────────────────╮</span>  <span class="w">╭ Needs attention ────────────────────────────────╮</span>
+  <span class="a">│</span> Starts      <span class="b">KognogOS (linux-zen)</span>            <span class="a">│</span>  <span class="w">│</span> <span class="w b">!</span> The boot menu is older than your settings.    <span class="w">│</span>
+  <span class="a">│</span> Waits       5 seconds, with a countdown     <span class="a">│</span>  <span class="w">│</span>   Changes saved at 09:12 aren't in it yet.      <span class="w">│</span>
+  <span class="a">│</span> Entries     6 · your own order              <span class="a">│</span>  <span class="w">│</span>                          <span class="foc"> Rebuild it now </span>        <span class="w">│</span>
+  <span class="a">│</span> Theme       catppuccin-mocha                <span class="a">│</span>  <span class="w">│</span>                                                 <span class="w">│</span>
+  <span class="a">│</span> Rebuilt     today 08:40                     <span class="a">│</span>  <span class="w">│</span> <span class="w b">!</span> Your own entry order is in use. A new kernel <span class="w">│</span>
+  <span class="a">╰─────────────────────────────────────────────╯</span>  <span class="w">│</span>   won't show up until you restore the original. <span class="w">│</span>
+                                                   <span class="w">│</span>                     <span class="btn"> What this means </span>           <span class="w">│</span>
+  <span class="a">╭ Safety ─────────────────────────────────────╮</span>  <span class="w">╰─────────────────────────────────────────────────╯</span>
+  <span class="a">│</span> Backups     7 · newest today 09:12          <span class="a">│</span>  <span class="a">╭ Common tasks ───────────────────────────────────╮</span>
+  <span class="a">│</span> Password    asked only when you apply       <span class="a">│</span>  <span class="a">│</span>  <span class="btn"> Choose what starts first </span>  <span class="btn"> Change wait time </span> <span class="a">│</span>
+  <span class="a">│</span> grub.cfg    /boot/grub/grub.cfg ✓            <span class="a">│</span>  <span class="a">│</span>  <span class="btn"> Pick a theme </span>              <span class="btn"> Back up now </span>      <span class="a">│</span>
+  <span class="a">╰─────────────────────────────────────────────╯</span>  <span class="a">╰─────────────────────────────────────────────────╯</span>
+
+<span class="hdr"> <span class="a">Tab</span> <span class="d">next button</span>  ·  <span class="a">Enter</span> <span class="d">do it</span>  ·  <span class="a">1-5</span> <span class="d">screens</span>  ·  <span class="a">F1</span> <span class="d">help</span>  ·  <span class="a">?</span> <span class="d">all keys</span>                                            </span></pre></div>
+  <p class="cap">"Needs attention" also covers the v1.x problems that used to hide: read-only mode (with how to fix it), and #19, where settings have no effect on entries frozen by your own order. When nothing needs attention, the box says so in green.</p>
+</section>
+
+<section id="settings">
+  <h2>2 · Settings</h2>
+  <p class="prose">Today this is one table of 17 raw GRUB names, all edited by typing. In 2.0 the settings are grouped by what people want to do. Each setting has a plain name, its current value, and the control that fits it. Only three things are ever typed: the system's display name, unusual kernel options, and a custom resolution.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar">  <span class="u">O</span>verview  <span class="act"> S<span class="u">e</span>ttings </span>  <span class="u">B</span>oot menu   <span class="u">T</span>hemes   Bac<span class="u">k</span>ups   <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+  <span class="d">Groups</span>                <span class="v b">Start-up</span>   <span class="d">How the boot menu behaves when the computer starts</span>
+ <span class="sel"> ▸ Start-up          </span>
+   Look                  Start this entry         <span class="foc"> KognogOS (linux-zen)                    ▾ </span>  <span class="pc">● changed</span>
+   Kernel options                                 <span class="d">was: the first entry in the menu</span>
+   Other systems
+   Advanced              Remember last choice     <span class="fld"> <span class="d">○</span> Off </span>   <span class="d">only works with "Last chosen" above</span>
+
+                         Wait before starting     <span class="fld">   5 </span> seconds    <span class="btn"> 0 </span> <span class="btn"> 3 </span> <span class="sel"> 5 </span> <span class="btn"> 10 </span> <span class="btn"> 30 </span> <span class="btn"> wait forever </span>
+
+                         Show the menu            <span class="d">( )</span> Always   <span class="a">(•)</span> With a countdown   <span class="d">( )</span> Hidden
+
+                       <span class="d">─ About this setting ─────────────────────────────────────────────────────</span>
+                         The entry GRUB starts when nobody presses a key. "Last chosen" starts
+                         whatever was picked the time before.
+                         <span class="d">GRUB name: GRUB_DEFAULT  ·  F1 opens the manual at "Start-up"</span>
+
+<span class="bar"> <span class="pc">● 1 change not saved yet</span>                                     <span class="pri"> Save…  F10 </span>  <span class="btn"> Discard </span> </span>
+<span class="hdr"> <span class="a">Tab</span> <span class="d">next</span>  ·  <span class="a">Enter</span> <span class="d">open list</span>  ·  <span class="a">Esc</span> <span class="d">undo this change</span>  ·  <span class="a">F1</span> <span class="d">help</span>  ·  <span class="a">F10</span> <span class="d">save</span>  ·  <span class="a">?</span> <span class="d">all keys</span>                     </span></pre></div>
+  <p class="cap">Moving with <kbd>Tab</kbd> goes from the groups to each setting in turn. <kbd>Enter</kbd> on a list opens it right there, and typing jumps to a match. The "About this setting" panel follows the focus.</p>
+
+  <h3>The list that opens on "Start this entry"</h3>
+  <div class="term"><pre>                         Start this entry         <span class="foc"> KognogOS (linux-zen)                    ▾ </span>
+                                                  <span class="a">╭─────────────────────────────────────────╮</span>
+                                                  <span class="a">│</span> <span class="d">Type to filter…</span>                         <span class="a">│</span>
+                                                  <span class="a">│</span>   Last chosen (remembers your pick)     <span class="a">│</span>
+                                                  <span class="a">│</span>   The first entry in the menu           <span class="a">│</span>
+                                                  <span class="a">│</span> <span class="sel">▸ KognogOS (linux-zen)                 </span> <span class="a">│</span>
+                                                  <span class="a">│</span>   KognogOS (linux-lts)                  <span class="a">│</span>
+                                                  <span class="a">│</span>   Windows Boot Manager                  <span class="a">│</span>
+                                                  <span class="a">│</span>   KognogOS snapshots ▸ (a submenu)      <span class="a">│</span>
+                                                  <span class="a">╰─────────────────────────────────────────╯</span></pre></div>
+  <p class="cap">The entries come from your real boot menu. Choosing an entry by name also fixes a v1.x bug: grubForge used to reject names, even though GRUB accepts them.</p>
+
+  <h3>Every setting, and how it's set</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Group</th><th>Shown as</th><th>Control</th><th>Choices come from</th><th>GRUB name</th></tr></thead>
+    <tbody>
+      <tr><td>Start-up</td><td>Start this entry</td><td>List</td><td>Your boot entries, plus "Last chosen" and "First entry"</td><td><code>GRUB_DEFAULT</code></td></tr>
+      <tr><td></td><td>Remember last choice</td><td>Switch</td><td>On / Off (works only with "Last chosen"; grubForge says so)</td><td><code>GRUB_SAVEDEFAULT</code></td></tr>
+      <tr><td></td><td>Wait before starting</td><td>Number + presets</td><td>0, 3, 5, 10, 30 or "wait forever" (−1); typing is optional</td><td><code>GRUB_TIMEOUT</code></td></tr>
+      <tr><td></td><td>Show the menu</td><td>Three choices</td><td>Always · With a countdown · Hidden</td><td><code>GRUB_TIMEOUT_STYLE</code></td></tr>
+      <tr><td>Look</td><td>Theme</td><td>List</td><td>Themes installed in <code>/boot/grub/themes</code>, plus "None". The same list as the Themes screen</td><td><code>GRUB_THEME</code></td></tr>
+      <tr><td></td><td>Screen resolution</td><td>List</td><td>Automatic, your screen's current size, common sizes, or "Other…"</td><td><code>GRUB_GFXMODE</code></td></tr>
+      <tr><td></td><td>Menu drawn as</td><td>List</td><td>Graphics (needed for themes) · Plain text console · Serial</td><td><code>GRUB_TERMINAL_OUTPUT</code></td></tr>
+      <tr><td></td><td>Text colours / Highlight colours</td><td>Two lists each, with a sample</td><td>GRUB's 16 named colours (text on background)</td><td><code>GRUB_COLOR_NORMAL</code>, <code>…_HIGHLIGHT</code></td></tr>
+      <tr><td></td><td>Background picture</td><td>File picker</td><td>Pictures in <code>/boot</code> and <code>/usr/share/backgrounds</code></td><td><code>GRUB_BACKGROUND</code></td></tr>
+      <tr><td></td><td>Resolution after the menu</td><td>List</td><td>Keep the menu's · Text mode · a resolution</td><td><code>GRUB_GFXPAYLOAD_LINUX</code></td></tr>
+      <tr><td>Kernel options</td><td>For normal starts</td><td>Checklist + one text field</td><td>Known options with a plain explanation each (quiet, splash, loglevel=3, nomodeset, nowatchdog…), plus "Other options"</td><td><code>GRUB_CMDLINE_LINUX_DEFAULT</code></td></tr>
+      <tr><td></td><td>For every start, recovery too</td><td>Checklist + one text field</td><td>The same</td><td><code>GRUB_CMDLINE_LINUX</code></td></tr>
+      <tr><td>Other systems</td><td>Look for Windows and other systems</td><td>Switch</td><td>On / Off. GRUB stores this backwards (<code>DISABLE=false</code>); grubForge shows it the right way round</td><td><code>GRUB_DISABLE_OS_PROBER</code></td></tr>
+      <tr><td>Advanced</td><td>Group older kernels in a submenu</td><td>Switch</td><td>On / Off (also stored backwards)</td><td><code>GRUB_DISABLE_SUBMENU</code></td></tr>
+      <tr><td></td><td>Name shown for this system</td><td>Text, pre-filled</td><td>Suggested from <code>/etc/os-release</code></td><td><code>GRUB_DISTRIBUTOR</code></td></tr>
+      <tr><td></td><td>Keyboard</td><td>List</td><td>Built-in keyboard · USB keyboard · AT keyboard · Serial</td><td><code>GRUB_TERMINAL_INPUT</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Kernel options as a checklist</h3>
+  <div class="term"><pre>  <span class="v b">Kernel options</span>   <span class="d">Extra instructions passed to Linux when it starts</span>
+
+  For normal starts
+     <span class="a">[x]</span> quiet          <span class="d">show fewer messages while starting</span>
+     <span class="a">[x]</span> splash         <span class="d">show a start-up picture instead of text</span>
+     <span class="sel"> [ ] nomodeset      <span class="m">use a basic display driver — try this if the screen goes black </span></span>
+     <span class="d">[ ]</span> loglevel=3     <span class="d">only show serious errors</span>
+     <span class="d">[ ]</span> nowatchdog     <span class="d">turn off the hang detector (saves a little power)</span>
+  Other options    <span class="fld"> nvidia_drm.modeset=1                                       </span>  <span class="ok">✓ looks valid</span>
+                   <span class="d">separate with spaces · quotes and ; are not allowed</span></pre></div>
+
+  <div class="decide">
+    <h3>Decision 1 · form or table?</h3>
+    <p><b>Form (recommended):</b> every control is visible, so you can see a setting is a switch or a list before touching it. That's what htop's setup, Grub Customizer and the KDE settings do, and it suits people who aren't engineers.</p>
+    <p><b>Table (alacrittyForge today):</b> rows of Key · Value · Staged, with a list opening at the cell on <kbd>Enter</kbd>. It's tidier for 40 settings, but the kind of control is hidden until you press a key.</p>
+    <p>If you choose the form, I'd later bring alacrittyForge's settings onto the same pieces, so the Forge Suite stays consistent.</p>
+  </div>
+</section>
+
+<section id="bootmenu">
+  <h2>3 · Boot menu</h2>
+  <p class="prose">The order the computer shows at start-up. Today one long column mixes moving, renaming, a template editor and the os-prober tools. In 2.0, the list is the screen. Each action is a button in a row underneath, and the bigger jobs (adding an entry, finding other systems) open their own window.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar">  <span class="u">O</span>verview   S<span class="u">e</span>ttings  <span class="act"> <span class="u">B</span>oot menu </span>  <span class="u">T</span>hemes   Bac<span class="u">k</span>ups   <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+  <span class="v b">Boot menu</span>   <span class="d">the entries shown when the computer starts, top to bottom</span>
+
+    <span class="d">#   Entry                                         Comes from           Notes</span>
+    1   KognogOS (linux-zen)                          This system          <span class="ok">★ starts first</span>
+    2   KognogOS (linux-lts)                          This system
+ <span class="sel"> ▸ 3   Windows Boot Manager                          Other systems        <span class="pc">● moved up</span>       </span>
+    4   KognogOS snapshots ▸                          Snapshot tool        <span class="d">fixed · its tool places it</span>
+    5   UEFI Firmware Settings                        UEFI
+    6   Memory test                                   Added by you         <span class="pc">● new</span>
+
+  <span class="btn"> Move up  Shift+↑ </span> <span class="btn"> Move down  Shift+↓ </span> <span class="btn"> Rename  F2 </span> <span class="btn"> Start this first </span> <span class="btn"> Remove… </span>
+  <span class="btn"> Add an entry…  + </span> <span class="btn"> Find other systems…  F </span> <span class="btn"> Back to the original order… </span>
+
+  <span class="w b">!</span> <span class="w">Your own order is in use.</span> <span class="m">GRUB stops adding new kernels on its own while it is. A kernel</span>
+    <span class="m">update won't show here until you go back to the original order.</span>   <span class="d">F1 explains why</span>
+
+<span class="bar"> <span class="pc">● 2 changes not saved yet</span>                                     <span class="pri"> Save…  F10 </span>  <span class="btn"> Discard </span> </span>
+<span class="hdr"> <span class="a">↑↓</span> <span class="d">pick</span>  ·  <span class="a">Shift+↑↓</span> <span class="d">move</span>  ·  <span class="a">F2</span> <span class="d">rename</span>  ·  <span class="a">+</span> <span class="d">add</span>  ·  <span class="a">Tab</span> <span class="d">buttons</span>  ·  <span class="a">F10</span> <span class="d">save</span>  ·  <span class="a">?</span> <span class="d">all keys</span>                      </span></pre></div>
+  <p class="cap">Renaming happens in the row itself: <kbd>F2</kbd>, type, <kbd>Enter</kbd>. Single letters act only while the list has focus, never while you're typing in a field. That fixes a v1.x clash where typing <kbd>k</kbd> into a name moved an entry.</p>
+
+  <h3>Add an entry: choices first, text only for the name</h3>
+  <div class="term"><pre>          <span class="a">╭ Add a boot entry ───────────────────────────────────────────────────╮</span>
+          <span class="a">│</span>                                                                     <span class="a">│</span>
+          <span class="a">│</span>  What kind         <span class="foc"> Another Linux kernel on this computer        ▾ </span>  <span class="a">│</span>
+          <span class="a">│</span>  Name in the menu  <span class="fld"> KognogOS (linux-lts, safe graphics)           </span>  <span class="a">│</span>
+          <span class="a">│</span>  Kernel            <span class="fld"> vmlinuz-linux-lts · 6.12.48                  ▾ </span>  <span class="a">│</span>
+          <span class="a">│</span>  Start-up image    <span class="fld"> initramfs-linux-lts.img                      ▾ </span>  <span class="a">│</span>
+          <span class="a">│</span>  System disk       <span class="fld"> nvme0n1p2 · KognogOS · 465 GB                ▾ </span>  <span class="a">│</span>
+          <span class="a">│</span>  Kernel options    <span class="fld"> quiet nomodeset                               </span>  <span class="a">│</span>
+          <span class="a">│</span>                                                                     <span class="a">│</span>
+          <span class="a">│</span>  <span class="d">─ What GRUB will read ──────────────────────────────────────────</span>  <span class="a">│</span>
+          <span class="a">│</span>  <span class="m">menuentry 'KognogOS (linux-lts, safe graphics)' {</span>                <span class="a">│</span>
+          <span class="a">│</span>  <span class="m">    search --fs-uuid --set=root 4f2c…e81a</span>                         <span class="a">│</span>
+          <span class="a">│</span>  <span class="m">    linux /vmlinuz-linux-lts root=UUID=4f2c…e81a rw quiet nomodeset</span> <span class="a">│</span>
+          <span class="a">│</span>  <span class="m">    initrd /initramfs-linux-lts.img</span>                               <span class="a">│</span>
+          <span class="a">│</span>  <span class="m">}</span>                                                     <span class="btn"> Edit by hand </span> <span class="a">│</span>
+          <span class="a">├─────────────────────────────────────────────────────────────────────┤</span>
+          <span class="a">│</span>                                            <span class="pri"> Add entry </span>  <span class="btn"> Cancel </span>  <span class="a">│</span>
+          <span class="a">╰─────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap">The kinds: another Linux kernel, another operating system on a disk, memory test, firmware settings, or an empty entry you write yourself. Kernels, images and disks are read from the computer, so the old placeholder "YOUR-UUID-HERE" is gone. "Edit by hand" opens the text for experts, checked before it's added.</p>
+
+  <div class="decide">
+    <h3>Decision 4 · entries made by other tools (#20)</h3>
+    <p>Today, saving your own order copies the snapshot entries into it while the snapshot tool keeps adding them too, so they show up twice. <b>Recommended:</b> those entries stay with their tool. They are shown as "fixed · its tool places it" and can't be moved, so the duplicate can't happen.</p>
+  </div>
+</section>
+
+<section id="themes">
+  <h2>4 · Themes</h2>
+  <p class="prose">Pick a theme and see roughly how your menu will look before using it. The preview draws your real entries in the theme's colours. Using a theme also sets the two things it needs (graphics mode and a resolution), and those show up in the review.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar">  <span class="u">O</span>verview   S<span class="u">e</span>ttings   <span class="u">B</span>oot menu  <span class="act"> <span class="u">T</span>hemes </span>  Bac<span class="u">k</span>ups   <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+  <span class="v b">Themes</span>   <span class="d">installed in /boot/grub/themes</span>
+
+    <span class="ok">● catppuccin-mocha</span>   <span class="d">in use</span>          <span class="a">╭ Preview · approximate colours ─────────────────────╮</span>
+ <span class="sel"> ▸ Vimix                             </span>  <span class="a">│</span><span style="background:#0d1117">                                                    </span><span class="a">│</span>
+    Tela                                <span class="a">│</span><span style="background:#0d1117;color:#e6edf3">        KognogOS (linux-zen)                        </span><span class="a">│</span>
+    Stylish                             <span class="a">│</span><span style="background:#0d1117"> <span style="background:#c678dd;color:#0d1117">       KognogOS (linux-lts)                       </span> </span><span class="a">│</span>
+                                        <span class="a">│</span><span style="background:#0d1117;color:#e6edf3">        Windows Boot Manager                        </span><span class="a">│</span>
+    <span class="d">4 themes</span>                            <span class="a">│</span><span style="background:#0d1117;color:#8b949e">        Starting in 5 s                             </span><span class="a">│</span>
+                                        <span class="a">╰────────────────────────────────────────────────────╯</span>
+                                          Colours  <span style="background:#0d1117">  </span> <span style="background:#c678dd">  </span> <span style="background:#e6edf3">  </span> <span style="background:#8b949e">  </span>   <span class="d">background · selection · text · hint</span>
+                                          Picture  <span class="d">background.png  1920×1080</span>
+                                          Fonts    <span class="d">Terminus 16, DejaVu Sans 14</span>
+
+                                          <span class="pri"> Use this theme </span>  <span class="btn"> Install a theme… </span>  <span class="btn"> Where to get themes </span>
+
+<span class="hdr"> <span class="a">↑↓</span> <span class="d">pick</span>  ·  <span class="a">Enter</span> <span class="d">use this theme</span>  ·  <span class="a">I</span> <span class="d">install</span>  ·  <span class="a">F1</span> <span class="d">help</span>  ·  <span class="a">?</span> <span class="d">all keys</span>                                     </span></pre></div>
+  <p class="cap">"Install a theme…" asks for a downloaded folder or <code>.tar.gz</code> file and copies it into place (password at apply, like everything else). The help text on where to find themes moves into the manual.</p>
+</section>
+
+<section id="backups">
+  <h2>5 · Backups</h2>
+  <p class="prose">Every apply makes a backup first, as v1.x does. The list says <em>why</em> each backup was made in plain words. The right side shows what is different from today's file, so you can see what a restore would change before you do it.</p>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge 2.0.0</span><span class="m"> · GRUB boot menu manager                                     KognogOS · javier · password at save  </span></span>
+<span class="bar">  <span class="u">O</span>verview   S<span class="u">e</span>ttings   <span class="u">B</span>oot menu   <span class="u">T</span>hemes  <span class="act"> Bac<span class="u">k</span>ups </span>  <span class="u">H</span>elp ▾   <span class="u">Q</span>uit                                     </span>
+
+  <span class="v b">Backups</span>   <span class="d">copies of your settings, newest first · the last 10 are kept</span>
+
+    <span class="d">Date      Time   Why it was made                   </span>  <span class="a">╭ Restoring this would change ──────────────╮</span>
+ <span class="sel"> ▸ Today     09:12  Before a settings change          </span>  <span class="a">│</span> Start this entry                          <span class="a">│</span>
+    Today     08:31  Before using a theme (Vimix)          <span class="a">│</span>   <span class="er">− KognogOS (linux-zen)</span>                    <span class="a">│</span>
+    Sep 29    21:04  Made by you                           <span class="a">│</span>   <span class="ok">+ the first entry in the menu</span>             <span class="a">│</span>
+    Sep 29    20:58  Before restoring a backup             <span class="a">│</span> Wait before starting                      <span class="a">│</span>
+    Sep 21    10:15  Before finding other systems          <span class="a">│</span>   <span class="er">− 3 seconds</span>                               <span class="a">│</span>
+                                                           <span class="a">│</span>   <span class="ok">+ 5 seconds</span>                               <span class="a">│</span>
+    <span class="d">5 backups · /var/lib/grubforge/backups</span>                 <span class="a">│</span> <span class="d">Everything else is the same.</span>              <span class="a">│</span>
+                                                           <span class="a">╰───────────────────────────────────────────╯</span>
+
+  <span class="btn"> Back up now  N </span>  <span class="btn"> Restore this backup…  R </span>  <span class="btn"> Delete…  D </span>  <span class="btn"> Show the whole file </span>
+
+<span class="hdr"> <span class="a">↑↓</span> <span class="d">pick</span>  ·  <span class="a">N</span> <span class="d">back up</span>  ·  <span class="a">R</span> <span class="d">restore</span>  ·  <span class="a">D</span> <span class="d">delete</span>  ·  <span class="a">F1</span> <span class="d">help</span>  ·  <span class="a">?</span> <span class="d">all keys</span>                                </span></pre></div>
+  <p class="cap">A restore is a save like any other: after it, the changes bar offers Rebuild, so you decide when the boot menu changes. Backups will also cover your own boot order file (<code>40_custom</code>), which v1.x didn't back up.</p>
+</section>
+
+<section id="apply">
+  <h2>Save &amp; rebuild</h2>
+  <p class="prose">Settings, boot order and themes all go into the same draft, and the changes bar counts them. <b>Save</b> (<kbd>F10</kbd>) shows one review of everything, then backs up and writes. <b>Rebuild</b> (<kbd>F9</kbd>) runs <code>grub-mkconfig</code>, so the boot menu picks the saved changes up. Two buttons, each doing one thing you can see. The review offers both together, for when you know you want both.</p>
+  <div class="term"><pre>        <span class="a">╭ Review before applying ────────────────────────────────────────────────╮</span>
+        <span class="a">│</span>                                                                        <span class="a">│</span>
+        <span class="a">│</span>  <span class="b">Settings</span>  <span class="d">/etc/default/grub</span>                                           <span class="a">│</span>
+        <span class="a">│</span>    Start this entry       the first entry   →  <span class="pc">KognogOS (linux-zen)</span>    <span class="a">│</span>
+        <span class="a">│</span>    Theme                  none              →  <span class="pc">Vimix</span>                   <span class="a">│</span>
+        <span class="a">│</span>    Menu drawn as          plain text        →  <span class="pc">graphics</span>  <span class="d">(themes need it)</span><span class="a">│</span>
+        <span class="a">│</span>  <span class="b">Boot order</span>  <span class="d">/etc/grub.d/40_custom</span>                                       <span class="a">│</span>
+        <span class="a">│</span>    Windows Boot Manager   3rd               →  <span class="pc">2nd</span>                     <span class="a">│</span>
+        <span class="a">│</span>                                                                        <span class="a">│</span>
+        <span class="a">│</span>  <span class="b">What happens</span>                                                          <span class="a">│</span>
+        <span class="a">│</span>    1  A backup of both files is saved                                  <span class="a">│</span>
+        <span class="a">│</span>    2  The changes are written                                          <span class="a">│</span>
+        <span class="a">│</span>    <span class="d">3  Rebuild the boot menu: separate, or choose "Save and rebuild"</span>     <span class="a">│</span>
+        <span class="a">│</span>  <span class="w">You'll be asked for your password once.</span>                               <span class="a">│</span>
+        <span class="a">├────────────────────────────────────────────────────────────────────────┤</span>
+        <span class="a">│</span>                               <span class="btn"> Files </span> <span class="pri"> Save </span> <span class="btn"> Save and rebuild </span> <span class="btn"> Cancel </span>  <span class="a">│</span>
+        <span class="a">╰────────────────────────────────────────────────────────────────────────╯</span></pre></div>
+  <div class="two">
+    <div class="term"><pre>  <span class="a">╭ Applying ──────────────────────────────╮</span>
+  <span class="a">│</span>  <span class="ok">✓</span> Backup saved           <span class="d">09:42:07</span>     <span class="a">│</span>
+  <span class="a">│</span>  <span class="ok">✓</span> Changes written                     <span class="a">│</span>
+  <span class="a">│</span>  <span class="w">~</span> Rebuilding the boot menu …          <span class="a">│</span>
+  <span class="a">│</span>    <span class="d">found linux-zen, linux-lts</span>          <span class="a">│</span>
+  <span class="a">│</span>    <span class="d">found Windows Boot Manager</span>          <span class="a">│</span>
+  <span class="a">╰────────────────────────────────────────╯</span></pre></div>
+    <div class="term"><pre>
+  <span class="ok b">==&gt; Saved · 4 changes</span>
+      Backup made first: Backups → today 09:42.
+      <span class="w">Not in the boot menu yet.</span>  <span class="pri"> Rebuild now  F9 </span>
+
+  <span class="er b">==&gt; Rebuild failed · the boot menu is unchanged</span>
+      Your saved settings are kept.
+      grub-mkconfig said: <span class="d">"…the error, in full…"</span>
+      <span class="btn"> Try again </span>  <span class="btn"> Restore the backup </span></pre></div>
+  </div>
+  <p class="cap">The messages follow your rules from nog: a heading that stands out, one blank line around it, plain words, and the next step named. A failure never leaves you guessing what state the computer is in.</p>
+  <h3>Quitting with saved changes not rebuilt</h3>
+  <div class="term"><pre>              <span class="w">╭ Before you go ──────────────────────────────────────────────╮</span>
+              <span class="w">│</span>                                                             <span class="w">│</span>
+              <span class="w">│</span>  <span class="w b">!</span> 4 changes are saved but not in the boot menu yet.        <span class="w">│</span>
+              <span class="w">│</span>    The computer will start with the old menu until you      <span class="w">│</span>
+              <span class="w">│</span>    rebuild it.                                              <span class="w">│</span>
+              <span class="w">│</span>                                                             <span class="w">│</span>
+              <span class="w">├─────────────────────────────────────────────────────────────┤</span>
+              <span class="w">│</span>        <span class="pri"> Rebuild and quit </span>  <span class="btn"> Quit anyway </span>  <span class="btn"> Stay </span>       <span class="w">│</span>
+              <span class="w">╰─────────────────────────────────────────────────────────────╯</span></pre></div>
+  <p class="cap">Unsaved changes get the same kind of window: "Save and quit", "Quit without saving", "Stay".</p>
+  <h3>The closing note in the terminal</h3>
+  <div class="term"><pre><span class="m">$</span> grubforge
+
+<span class="v b">=========================================</span>
+<span class="b">  grubForge v2.0.0  ·  Session</span>
+<span class="v b">=========================================</span>
+  Run:   grubforge
+  Date:  10/02/2026   09:31 AM   →   09:44 AM
+  User:  javier
+
+<span class="w b">==&gt; Closed · saved, not rebuilt</span>
+    4 changes saved at 09:42 (backup grub_20261002_094207).
+    <span class="w">They are not in the boot menu yet: run grubforge and press F9.</span>
+    Logged in:
+      ~/.local/share/grubforge/logs/20261002 grubforge-runs.csv
+    Thank you for using grubForge!</pre></div>
+  <p class="cap">The same start and end as nog: the banner, then "Done" or the state you left things in, the log, and the thanks. After a clean session the heading is green: "Closed · everything saved is in the boot menu".</p>
+</section>
+
+<section id="distros">
+  <h2>Distributions</h2>
+  <p class="prose">GRUB is the same program everywhere, but distributions keep its files in different places and call its tools by different names. grubForge 2.0 finds these by itself and says what it found on the Overview. Each row gets tested in a VM before release, and anything not proven there is marked so in the README.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Family</th><th>Examples</th><th>GRUB lives in</th><th>Rebuild runs</th><th>Boot menu entries</th></tr></thead>
+    <tbody>
+      <tr><td>Arch</td><td>Arch, KognogOS, EndeavourOS, Manjaro</td><td><code>/boot/grub</code></td><td><code>grub-mkconfig</code></td><td>Classic: reorder, rename, add</td></tr>
+      <tr><td>Debian</td><td>Debian, Ubuntu, Linux Mint, Zorin</td><td><code>/boot/grub</code></td><td><code>grub-mkconfig</code> (what <code>update-grub</code> runs)</td><td>Classic</td></tr>
+      <tr><td>Fedora / Red Hat</td><td>Fedora, RHEL, Rocky, Alma</td><td><code>/boot/grub2</code></td><td><code>grub2-mkconfig</code></td><td><b>Kept as separate files</b> (Boot Loader Specification, <code>/boot/loader/entries</code>). grubForge shows them and sets the default; order and names follow their own rules there</td></tr>
+      <tr><td>openSUSE</td><td>Tumbleweed, Leap</td><td><code>/boot/grub2</code></td><td><code>grub2-mkconfig</code></td><td>Classic on most installs; checked per install, since newer ones can use the Fedora-style files</td></tr>
+      <tr><td>Gentoo, Void, others</td><td></td><td><code>/boot/grub</code></td><td><code>grub-mkconfig</code></td><td>Classic</td></tr>
+      <tr><td>Not GRUB</td><td>Pop!_OS (systemd-boot), some immutable systems</td><td colspan="3">grubForge says plainly that this computer doesn't start with GRUB, and opens read-only</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">The Fedora row is the big one: those systems don't put entries in <code>grub.cfg</code> at all. That's why grubForge can't be working there today (#24). How it should look on the Boot menu screen there is a small design of its own, which I'll show you before building it.</p>
+</section>
+
+<section id="help">
+  <h2>Help and the manual</h2>
+  <div class="two">
+    <div class="card"><h3>Help (quick)</h3>
+      <ul>
+        <li><b>The hint bar</b> always shows the keys for what is selected.</li>
+        <li><kbd>F1</kbd> explains the setting or button you're on, and links to its manual page.</li>
+        <li><kbd>?</kbd> lists every key on one page.</li>
+        <li>Help ▾ menu: Manual, Keys, License, About.</li>
+      </ul></div>
+    <div class="card"><h3>The manual (how to do things)</h3>
+      <ul>
+        <li>It opens in the app (Help ▾ Manual, or <kbd>M</kbd>), with a contents list on the left.</li>
+        <li>Each page leads with the steps for a task, then the details.</li>
+        <li>The same pages are on GitHub and installed with the package, so they can be read without the app.</li>
+      </ul></div>
+  </div>
+  <div class="term"><pre><span class="hdr"> <span class="v b">grubForge manual</span><span class="m">                                                                    Esc closes · Backspace goes back </span></span>
+
+  <span class="d">Contents</span>                          <span class="v b">Choose what starts first</span>
+ <span class="d">─────────────────────────────</span>
+  Getting started                   <span class="b">Steps</span>
+ <span class="sel"> ▸ Choose what starts first     </span>    1  Open <span class="a">Settings</span> (press <span class="a">e</span>), then <span class="a">Start-up</span>.
+    Change the wait time               2  On <span class="a">Start this entry</span>, press <span class="a">Enter</span> and pick an entry.
+    Make the menu look nicer           3  Press <span class="a">F10</span>, check the review, and choose <span class="a">Apply</span>.
+    Add or reorder entries
+    Find Windows                    <span class="b">Good to know</span>
+    Kernel options explained          · "Last chosen" starts whatever you picked last time. Turn on
+    Backups and undo                    <span class="a">Remember last choice</span> as well, or GRUB won't remember.
+    If the computer won't start       · Snapshot entries can't be the default: they change daily.
+    Changes made outside grubForge
+    On a text console               <span class="d">GRUB names on this page: GRUB_DEFAULT, GRUB_SAVEDEFAULT</span>
+    All keys
+
+<span class="hdr"> <span class="a">↑↓</span> <span class="d">contents</span>  ·  <span class="a">Tab</span> <span class="d">page</span>  ·  <span class="a">Enter</span> <span class="d">open</span>  ·  <span class="a">Backspace</span> <span class="d">back</span>  ·  <span class="a">Esc</span> <span class="d">close the manual</span>                                </span></pre></div>
+  <p class="cap">"If the computer won't start" is written to be read on a phone, from GitHub, while the computer is broken. "Changes made outside grubForge" closes #17.</p>
+</section>
+
+<section id="keys">
+  <h2>Keys</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Everywhere</th><th>What it does</th><th>In lists</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Next / previous field or button</td><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Pick</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Open a list, press a button, confirm</td><td><kbd>Shift+↑</kbd> <kbd>Shift+↓</kbd></td><td>Move an entry (Boot menu)</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>Flip a switch, tick a checkbox</td><td><kbd>F2</kbd></td><td>Rename (Boot menu)</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Close a window; on a changed setting, undo it</td><td><kbd>+</kbd> <kbd>F</kbd></td><td>Add an entry · Find other systems</td></tr>
+      <tr><td><kbd>1</kbd>–<kbd>5</kbd>, <kbd>Ctrl</kbd>+underlined letter</td><td>Go to a screen</td><td><kbd>N</kbd> <kbd>R</kbd> <kbd>D</kbd></td><td>Back up · Restore · Delete (Backups)</td></tr>
+      <tr><td><kbd>F10</kbd> (or <kbd>S</kbd>) · <kbd>F9</kbd> (or <kbd>Ctrl+R</kbd>)</td><td>Save, with review · Rebuild the boot menu</td><td><kbd>I</kbd></td><td>Install a theme</td></tr>
+      <tr><td><kbd>F1</kbd> · <kbd>?</kbd> · <kbd>M</kbd></td><td>Help on this · all keys · the manual</td><td><kbd>/</kbd></td><td>Filter a long list</td></tr>
+      <tr><td><kbd>Ctrl+Q</kbd> or <kbd>q</kbd></td><td>Quit (asks first if something isn't saved, or saved but not rebuilt)</td><td></td><td></td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">Letter keys never fire while you're typing in a field. The v1.x keys keep their meaning, so nobody's habits break: <kbd>E</kbd> edit the selected setting, <kbd>S</kbd> save, <kbd>R</kbd> re-read from disk, <kbd>Ctrl+R</kbd> rebuild the boot menu.</p>
+</section>
+
+<section id="console">
+  <h2>On a plain text console (#21)</h2>
+  <p class="prose">When the desktop is broken, a text console (<kbd>Ctrl+Alt+F3</kbd>) is where you'll run grubForge. That's exactly when it matters most. The console has 8 colours and no emoji, so every colour comes from forgekit's roles, every symbol from its table with a plain fallback, and the focused control is the only blue one.</p>
+  <div class="term con"><pre><span class="c-bl"> grubForge 2.0.0 · GRUB boot menu manager                         KognogOS · root (sudo)              </span>
+ <span class="c-bl"> Overview </span>  Settings   Boot menu   Themes   Backups   Help F1   Quit
+
+  <span class="c-w">Start-up</span>   How the boot menu behaves when the computer starts
+
+  Start this entry       <span class="c-bl"> KognogOS (linux-zen)                    v </span>  <span class="c-y">* changed</span>
+  Remember last choice   <span class="c-btn"> o Off </span>
+  Wait before starting   <span class="c-btn">   5 </span> seconds
+  Show the menu          ( ) Always   <span class="c-cy">(*)</span> With a countdown   ( ) Hidden
+
+ <span class="c-y">* 1 change not saved yet</span>                                     <span class="c-pri"> Save...  F10 </span>  <span class="c-btn"> Discard </span></pre></div>
+</section>
+
+<section id="kit">
+  <h2>What moves into forgekit (v0.5.0)</h2>
+  <p class="prose">grubForge needs pieces the other Forge apps lack too. Building them in forgekit means alacrittyForge and bitlaForge get them for free, and the suite looks and behaves the same.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Piece</th><th>What it is</th><th>Who has it today</th></tr></thead>
+    <tbody>
+      <tr><td>Hint bar</td><td>The bottom row of keys that changes with what is selected</td><td>Nobody (keys are written into titles)</td></tr>
+      <tr><td>Changes bar + review window</td><td>"N changes not saved" / "saved, not rebuilt", and old → new before writing</td><td>Copied by hand into three alacrittyForge screens</td></tr>
+      <tr><td>Filter list</td><td>A list with type-to-filter and the current value marked</td><td>alacrittyForge only (listed for promotion)</td></tr>
+      <tr><td>Notices</td><td>The designed message: heading, one blank line around it, plain words</td><td>Two app copies of a status line</td></tr>
+      <tr><td>Progress window</td><td>Step-by-step progress for long, password-protected jobs</td><td>Nobody</td></tr>
+      <tr><td>Manual viewer</td><td>Contents list + pages, styled for the window and the console</td><td>Nobody</td></tr>
+      <tr><td>Two colour roles, five symbols</td><td>"changed" (peach) and "info"; changed / new / fixed / info / default</td><td>Apps use raw colours and emoji</td></tr>
+      <tr><td>Styles for lists, switches, checklists, radio choices</td><td>So they look right in both modes</td><td>Unstyled in the kit today</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="plan">
+  <h2>How it gets built</h2>
+  <p class="prose">Release discipline as always: one logical commit per phase, docs and version, then a tag. You test before anything is released.</p>
+  <ol>
+    <li><b>forgekit v0.5.0</b>: the pieces above, with a demo and console checks.</li>
+    <li><b>The frame, Overview and Settings</b>, on the new forgekit, with Save, Rebuild and the quit warning.</li>
+    <li><b>Boot menu</b>, including Add an entry, Find other systems, and the #20 fix.</li>
+    <li><b>Themes and Backups.</b></li>
+    <li><b>The manual and the console</b>, plus <code>grubforge --version</code> and <code>--help</code> printing instead of opening the app (#22), and every major distribution's paths and tools (#24).</li>
+    <li><b>Testing</b>: automated tests for every screen's flow, a test plan run in VMs for each distribution family (window and text console), then your own run. Then the release.</li>
+  </ol>
+  <div class="note">Nothing changes for current users until 2.0.0 ships. v1.1.3 stays on the AUR until your test passes.</div>
+</section>
+
+</div>

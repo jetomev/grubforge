@@ -8,8 +8,21 @@
 Javier's brief (2 Oct): *"screens done with high quality UI and easy to use structure … caring for formatting, use of colors, contrasts, and following flow of use from selecting, tabbing, buttons … leave as little to the user to write where options are known to select from … besides the help shortcuts, a manual on how to use it."*
 
 - [x] Research (2 Oct): inventory of every screen/setting today; forgekit's API and gaps; how well-regarded TUIs do settings, pickers, apply/preview, manuals
-- [ ] Design: screen-by-screen proposal published 2 Oct — https://claude.ai/artifact/EM3avQE6fn4EXYHnz9674R — **waiting on Javier's six decisions** (form vs table, one Apply, plain names, #20 fixed entries, #24 grub2 paths, closing note)
-- [ ] Build on forgekit; promote shared pieces (pickers, notices) into forgekit where every app benefits
+- [x] Design approved (2 Oct): https://claude.ai/artifact/EM3avQE6fn4EXYHnz9674R · copy in `docs/design/v2.0.0-screens.html`. Javier's rulings:
+  1. Settings as a **form** with visible controls
+  2. **Save** and **Rebuild** are two buttons; saved stays saved; the bar shows "saved, not rebuilt"
+  3. **Plain names**, GRUB name in the help line
+  4. Entries from other tools (snapshots) **stay fixed** (#20)
+  5. **All major distributions** (#24): Arch, Debian/Ubuntu, Fedora/RHEL (BLS entries!), openSUSE, Gentoo/Void; non-GRUB systems open read-only
+  6. **Closing note** in the terminal; **quit warns** when something is saved but not rebuilt (or not saved)
+  *"So far, it is looking very good! This pages where you do work and show me are very good to visualize before we go bananas."*
+- [ ] Design still to show: the Boot menu on Fedora-style (BLS) systems
+- [ ] Phase 1 · forgekit v0.5.0: hint bar, changes bar + review window, filter list, notices, progress window, manual viewer, roles (changed, info), glyphs, styles for lists/switches/checklists/radio
+- [ ] Phase 2 · frame + Overview + Settings (form), Save, Rebuild, quit warning, closing note
+- [ ] Phase 3 · Boot menu (+ Add an entry, Find other systems, #20 fixed entries)
+- [ ] Phase 4 · Themes + Backups (40_custom backed up too)
+- [ ] Phase 5 · manual, console, `--version`/`--help` (#22), distro detection (#24)
+- [ ] Phase 6 · tests per screen flow; VMs per distro family (need Ubuntu, Fedora, openSUSE VMs); Javier's run; release
 - [ ] In-app manual (besides the help shortcuts)
 - [ ] Console mode readable (#21)
 - [ ] Test matrix in VMs (KognogOS, Debian), then Javier's own run

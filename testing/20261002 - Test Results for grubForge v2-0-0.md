@@ -22,5 +22,5 @@ The matrix itself carries every result row: `20261002 - Test Matrix for grubForg
 | F-5 | [#33](https://github.com/jetomev/grubforge/issues/33) | buttons, labels and the changed mark cut off at 100 columns |
 
 ## Gaps found outside grubForge
-- **nog** cannot install a package file from disk; the rc packages went in with `pacman -U`.
+- ~~nog cannot install a package file from disk~~ **Wrong, corrected at release:** `nog install ./file.pkg.tar.zst` works (nog #17). The rc packages went in with `pacman -U` because of that mistaken reading of `nog install --help`; nog should have been used.
 - Test VMs: Fedora's guest agent is confined by SELinux and openSUSE ships it with command running switched off; both are handled in `scripts/make-test-vms.sh` (test VMs only).

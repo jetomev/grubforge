@@ -181,7 +181,7 @@ Every release artifact must carry the human + AI credit:
   openSUSE; snapshot `fresh` each), and a real save in each, checked in `grub.cfg`.
 - **A real package upgrade before the tag:** `scripts/make-rc-packages.sh` builds
   rc packages from the AUR recipes; install them over the released version in the
-  KognogOS VM for the human run. (nog cannot install a package file, so `pacman -U`.)
+  KognogOS VM for the human run, with `nog install ./file.pkg.tar.zst` (nog #17).
 - **python-forgekit first:** grubforge depends on its newest pieces; the AUR must
   have the forgekit version before the grubforge push.
 

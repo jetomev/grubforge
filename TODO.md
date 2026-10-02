@@ -18,7 +18,7 @@ Javier's brief (2 Oct): *"screens done with high quality UI and easy to use stru
   *"So far, it is looking very good! This pages where you do work and show me are very good to visualize before we go bananas."*
 - [ ] Design still to show: the Boot menu on Fedora-style (BLS) systems
 - [x] Phase 1 · forgekit v0.5.0 (2 Oct, forgekit `c13c238`, not released — proven here first): hint bar, changes bar + review window, filter list, notices, progress window, manual viewer, roles (changed, info), glyphs, styles for lists/switches/checklists/radio
-- [ ] Phase 2 · frame + Overview + Settings (form), Save, Rebuild, quit warning, closing note
+- [x] Phase 2 · frame + Overview + Settings (form), Save, Rebuild, quit warning, closing note — `f52ca05` + fixes; **real save proven in the KognogOS VM** (timeout 5→3: backup, write, rebuild, `set timeout=3`; Save-only → "saved, not rebuilt" → quit asks → F9 clears). Also #22 (--version/--help) and #24 groundwork (grubenv + helper picks the tool)
 - [ ] Phase 3 · Boot menu (+ Add an entry, Find other systems, #20 fixed entries)
 - [ ] Phase 4 · Themes + Backups (40_custom backed up too)
 - [ ] Phase 5 · manual, console, `--version`/`--help` (#22), distro detection (#24)

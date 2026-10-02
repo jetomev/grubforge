@@ -187,7 +187,8 @@ class GrubForgeApp(ForgeApp):
     def on_mount(self) -> None:
         super().on_mount()
         user = os.environ.get("USER", "")
-        mode = {"root": "root", "polkit": "password at save", "none": "read-only"}[self.session.capability.level.value]
+        mode = {"root": "no password needed", "polkit": "password at save",
+                "none": "read-only"}[self.session.capability.level.value]
         self.set_title_status(f"{self.session.env.distro} · {user} · {mode}")
         self.refresh_state()
 
@@ -235,7 +236,7 @@ class GrubForgeApp(ForgeApp):
                      [("Save…  F10", "gf-save", True), ("Discard", "gf-discard", False)])
         elif s.not_rebuilt and not s.read_only:
             when = s.last_saved()
-            bar.show(f"Saved{f' at {when:%H:%M}' if when else ''} · not in the boot menu yet", "warn",
+            bar.show(f"Saved{f' at {when:%I:%M %p}' if when else ''} · not in the boot menu yet", "warn",
                      [("Rebuild boot menu  F9", "gf-rebuild", True), ("Why?", "gf-why", False)])
         else:
             bar.hide()

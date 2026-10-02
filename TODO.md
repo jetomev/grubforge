@@ -5,7 +5,8 @@
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
 ## Next
-- [ ] Javier: `nog install grubforge` on the desktop (it still runs 1.1.3); then a look at the real desktop menu (its old #20 copy should show "Drop the old copy")
+- [x] Javier: `nog install grubforge` on the desktop: 2.0.0-1 + python-forgekit 0.5.0-1, verified 2 Oct (public AUR path works)
+- [ ] A look at the real desktop menu with 2.0 (its old #20 copy should show "Drop the old copy")
 - [ ] #34 write `/etc/default/grub.d` on Debian/Ubuntu — **needs Javier's design call**: edit the file that sets it, or add a grubForge file late in the order
 - [ ] #35 rename/reorder Fedora entry files
 - [ ] Keep the test VMs (gf-debian, gf-ubuntu, gf-fedora, gf-opensuse; snapshot `fresh`) for the next release

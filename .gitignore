@@ -28,4 +28,5 @@ Thumbs.db
 /PKGBUILD
 /.SRCINFO
 *.tar.gz
-*.pkg.tar.*logs/
+*.pkg.tar.*
+logs/

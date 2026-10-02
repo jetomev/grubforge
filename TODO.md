@@ -7,8 +7,8 @@
 ## Now — v2.0.0
 Javier's brief (2 Oct): *"screens done with high quality UI and easy to use structure … caring for formatting, use of colors, contrasts, and following flow of use from selecting, tabbing, buttons … leave as little to the user to write where options are known to select from … besides the help shortcuts, a manual on how to use it."*
 
-- [ ] Research: inventory of every screen/setting today; forgekit's API and gaps; how well-regarded TUIs do settings, pickers, apply/preview, manuals
-- [ ] Design: a screen-by-screen proposal (layout, flow, keys, which control for each setting) — **shown to Javier before any code**
+- [x] Research (2 Oct): inventory of every screen/setting today; forgekit's API and gaps; how well-regarded TUIs do settings, pickers, apply/preview, manuals
+- [ ] Design: screen-by-screen proposal published 2 Oct — https://claude.ai/artifact/EM3avQE6fn4EXYHnz9674R — **waiting on Javier's six decisions** (form vs table, one Apply, plain names, #20 fixed entries, #24 grub2 paths, closing note)
 - [ ] Build on forgekit; promote shared pieces (pickers, notices) into forgekit where every app benefits
 - [ ] In-app manual (besides the help shortcuts)
 - [ ] Console mode readable (#21)

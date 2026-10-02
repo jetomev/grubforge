@@ -79,15 +79,17 @@ class BootMenuScreen(Vertical, can_focus=False):
         table = DataTable(id="bm-table", cursor_type="row", zebra_stripes=False)
         table.FORGE_HINTS = self.EDIT_HINTS
         yield table
+        # three rows that fit at 100 columns: the picked entry, then the menu, then undo
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-actions"):
             yield Button("Move up  Shift+↑", id="bm-up")
             yield Button("Move down  Shift+↓", id="bm-down")
             yield Button("Rename  F2", id="bm-rename")
-            yield Button("Start this first", id="bm-default")
             yield Button(f"Remove{glyph('ellipsis')}", id="bm-remove")
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-more"):
+            yield Button("Start this first", id="bm-default")
             yield Button(f"Add an entry{glyph('ellipsis')}  +", id="bm-add")
             yield Button(f"Find other systems{glyph('ellipsis')}  F", id="bm-others")
+        with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-undo"):
             yield Button(f"Back to the original order{glyph('ellipsis')}", id="bm-restore")
 
     def on_mount(self) -> None:
@@ -102,7 +104,7 @@ class BootMenuScreen(Vertical, can_focus=False):
         read = self.query_one("#bm-read")
         table = self.query_one("#bm-table", DataTable)
         actions_ok = s.boot is not None and not s.read_only and not s.env.bls
-        for bid in ("bm-actions", "bm-more"):
+        for bid in ("bm-actions", "bm-more", "bm-undo"):
             self.query_one(f"#{bid}").display = actions_ok
         read.display = s.boot_unreadable and not s.read_only
         self.query_one("#bm-stale").display = False      # shown below only when there is an old copy
@@ -119,7 +121,7 @@ class BootMenuScreen(Vertical, can_focus=False):
             return
         if s.boot_unreadable:
             notice.show("The boot menu is readable only by an administrator", [
-                "This computer protects grub.cfg. grubForge can read it through its helper,",
+                "This computer protects grub.cfg. grubForge can read it through its helper, "
                 "which asks for your password once."], level="info")
             table.clear()
             return
@@ -128,12 +130,13 @@ class BootMenuScreen(Vertical, can_focus=False):
         if stale:
             names = ", ".join(sorted({f'"{it.entry.title}"' for it in stale}))
             notice.show("An old copy is stuck in your saved order", [
-                f"{escape(names)} appears twice: once from its own tool, once copied into your order by an",
-                "older grubForge (#20). Drop it and save; the live entry stays."
-                if not s.boot.drop_stale else "older grubForge (#20). It will be dropped when you save."], level="warn")
+                f"{escape(names)} appears twice: once from its own tool, once copied into your order by an "
+                "older grubForge (#20). "
+                + ("Drop it and save; the live entry stays." if not s.boot.drop_stale
+                   else "It will be dropped when you save.")], level="warn")
         elif self.session.custom_order_in_use:
             notice.show("Your own order is in use", [
-                "GRUB stops adding new kernels by itself while it is. A kernel update won't show here",
+                "GRUB stops adding new kernels by itself while it is. A kernel update won't show here "
                 "until you go back to the original order. F1 explains why."], level="warn")
         else:
             notice.hide()

@@ -6,7 +6,7 @@ Every save makes a backup of your settings first; the last 10 are kept. Each one
 
 1. Open **Backups** (press **5**).
 2. Pick the backup from before the change. The right side shows what restoring it would change, setting by setting.
-3. **Restore this backup…** (or **R**). The window starts on **Cancel**; move to **Restore** to confirm.
+3. **Restore…** (or **R**). The window starts on **Cancel**; move to **Restore** to confirm.
 4. Rebuild with **F9**.
 
 Today's settings are backed up before a restore, so a restore can be undone too.

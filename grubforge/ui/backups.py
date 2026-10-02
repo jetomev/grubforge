@@ -85,7 +85,7 @@ class BackupsScreen(Horizontal, can_focus=False):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="bk-left"):
-            yield Static("[b $forge-title-accent]Backups[/]   [$forge-muted]newest first · the last 10 are kept[/]",
+            yield Static("[b $forge-title-accent]Backups[/]   [$forge-muted]newest first · last 10 kept[/]",
                          classes="gf-group-title")
             t = DataTable(id="bk-table", cursor_type="row")
             t.FORGE_HINTS = [("↑↓", "pick"), ("N", "back up"), ("R", "restore"), ("D", "delete"),
@@ -93,10 +93,10 @@ class BackupsScreen(Horizontal, can_focus=False):
             yield t
             yield Static("", id="bk-where")
             with Horizontal(classes="forge-buttons gf-box-buttons bk-actions", id="bk-actions"):
-                yield Button(f"Restore this backup{glyph('ellipsis')}  R", id="bk-restore", variant="primary")
+                yield Button(f"Restore{glyph('ellipsis')}  R", id="bk-restore", variant="primary")
                 yield Button("Back up now  N", id="bk-new")
             with Horizontal(classes="forge-buttons gf-box-buttons bk-actions", id="bk-more"):
-                yield Button("Show the whole file", id="bk-show")
+                yield Button("Show whole file", id="bk-show")
                 yield Button(f"Delete{glyph('ellipsis')}  D", id="bk-delete")
         with VerticalScroll(id="bk-right", classes="gf-box", can_focus=False):
             yield Static("", id="bk-diff")
@@ -104,19 +104,33 @@ class BackupsScreen(Horizontal, can_focus=False):
 
     def on_mount(self) -> None:
         self.query_one("#bk-right").border_title = "Restoring this would change"
-        t = self.query_one("#bk-table", DataTable)
-        t.add_columns("Date", "Time", "Why it was made", "Size")
         self.refresh_view()
+
+    def on_resize(self) -> None:
+        self.call_after_refresh(self.refresh_view)
 
     def refresh_view(self) -> None:
         t = self.query_one("#bk-table", DataTable)
         keep = t.cursor_row
-        t.clear()
+        # columns rebuilt each time: clear() alone keeps widths from longer text
+        # One "When" column and no size: at 100 columns four needed a sideways scroll.
+        t.clear(columns=True)
+        t.add_columns("When", "Why it was made")
         self.backups = list_backups()
+        rows = []
         for b in self.backups:
             day, clock = when(b.timestamp)
-            extra = f" [$forge-muted]+ boot order[/]" if b.path.with_name(b.path.name + ".40_custom").exists() else ""
-            t.add_row(day, clock, rich_colours(escape(why_made(b.label)) + extra, self.app), b.size_display)
+            order = b.path.with_name(b.path.name + ".40_custom").exists()
+            rows.append((f"{day} {clock}", why_made(b.label), order))
+        # a long reason ("Before using a theme (…)") is cut to the list's width, so
+        # the list never needs a sideways scroll; it is refilled when the window resizes
+        widest = max((len(w) for w, _r, _o in rows), default=0)
+        room = t.size.width - 2 - (widest + 2) - 2 - 1 if t.size.width else 0
+        for w, why, order in rows:
+            tail = "  + boot order" if order else ""
+            if room and len(why) + len(tail) > room:
+                why = why[:max(room - len(tail) - 1, 8)].rstrip() + glyph("ellipsis")
+            t.add_row(w, rich_colours(escape(why) + (f"[$forge-muted]{tail}[/]" if tail else ""), self.app))
         self.query_one("#bk-where", Static).update(
             f"[$forge-muted]{len(self.backups)} backup{'s' if len(self.backups) != 1 else ''} · {BACKUP_DIR}[/]")
         if self.backups:
@@ -152,8 +166,8 @@ class BackupsScreen(Horizontal, can_focus=False):
         note = self.query_one("#bk-note", Notice)
         if b.path.with_name(b.path.name + ".40_custom").exists():
             note.show("Your boot order file was saved with it", [
-                "Restoring puts back the settings. The boot order is changed on the Boot menu screen;",
-                f"the saved copy is kept beside the backup for recovery."], level="muted")
+                "Restoring puts back the settings. The boot order is changed on the Boot menu screen; "
+                "the saved copy is kept beside the backup for recovery."], level="muted")
         else:
             note.hide()
 

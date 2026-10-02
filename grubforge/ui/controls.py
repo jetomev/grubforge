@@ -151,7 +151,7 @@ class ColourPair(Horizontal):
         fg = self.query_one(".gf-colour-fg", Select).value
         bg = self.query_one(".gf-colour-bg", Select).value
         self.query_one(".gf-colour-sample", Static).update(
-            f"[{SAMPLE.get(fg, '#aaaaaa')} on {SAMPLE.get(bg, '#000000')}] Sample [/]")
+            f"[{SAMPLE.get(fg, '#aaaaaa')} on {SAMPLE.get(bg, '#000000')}] Aa [/]")  # short: the row has 50 columns at 100
 
     def value(self) -> str:
         return f"{self.query_one('.gf-colour-fg', Select).value}/{self.query_one('.gf-colour-bg', Select).value}"

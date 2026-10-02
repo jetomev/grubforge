@@ -97,8 +97,10 @@
 | 8.4 | List boxes | bordered, value beside its label | **PASS** | had no border on the console and the value floated a line up — fixed in forgekit |
 | 8.5 | Button labels ending in "…" | "..." on the console | **PASS** | |
 | 8.6 | A real tty in the VM (tty8, `sudo grubforge`) | readable and usable | — | to run with Javier's §10 |
+| 8.7 | Nothing cut off at 100 columns: every button label whole and inside its row, no sideways scroll bar, every settings row's control inside its row (automatic: `test_every_button_label_fits_at_100_columns`, `test_no_settings_group_scrolls_sideways_at_100_columns`, `test_the_changed_mark_shows_at_100_columns`) | all whole | **PASS** | added 10-02 after 8.1 passed with things cut off: 8.1 checked that characters are *readable*, not that they *fit*. Found + fixed: Overview task buttons and Safety line; Backups buttons, list (sideways scroll, a hidden Size column) and heading; Boot menu "Remove…"; Look colour sample; wait-time presets ("forever", the known 100-column clip); the "● changed" mark (cut at 120, gone at 100 — moved to the line under the setting); notices wrapping to the edge. Each test was run against the old code and failed there. Note: the Backups list check relies on a backup with a long reason existing; on a machine with none it passes without exercising that path |
 
-Known at 100×30 only: the last timeout preset ("forever") sits past the right edge; at 128×48 everything fits.
+Formerly known at 100×30: the last wait-time preset ("forever") sat past the right edge. Fixed 10-02, see 8.7.
+
 ## 9 · Other distributions (VMs from each distribution's cloud image, UEFI — `scripts/make-test-vms.sh`)
 
 Each VM: detection, the boot menu read, nothing pending at start, a real Save and rebuild that must show up in grub.cfg, then put back. Run as root inside the VM (`/opt/gf` venv with Textual), from snapshot `fresh`.

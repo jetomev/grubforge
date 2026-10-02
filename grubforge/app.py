@@ -56,20 +56,25 @@ GF_CSS = FORGE_CSS + """
 .gf-colours { height: 3; width: auto; }
 .gf-colours > Select { width: 20; }
 .gf-colour-on { width: auto; height: 3; padding: 0 1; content-align: center middle; color: $forge-muted; }
-.gf-colour-sample { width: auto; height: 3; padding: 0 0 0 2; content-align: left middle; }
+.gf-colour-sample { width: auto; height: 3; padding: 0 0 0 1; content-align: left middle; }
 #gf-overview { grid-size: 2 2; grid-columns: 1fr 1fr; grid-rows: auto auto; grid-gutter: 1 2; height: auto; padding: 0 2 0 0; }
 .gf-box { height: auto; border: round $forge-border; border-title-color: $forge-accent; border-title-style: bold; padding: 0 1; }
 .gf-attention { border: round $forge-warn; border-title-color: $forge-warn; }
 .gf-box-buttons, .gf-task-row { padding: 1 0 0 0; align-horizontal: left; }
-.gf-task-row Button { margin: 0 2 0 0; }
+.forge-buttons.gf-task-row Button { margin: 0 2 0 0; width: 1fr; min-width: 0; padding: 0 1; }
+.forge-buttons.gf-task-row Button:last-child { margin: 0; }
 .gf-box-buttons Button { margin: 0 2 0 0; }
+#ov-attention { height: auto; }
+.gf-att-head { height: auto; }
+.gf-att-body { height: auto; padding: 0 0 0 3; margin: 0 0 1 0; }
+.gf-att-body:last-child { margin: 0; }
 .gf-soon { padding: 1 0; }
 #gf-quit-msg { height: auto; padding: 0 0 1 0; }
 #sec-boot { padding: 0 2 0 0; }
 #bm-table { height: auto; max-height: 20; margin: 1 0 0 0; border: solid $forge-field-border; background: $forge-bg; }
 #bm-table:focus { border: solid $forge-accent; }
-#bm-actions, #bm-more { padding: 1 0 0 0; align-horizontal: left; height: auto; }
-#bm-actions Button, #bm-more Button { margin: 0 2 0 0; }
+#bm-actions, #bm-more, #bm-undo { padding: 1 0 0 0; align-horizontal: left; height: auto; }
+#bm-actions Button, #bm-more Button, #bm-undo Button { margin: 0 2 0 0; }
 #bm-read, #bm-stale { align-horizontal: left; height: auto; }
 .gf-small { width: 76; }
 .gf-add { width: 96; }
@@ -90,13 +95,14 @@ GF_CSS = FORGE_CSS + """
 #th-info { height: auto; margin: 1 0 0 0; }
 .th-actions { padding: 1 0 0 0; align-horizontal: left; height: auto; }
 .th-actions Button { margin: 0 2 0 0; }
-#bk-left { width: 1fr; height: 1fr; }
+#bk-left { width: 1fr; min-width: 46; height: 1fr; }
 #bk-table { height: auto; max-height: 14; border: solid $forge-field-border; background: $forge-bg; }
 #bk-table:focus { border: solid $forge-accent; }
 #bk-where { height: auto; padding: 1 0 0 0; }
 .bk-actions { padding: 1 0 0 0; align-horizontal: left; height: auto; }
-.bk-actions Button { margin: 0 2 0 0; }
-#bk-right { width: 52; height: auto; max-height: 1fr; margin: 2 0 0 2; }
+.forge-buttons.bk-actions Button { margin: 0 2 0 0; width: 1fr; min-width: 0; padding: 0 1; }
+.forge-buttons.bk-actions Button:last-child { margin: 0; }
+#bk-right { width: 1fr; max-width: 64; height: auto; max-height: 1fr; margin: 2 0 0 2; }
 """
 
 

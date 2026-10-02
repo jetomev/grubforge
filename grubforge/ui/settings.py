@@ -182,8 +182,9 @@ class SettingsScreen(Horizontal):
     def frozen_notice(self) -> None:
         n = self.query_one("#gf-frozen", Notice)
         if self.session.custom_order_in_use:
+            # one paragraph per string: the notice wraps it under its own indent
             n.show("Your own boot order is in use", [
-                "The entries saved in it carry their own options, so changes here reach only entries",
+                "The entries saved in it carry their own options, so changes here reach only entries "
                 "GRUB still makes by itself (and new kernels after you go back to the original order)."], level="warn")
         else:
             n.hide()

@@ -235,7 +235,7 @@ class Screens(unittest.IsolatedAsyncioTestCase):
             await pilot.pause(0.3)
             self.assertEqual(app.session.pending, {"GRUB_TIMEOUT": "3"})
             row = app.query_one("#row-GRUB_TIMEOUT")
-            self.assertIn("changed", str(row.query_one(".forge-setting-mark").render()))
+            self.assertIn("changed", str(row.query_one(".forge-setting-note").render()))
             self.assertIn("was: 10 seconds", str(row.query_one(".forge-setting-note").render()))
             self.assertTrue(app.changes_bar.display)
             self.assertIn("1 change not saved yet", str(app.query_one("#forge-changes-msg").render()))
@@ -286,6 +286,70 @@ class Screens(unittest.IsolatedAsyncioTestCase):
             await pilot.pause(0.5)
             self.assertEqual(app.session.pending, {})
 
+    async def test_the_changed_mark_shows_at_100_columns(self):
+        # beside the wait-time presets the mark was cut off at 120 columns, gone at 100
+        from grubforge.app import GrubForgeApp
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(100, 32)) as pilot:
+            await pilot.pause(0.5)
+            await pilot.press("2")
+            await pilot.pause(0.4)
+            app.query_one("#row-GRUB_TIMEOUT").control.set_value(3)
+            await pilot.pause(0.4)
+            shot = app.export_screenshot().replace("&#160;", " ")
+            from forgekit import glyph
+            self.assertIn(f"{glyph('changed')} changed", shot)   # the mark, not "can be changed" in a notice
+            self.assertIn("was: 10 seconds", shot)
+
+    async def test_every_button_label_fits_at_100_columns(self):
+        # the Overview's "Choose what starts first" / "Change wait time" were cut off
+        from textual.widgets import Button
+        from grubforge.app import GrubForgeApp
+        s = fake_session(SAMPLE)
+        # allowed to write, so the editing buttons are shown too (a read-only
+        # session hid the Boot menu's row where "Remove…" was cut off); nothing
+        # in this test saves
+        s.capability = privilege.Capability(privilege.Privilege.POLKIT, "test: shown, never used")
+        s.load_boot()                       # the sample menu, so the Boot menu's buttons show
+        app = GrubForgeApp(session=s)
+        async with app.run_test(size=(100, 30)) as pilot:
+            for key in "12345":
+                await pilot.press(key)
+                await pilot.pause(0.5)
+                for b in app.screen.query(Button):
+                    if not b.display or b.size.width == 0 or not b.region.width:
+                        continue
+                    drawn = b.render_line(0).text     # what the button really shows
+                    self.assertIn(str(b.label), drawn, f"screen {key}: {str(b.label)!r} drawn as {drawn!r}")
+                    # and the row around it doesn't cut it off
+                    self.assertLessEqual(b.region.right, b.parent.region.right,
+                                         f"screen {key}: {str(b.label)!r} runs past its row")
+                # nothing needs a sideways scroll bar (Backups' list did)
+                for w in app.screen.query("*"):
+                    self.assertFalse(w.display and w.show_horizontal_scrollbar,
+                                     f"screen {key}: {w!r} scrolls sideways")
+
+    async def test_no_settings_group_scrolls_sideways_at_100_columns(self):
+        from textual.widgets import OptionList
+        from grubforge.app import GrubForgeApp
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.press("2")
+            await pilot.pause(0.5)
+            groups = app.query_one("#gf-groups", OptionList)
+            for i in range(groups.option_count):
+                groups.highlighted = i
+                await pilot.pause(0.4)
+                for w in app.screen.query("*"):
+                    self.assertFalse(w.display and w.show_horizontal_scrollbar,
+                                     f"group {i}: {w!r} scrolls sideways")
+                # and each row's control stays inside its row (the colour sample was cut off)
+                for row in app.screen.query(".forge-setting"):
+                    if row.display and row.region.width:
+                        line = row.query_one(".forge-setting-line")
+                        self.assertLessEqual(row.control.region.right, line.region.right,
+                                             f"group {i}: {row.setting} runs past its row")
+
     async def test_an_empty_setting_is_not_a_change(self):
         # openSUSE: GRUB_BACKGROUND= (empty) was staged as a change to "not set"
         from grubforge.app import GrubForgeApp
@@ -316,7 +380,7 @@ class Screens(unittest.IsolatedAsyncioTestCase):
             await pilot.pause(0.5)
             await pilot.press("2")
             await pilot.pause(0.3)
-            self.assertIn("Read-only", str(app.query_one("#gf-readonly").render()))
+            self.assertIn("Read-only", app.query_one("#gf-readonly").render_text())
 
 
 if __name__ == "__main__":

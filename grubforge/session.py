@@ -29,6 +29,12 @@ Step = Callable[[int, str, str], None]     # (index, state, detail)
 Line = Callable[[str], None]
 
 
+
+def same_value(a, b) -> bool:
+    """GRUB reads KEY= (empty) and no KEY at all the same way. openSUSE ships
+    GRUB_BACKGROUND=, and the "None" choice was staged, then saved, as a change (F-4)."""
+    return a == b or (a in (None, "") and b in (None, ""))
+
 @dataclass
 class Event:
     when: dt.datetime
@@ -65,7 +71,7 @@ class Session:
         """Re-read the file; your unsaved changes stay (they are yours)."""
         self.config = config_manager.parse_grub_config(grubenv.GRUB_DEFAULT_FILE)
         self._read_originals()
-        self.pending = {k: v for k, v in self.pending.items() if v != self.original.get(k)}
+        self.pending = {k: v for k, v in self.pending.items() if not same_value(v, self.original.get(k))}
 
     # ── the boot menu ────────────────────────────────────────────────────────
     def load_boot(self) -> None:
@@ -155,7 +161,7 @@ class Session:
     # ── changing ─────────────────────────────────────────────────────────────
     def set(self, key: str, value) -> bool:
         """Stage a change. Returns True when it differs from the file."""
-        if value == self.original.get(key):
+        if same_value(value, self.original.get(key)):
             self.pending.pop(key, None)
             return False
         self.pending[key] = value

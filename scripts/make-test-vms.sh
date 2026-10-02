@@ -64,7 +64,10 @@ for d in "${want[@]}"; do
     # grubForge's helper runs unconfined under the targeted policy either way.
     echo "  - command -v setenforce >/dev/null && setenforce 0 || true"
     echo "  - test -f /etc/selinux/config && sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config || true"
+    # openSUSE: the agent ships with guest-exec switched off; allow it in this test VM
+    echo "  - test -f /usr/etc/sysconfig/qemu-ga && echo 'FILTER_RPC_ARGS=\"\"' > /etc/sysconfig/qemu-ga || true"
     echo "  - systemctl enable --now qemu-guest-agent || true"
+    echo "  - systemctl restart qemu-guest-agent || true"
     echo "  - python3 -m venv /opt/gf && /opt/gf/bin/pip install -q textual rich"
     echo "  - touch /var/lib/gf-ready"
   } > "$seed/user-data"

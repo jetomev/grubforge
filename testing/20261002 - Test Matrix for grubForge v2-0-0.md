@@ -108,12 +108,15 @@ Each VM: detection, the boot menu read, nothing pending at start, a real Save an
 | 9.1 | Debian 13 | Debian · /boot/grub · grub-mkconfig | 3 entries | **yes** (countdown style) | **PASS** | first run found F-1 and F-2 (below) |
 | 9.2 | Ubuntu 24.04 | Debian family · Ubuntu | 3 entries | **yes** | **PASS** | 4 settings decided in `50-cloudimg-settings.cfg`, locked |
 | 9.3 | Fedora 44 | Fedora · /boot/grub2 · grub2-mkconfig · entries as separate files | 1 entry file + UEFI Firmware Settings (fixed) | **yes** (wait 0 → 7, put back) | **PASS** | first run found F-3 (below); SELinux permissive in the test VM only |
-| 9.4 | openSUSE Tumbleweed | — | — | — | — | building |
+| 9.4 | openSUSE Tumbleweed | openSUSE · /boot/grub2 · grub2-mkconfig | 3 entries | **yes** (`set timeout=7`, put back) | **PASS** | first run found F-4 (below); the guest agent ships with guest-exec off, allowed in the test VM |
 
 **Findings from the distribution VMs** (fixed, each with a test):
 - **F-1 (Debian):** `GRUB_GFXMODE` not set in the file → the list fell back to "Automatic" and staged it as a change nobody made. Every list now offers "Not set (…)" when the file doesn't set it.
 - **F-2 (Debian, Ubuntu):** `/etc/default/grub.d/*.cfg` (read by Debian's grub-mkconfig *after* /etc/default/grub) decided `GRUB_TIMEOUT`; grubForge's saved change had **no effect** and nothing said so. grubForge now checks whether the system's grub-mkconfig reads that folder; settings decided there are shown with their real value and file, locked ("change it there"), and the Overview says how many. Writing into that folder is a possible follow-up.
 - **F-3 (Fedora):** on the Boot menu, a "Drop the old copy" button showed with no old copy, the hint line offered move/rename/add (which don't work on entry files), and GRUB's own entries (UEFI Firmware Settings) were missing. Now: the button only with an old copy, a hint line of keys that work, and GRUB's own entries listed after the entry files as fixed. Test `FedoraStyle` fails on the old code, passes on the new.
+- **F-4 (openSUSE):** openSUSE ships `GRUB_BACKGROUND=` (present, empty). grubForge treated empty and unset as different, so it showed a change at start, and a save then switched that line off: an edit nobody asked for, though harmless to GRUB. Empty and unset now count as the same everywhere a change is decided. The test checks at start, on the Overview; a first version checked after opening Settings, where the false change had already gone, and it passed on the broken code too. Rewritten until it failed on the old code.
+
+**§9 result: all four families PASS** (Debian 13, Ubuntu 24.04, Fedora 44, openSUSE Tumbleweed), each with a real save that reached the boot menu. Four findings, all fixed with tests.
 ## 10 · Javier's run (KognogOS VM, at the keyboard)
 
 Setup by Claude before the run: the VM `kognog-hypeforge` reset to `clean-install-3`, grubForge 2.0.0 and python-forgekit 0.5.0 installed as packages (built from the release tags), nothing else changed. Javier logs in and opens a terminal.

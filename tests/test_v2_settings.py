@@ -286,6 +286,17 @@ class Screens(unittest.IsolatedAsyncioTestCase):
             await pilot.pause(0.5)
             self.assertEqual(app.session.pending, {})
 
+    async def test_an_empty_setting_is_not_a_change(self):
+        # openSUSE: GRUB_BACKGROUND= (empty) was staged as a change to "not set"
+        from grubforge.app import GrubForgeApp
+        app = GrubForgeApp(session=fake_session(SAMPLE + "GRUB_BACKGROUND=\n"))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.6)
+            self.assertEqual(app.session.pending, {})      # at start, on the Overview
+            await pilot.press("2")
+            await pilot.pause(0.5)
+            self.assertEqual(app.session.pending, {})
+
     async def test_an_overridden_setting_is_locked_and_says_where(self):
         from grubforge.app import GrubForgeApp
         s = fake_session(SAMPLE)

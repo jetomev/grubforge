@@ -19,7 +19,8 @@ Usage:
 Verbs:
     write-config             read /etc/default/grub content from stdin
     write-custom-40          read /etc/grub.d/40_custom content from stdin
-    regenerate               run grub-mkconfig -o /boot/grub/grub.cfg
+    regenerate               rebuild grub.cfg (grub-mkconfig, or grub2-mkconfig
+                             into /boot/grub2 on Fedora/openSUSE-style systems)
     backup-create [label]    snapshot /etc/default/grub, rotate old ones
     backup-restore <name>    restore a named backup (auto-snapshots first)
     backup-delete <name>     delete a named backup
@@ -48,6 +49,19 @@ GRUB_CONFIG_PATH = Path("/etc/default/grub")
 GRUB_D_PATH      = Path("/etc/grub.d")
 CUSTOM_40        = GRUB_D_PATH / "40_custom"
 GRUB_CFG_PATH    = Path("/boot/grub/grub.cfg")
+GRUB2_CFG_PATH   = Path("/boot/grub2/grub.cfg")
+
+
+def grub_target():
+    """(tool, grub.cfg) for this computer, decided here as root, never taken
+    from the caller (v2.0.0, #24): Fedora/RHEL and openSUSE use /boot/grub2 and
+    grub2-mkconfig; everyone else /boot/grub and grub-mkconfig."""
+    path = SAFE_ENV.get("PATH", "/usr/bin:/bin:/usr/sbin:/sbin")
+    has1 = shutil.which("grub-mkconfig", path=path)
+    has2 = shutil.which("grub2-mkconfig", path=path)
+    if has2 and (GRUB2_CFG_PATH.exists() or not has1):
+        return "grub2-mkconfig", GRUB2_CFG_PATH
+    return "grub-mkconfig", GRUB_CFG_PATH
 BACKUP_DIR       = Path("/var/lib/grubforge/backups")
 
 MAX_BACKUPS   = 10
@@ -240,18 +254,24 @@ def do_write_custom_40() -> None:
 
 
 def do_regenerate() -> None:
+    tool, cfg = grub_target()
     try:
         result = subprocess.run(
-            ["grub-mkconfig", "-o", str(GRUB_CFG_PATH)],
-            capture_output=True, text=True, timeout=60, env=SAFE_ENV,
+            [tool, "-o", str(cfg)],
+            capture_output=True, text=True, timeout=180, env=SAFE_ENV,
         )
     except FileNotFoundError:
-        die("grub-mkconfig not found — is GRUB installed?")
+        die(f"{tool} not found — is GRUB installed?")
     except subprocess.TimeoutExpired:
-        die("grub-mkconfig timed out after 60 seconds")
+        die(f"{tool} timed out after 180 seconds")
 
-    sys.stdout.write(result.stdout)
-    sys.stderr.write(result.stderr)
+    # grub-mkconfig reports what it found ("Found linux image: …") on stderr;
+    # on success that is the progress grubForge shows, so it goes to stdout
+    if result.returncode == 0:
+        sys.stdout.write(result.stdout + result.stderr)
+    else:
+        sys.stdout.write(result.stdout)
+        sys.stderr.write(result.stderr)
     sys.exit(result.returncode)
 
 
@@ -411,13 +431,14 @@ def do_read_entries() -> None:
     carry a password_pbkdf2 hash, which is one of the reasons the file is root-only
     to begin with; drawing a list of boot entries is no reason to hand it out.
     """
-    if not GRUB_CFG_PATH.is_file():
-        die(f"{GRUB_CFG_PATH} does not exist — run grub-mkconfig first")
+    cfg = grub_target()[1]
+    if not cfg.is_file():
+        die(f"{cfg} does not exist — rebuild the boot menu first")
 
     try:
-        text = GRUB_CFG_PATH.read_text(encoding="utf-8", errors="replace")
+        text = cfg.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
-        die(f"could not read {GRUB_CFG_PATH}: {exc}")
+        die(f"could not read {cfg}: {exc}")
 
     lines  = text.splitlines()
     blocks = []

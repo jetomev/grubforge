@@ -1,7 +1,8 @@
 """grubForge — GRUB TUI Manager entry point."""
 
-from grubforge.app import GrubForgeApp
+import sys
+
+from grubforge.cli import main
 
 if __name__ == "__main__":
-    app = GrubForgeApp()
-    app.run()
+    sys.exit(main())

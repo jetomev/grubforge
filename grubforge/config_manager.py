@@ -146,6 +146,9 @@ def write_grub_config(config: GrubConfig, new_values: dict) -> list:
     """
     Apply new_values to config.raw_lines and return the updated lines.
     Does NOT write to disk — pass the result to save_grub_config().
+
+    v2.0.0: a value of None means "not set": an active line is commented out
+    (kept, so the old value stays visible in the file), nothing is appended.
     """
     updated_lines = list(config.raw_lines)
     handled = set()
@@ -158,6 +161,11 @@ def write_grub_config(config: GrubConfig, new_values: dict) -> list:
         if key not in new_values:
             continue
         new_val = new_values[key]
+        if new_val is None:
+            if not m.group("comment"):
+                updated_lines[i] = "#" + line if line.endswith("\n") else "#" + line + "\n"
+            handled.add(key)
+            continue
         if new_val in ("true", "false") or new_val.lstrip("-").isdigit():
             updated_lines[i] = f'{key}={new_val}\n'
         else:
@@ -165,7 +173,7 @@ def write_grub_config(config: GrubConfig, new_values: dict) -> list:
         handled.add(key)
 
     for key, value in new_values.items():
-        if key not in handled:
+        if key not in handled and value is not None:
             if value in ("true", "false") or value.lstrip("-").isdigit():
                 updated_lines.append(f'{key}={value}\n')
             else:
@@ -188,6 +196,13 @@ def validate_changes(changes: dict) -> ValidationResult:
     result = ValidationResult(valid=True)
 
     for key, value in changes.items():
+        if value is None:
+            if is_required(key):
+                result.errors.append(f"{key} is required and cannot be removed")
+            continue
+        if '"' in value or "\n" in value:
+            result.errors.append(f"{key} can't contain quotes or line breaks")
+            continue
         if not value:
             if is_required(key):
                 result.errors.append(
@@ -201,9 +216,11 @@ def validate_changes(changes: dict) -> ValidationResult:
                     f"GRUB_TIMEOUT must be an integer >= -1 (got '{value}')"
                 )
         elif key == "GRUB_DEFAULT":
-            if not (value == "saved" or _is_non_negative_int(value)):
+            # v2.0.0: GRUB also takes an entry's title or id, and
+            # "Submenu title>Entry title" paths; only a negative number is wrong
+            if _is_int(value) and int(value) < 0:
                 result.errors.append(
-                    f"GRUB_DEFAULT must be 'saved' or a non-negative integer (got '{value}')"
+                    f"GRUB_DEFAULT can't be a negative number (got '{value}')"
                 )
         elif key == "GRUB_TIMEOUT_STYLE":
             if value not in ("menu", "countdown", "hidden"):
@@ -211,12 +228,15 @@ def validate_changes(changes: dict) -> ValidationResult:
                     f"GRUB_TIMEOUT_STYLE must be menu|countdown|hidden (got '{value}')"
                 )
         elif key == "GRUB_GFXMODE":
-            if value != "auto" and not re.match(r'^\d+x\d+(?:x\d+)?$', value):
+            # v2.0.0: a comma list ("1920x1080,auto") is valid GRUB (F18)
+            parts = [v.strip() for v in value.split(",")]
+            if not all(v == "auto" or re.match(r'^\d+x\d+(?:x\d+)?$', v) for v in parts):
                 result.warnings.append(
                     f"GRUB_GFXMODE '{value}' is non-standard; verify your hardware supports it"
                 )
         elif key in ("GRUB_DISABLE_OS_PROBER", "GRUB_DISABLE_SUBMENU", "GRUB_SAVEDEFAULT"):
-            if value not in ("true", "false"):
+            # v2.0.0: GRUB reads these as shell tests on "true"; y/yes work too
+            if value.lower() not in ("true", "false", "y", "yes", "n", "no"):
                 result.errors.append(
                     f"{key} must be 'true' or 'false' (got '{value}')"
                 )

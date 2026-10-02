@@ -1,6 +1,7 @@
 """Allow running as: python -m grubforge"""
 
-from grubforge.app import GrubForgeApp
+import sys
 
-app = GrubForgeApp()
-app.run()
+from grubforge.cli import main
+
+sys.exit(main())

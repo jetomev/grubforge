@@ -16,6 +16,8 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widgets import Input, Select, SelectionList, Static
 
+from forgekit import CheckList
+
 from ..settings_spec import (
     GRUB_COLOURS, KNOWN_KERNEL_OPTIONS, join_kernel, kernel_other_problem, split_kernel,
 )
@@ -48,7 +50,7 @@ class KernelOptions(Vertical):
         self._on, self._other = split_kernel(raw)
 
     def compose(self) -> ComposeResult:
-        sl = SelectionList(*((f"{k:<21} [$forge-muted]{desc}[/]", k, k in self._on) for k, desc in KNOWN_KERNEL_OPTIONS),
+        sl = CheckList(*((f"{k:<21} [$forge-muted]{desc}[/]", k, k in self._on) for k, desc in KNOWN_KERNEL_OPTIONS),
                            classes="gf-kernel-known")
         sl.FORGE_HINTS = [("↑↓", "pick"), ("Space", "tick / untick"), ("Tab", "next")]
         yield sl

@@ -25,7 +25,7 @@ from textual.widgets import Button, Static
 
 from forgekit import (
     FORGE_CSS, GPL3_NOTICE, ChangeGroup, ForgeApp, ForgeModal, ForgePanelScreen, ManualScreen, Notice,
-    ProgressDialog, ReviewDialog, load_pages,
+    ProgressDialog, ReviewDialog, glyph, load_pages,
 )
 
 from . import __version__
@@ -41,17 +41,17 @@ MANUAL_DIR = os.path.join(os.path.dirname(__file__), "manual")
 
 GF_CSS = FORGE_CSS + """
 /* grubForge's own sections, coloured only through forgekit's roles */
-#gf-groups { width: 24; height: 1fr; border: none; border-right: solid $forge-border; background: $forge-bg; padding: 1 1 0 0; }
+#gf-groups { width: 20; height: 1fr; border: none; border-right: solid $forge-border; background: $forge-bg; padding: 1 1 0 0; }
 #gf-settings-right { width: 1fr; height: 1fr; padding: 0 0 0 2; }
 #gf-groupforms { height: 1fr; }
 .gf-group { height: 1fr; padding: 0 1 0 0; }
 .gf-group-title { height: auto; margin: 0 0 1 0; }
 #gf-about { height: auto; min-height: 4; max-height: 7; padding: 1 0 0 0; color: $forge-text; }
 .gf-kernel { height: auto; width: 1fr; }
-.gf-kernel-known { width: 1fr; max-width: 74; }
+.gf-kernel-known { width: 1fr; max-width: 80; }
 .gf-kernel-other-line { height: auto; }
 .gf-kernel-other-label { width: auto; height: 3; padding: 0 2 0 0; content-align: left middle; color: $forge-muted; }
-.gf-kernel-other { width: 1fr; max-width: 70; }
+.gf-kernel-other { width: 1fr; max-width: 64; }
 .gf-kernel-problem { height: auto; }
 .gf-colours { height: 3; width: auto; }
 .gf-colours > Select { width: 20; }
@@ -221,6 +221,11 @@ class GrubForgeApp(ForgeApp):
         self._switch_section(section)
 
     def on_section_shown(self, section_id: str) -> None:
+        # the files may have changed outside grubForge (#17): read them again;
+        # unsaved changes stay
+        self.session.reload()
+        self.query_one(SettingsScreen).sync()
+        self.refresh_state()
         if section_id == "overview":
             self.query_one(OverviewScreen).refresh_view()
         if section_id == "settings":
@@ -242,13 +247,20 @@ class GrubForgeApp(ForgeApp):
     def open_manual(self, page: str | None = None) -> None:
         pages = load_pages(MANUAL_DIR) if os.path.isdir(MANUAL_DIR) else []
         if not pages:
-            self.notify("The manual arrives in a later phase of 2.0.", severity="information")
+            self.notify("The manual isn't installed here.", severity="warning")
             return
         self.push_screen(ManualScreen("grubForge manual", pages, start=page))
 
     def action_field_help(self) -> None:
         from forgekit import SettingRow
         w = self.focused
+        chain = list(w.ancestors_with_self) if w is not None else []
+        pages = load_pages(MANUAL_DIR) if os.path.isdir(MANUAL_DIR) else []
+        for screen, page in ((BootMenuScreen, "boot-menu"), (ThemesScreen, "themes"),
+                             (BackupsScreen, "backups"), (OverviewScreen, "start")):
+            if pages and any(isinstance(a, screen) for a in chain):
+                self.open_manual(page=page)
+                return
         if w is not None and any(isinstance(a, BootMenuScreen) for a in w.ancestors_with_self):
             self.push_screen(FieldHelp("Your own boot order", (
                 "GRUB normally builds the menu by itself every time it is rebuilt, and new kernels appear on "
@@ -275,7 +287,7 @@ class GrubForgeApp(ForgeApp):
         n = s.change_count()
         if n:
             bar.show(f"{n} change{'s' if n != 1 else ''} not saved yet", "changed",
-                     [("Save…  F10", "gf-save", True), ("Discard", "gf-discard", False)])
+                     [(f"Save{glyph('ellipsis')}  F10", "gf-save", True), ("Discard", "gf-discard", False)])
         elif s.not_rebuilt and not s.read_only:
             when = s.last_saved()
             bar.show(f"Saved{f' at {when:%I:%M %p}' if when else ''} · not in the boot menu yet", "warn",

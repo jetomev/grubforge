@@ -93,7 +93,7 @@ SETTINGS: list[Setting] = [
     Setting("GRUB_BACKGROUND", "look", "Background picture", "file",
             "A picture behind the menu (PNG, JPG or TGA) when no theme is used.",
             default="none"),
-    Setting("GRUB_GFXPAYLOAD_LINUX", "look", "Resolution after the menu", "list",
+    Setting("GRUB_GFXPAYLOAD_LINUX", "look", "Resolution after menu", "list",
             "What screen mode Linux starts in. \"Keep the menu's\" avoids a flicker.",
             default="GRUB decides",
             choices=[("keep", "Keep the menu's"), ("text", "Text mode")]),
@@ -110,10 +110,10 @@ SETTINGS: list[Setting] = [
             "operating systems and adds them to the menu. Needs the os-prober program.",
             default="off", inverted=True),
     # ── Advanced ──
-    Setting("GRUB_DISABLE_SUBMENU", "advanced", "Older kernels in a submenu", "switch",
+    Setting("GRUB_DISABLE_SUBMENU", "advanced", "Older kernels in submenu", "switch",
             "When on, extra kernels go into an \"Advanced options\" submenu, keeping the "
             "main menu short.", default="on", inverted=True),
-    Setting("GRUB_DISTRIBUTOR", "advanced", "Name shown for this system", "text",
+    Setting("GRUB_DISTRIBUTOR", "advanced", "Name for this system", "text",
             "The name at the start of this system's entries. Often a command that reads it "
             "from the system; leave it unless you want a different name.", default="the system's name"),
     Setting("GRUB_TERMINAL_INPUT", "advanced", "Keyboard", "list",

@@ -80,11 +80,11 @@ class BootMenuScreen(Vertical, can_focus=False):
             yield Button("Move down  Shift+↓", id="bm-down")
             yield Button("Rename  F2", id="bm-rename")
             yield Button("Start this first", id="bm-default")
-            yield Button("Remove…", id="bm-remove")
+            yield Button(f"Remove{glyph('ellipsis')}", id="bm-remove")
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-more"):
-            yield Button("Add an entry…  +", id="bm-add")
-            yield Button("Find other systems…  F", id="bm-others")
-            yield Button("Back to the original order…", id="bm-restore")
+            yield Button(f"Add an entry{glyph('ellipsis')}  +", id="bm-add")
+            yield Button(f"Find other systems{glyph('ellipsis')}  F", id="bm-others")
+            yield Button(f"Back to the original order{glyph('ellipsis')}", id="bm-restore")
 
     def on_mount(self) -> None:
         t = self.query_one("#bm-table", DataTable)

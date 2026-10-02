@@ -77,7 +77,27 @@
 | 6.2 | VM: a save makes a backup with the boot-order copy beside it | `.bak` + `.bak.40_custom` | **PASS** | |
 | 6.3 | VM: Restore… | the confirm starts on Cancel; settings back; "saved, not rebuilt"; F9 takes the theme out of grub.cfg | **PASS** | |
 | 6.4 | VM: Delete… | the backup and its boot-order copy gone | **PASS** | |
-## 7 · Manual, help, keys (Phase 5) — to fill
-## 8 · Text console (`TERM=linux`, real tty in the VM) — to fill
+## 7 · Manual, help, keys (Phase 5)
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 7.1 | `M` / Help ▸ Manual | 14 pages, contents left, steps first | **PASS** | `grubforge/manual/*.md`, also readable on GitHub |
+| 7.2 | F1 on a setting | the manual at that group's page (e.g. Start-up) | **PASS** | |
+| 7.3 | F1 on Boot menu / Themes / Backups / Overview | their pages | **PASS** | |
+| 7.4 | Opening a page other than the first | stays there | **PASS** | the list's own first highlight sent it back to page 1 — fixed in forgekit, test added |
+| 7.5 | The manual's claim "files are read again on every screen switch" | true | **PASS** | made true in code (it wasn't for Settings) |
+
+## 8 · Text console (`TERM=linux`, forgekit's console preview)
+
+| ID | Check | EXPECT | Result | Notes |
+|---|---|---|---|---|
+| 8.1 | Every screen at 100×30: Overview, Settings, Kernel options, Boot menu, Themes, Backups, Manual | only console-font characters; nothing drawn in its own background | **PASS** | |
+| 8.2 | Same at 128×48 (a 1024×768 console) | same | **PASS** | |
+| 8.3 | Unticked checklist boxes | empty | **PASS** | were an X coloured like the box (flagged as invisible) — forgekit `CheckList` draws nothing |
+| 8.4 | List boxes | bordered, value beside its label | **PASS** | had no border on the console and the value floated a line up — fixed in forgekit |
+| 8.5 | Button labels ending in "…" | "..." on the console | **PASS** | |
+| 8.6 | A real tty in the VM (tty8, `sudo grubforge`) | readable and usable | — | to run with Javier's §10 |
+
+Known at 100×30 only: the last timeout preset ("forever") sits past the right edge; at 128×48 everything fits.
 ## 9 · Other distributions (VMs: Debian 13, Ubuntu, Fedora, openSUSE) — to fill
 ## 10 · Javier's run — after everything is built

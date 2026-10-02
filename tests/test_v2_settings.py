@@ -92,7 +92,7 @@ class SettingsInPlainWords(unittest.TestCase):
         self.assertEqual(len(SETTINGS), 17)
         for s in SETTINGS:
             self.assertTrue(s.label and s.help and s.group, s.key)
-            self.assertLessEqual(len(s.label), 26, s.label)   # fits the label column
+            self.assertLessEqual(len(s.label), 24, s.label)   # fits the label column
 
     def test_backwards_switches_read_the_right_way_round(self):
         prober = BY_KEY["GRUB_DISABLE_OS_PROBER"]

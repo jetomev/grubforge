@@ -32,7 +32,7 @@ from .controls import ColourPair, KernelOptions, default_colours
 UNSET = "__unset__"
 OTHER = "__other__"
 SELECT_HINTS = [("Enter", "open list"), ("type", "jump to a match"), ("Tab", "next"), ("F1", "help")]
-TIMEOUT_PRESETS = [("0", 0), ("3", 3), ("5", 5), ("10", 10), ("30", 30), ("wait forever", -1)]
+TIMEOUT_PRESETS = [("0", 0), ("3", 3), ("5", 5), ("10", 10), ("30", 30), ("forever", -1)]
 
 
 def screen_resolutions() -> list[str]:
@@ -163,7 +163,8 @@ class SettingsScreen(Horizontal):
             ctrl = Input(raw or "", placeholder=system_name(), disabled=disabled)
             ctrl.FORGE_HINTS = [("type", "a name"), ("Tab", "next"), ("F1", "help")]
         ctrl.setting_key = s.key
-        return SettingRow(s.label, ctrl, note=s.note, help=s.help, setting=s.key, id=f"row-{s.key}")
+        return SettingRow(s.label, ctrl, note=s.note, help=s.help, setting=s.key, id=f"row-{s.key}",
+                          stacked=s.control == "kernel")
 
     def on_mount(self) -> None:
         self.query_one("#gf-groups", OptionList).highlighted = 0

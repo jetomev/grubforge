@@ -101,7 +101,7 @@ class ThemesScreen(Horizontal, can_focus=False):
                 yield Button("Use this theme", id="th-use", variant="primary")
                 yield Button("Stop using a theme", id="th-none")
             with Horizontal(classes="forge-buttons gf-box-buttons th-actions", id="th-more"):
-                yield Button("Install a theme…  I", id="th-install")
+                yield Button(f"Install a theme{glyph('ellipsis')}  I", id="th-install")
                 yield Button("Where to get themes", id="th-get")
 
     def on_mount(self) -> None:
@@ -290,7 +290,7 @@ class InstallThemeDialog(ForgeModal[bool]):
                 yield Input(placeholder="the folder name under themes/", id="ti-name")
             yield Static("", id="ti-status")
             with Horizontal(classes="forge-buttons forge-panel-footer"):
-                yield Button("Choose…", id="ti-choose")
+                yield Button(f"Choose{glyph('ellipsis')}", id="ti-choose")
                 yield Button("Install (asks for your password)", id="ti-ok", variant="primary")
                 yield Button("Cancel", id="ti-cancel")
 

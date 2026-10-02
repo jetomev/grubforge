@@ -21,7 +21,8 @@ Javier's brief (2 Oct): *"screens done with high quality UI and easy to use stru
 - [x] Phase 2 · frame + Overview + Settings (form), Save, Rebuild, quit warning, closing note — `f52ca05` + fixes; **real save proven in the KognogOS VM** (timeout 5→3: backup, write, rebuild, `set timeout=3`; Save-only → "saved, not rebuilt" → quit asks → F9 clears). Also #22 (--version/--help) and #24 groundwork (grubenv + helper picks the tool)
 - [x] Phase 3 · Boot menu (+ Add an entry, Find other systems, #20 fixed entries + the old copy dropped) — real save and restore proven in the VM; found + fixed the `20_memtest86+` marker bug. Open O-1: the UEFI entry's `if` guard isn't copied into a saved order
 - [x] Phase 4 · Themes (preview, use, install through the checked helper verb `theme-install`) + Backups (plain reasons, what a restore changes, boot-order copy kept beside each backup) — proven in the VM incl. a refused attack archive
-- [ ] Phase 5 · manual, console, `--version`/`--help` (#22), distro detection (#24)
+- [x] Phase 5a · manual (14 pages, F1 → the right page), console (every screen passes at 100×30 and 128×48), `--version`/`--help` (#22), distro detection (#24) — VMs for other distributions still to do (5b)
+- [ ] Phase 5b · VMs for Debian 13 / Ubuntu / Fedora / openSUSE: Overview, Settings save + rebuild, Boot menu read
 - [ ] Phase 6 · tests per screen flow; VMs per distro family (need Ubuntu, Fedora, openSUSE VMs); Javier's run; release
 - [ ] In-app manual (besides the help shortcuts)
 - [ ] Console mode readable (#21)

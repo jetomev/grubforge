@@ -4,6 +4,8 @@
 
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
+
+- [ ] **Next version — button labels in Javier's format (3 Oct 2026):** "Words In Title Case (k)", e.g. "Review Updates (u)": the key in brackets after the words, for every Forge Suite app. What shipped stays until this app's next version.
 ## Next
 - [x] Javier: `nog install grubforge` on the desktop: 2.0.0-1 + python-forgekit 0.5.0-1, verified 2 Oct (public AUR path works)
 - [ ] A look at the real desktop menu with 2.0 (its old #20 copy should show "Drop the old copy")

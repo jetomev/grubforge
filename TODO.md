@@ -6,10 +6,10 @@
 
 
 - [ ] **Next version — button labels in Javier's format (3 Oct 2026):** "Words In Title Case (k)", e.g. "Review Updates (u)": the key in brackets after the words, for every Forge Suite app. What shipped stays until this app's next version.
-## Now · v2.1.0 — polkit's password in grubForge's own box, text console included · issue #36
+## Done · v2.1.0 — polkit's password in grubForge's own box, text console included · released 2026-10-04 (GitHub + AUR eedcc7b, #36 closed)
 - [x] forgekit's InAppPolkitAgent at start; manual (On a text console, Won't start) updated; 53 tests
 - [x] KognogOS VM tty3: wrong password → try again; right one → backup as root (source and installed 2.1.0rc1)
-- [ ] Javier's desktop test (nogForge matrix §2.7) → release after forgekit 0.6.0 (AUR recipe: python-gobject + forgekit>=0.6.0, local only)
+- [x] Javier's desktop test passed ("perfect!") → released after forgekit 0.6.0 (AUR recipe: python-gobject + forgekit>=0.6.0, local only)
 - [ ] Decide (Javier): over ssh the policy refuses (allow_any=no) — keep?
 
 ## Next

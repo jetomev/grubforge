@@ -35,6 +35,10 @@ ACTION_ID = "org.kognogos.grubforge.manage"
 
 HELPER_TIMEOUT = 300  # grub-mkconfig can be slow, and you have to type a password
 
+# v2.1: True while the app is polkit's password asker for its own process
+# (forgekit's InAppPolkitAgent): pkexec then asks in grubForge's own box.
+IN_APP_AGENT = False
+
 
 # ── What we are able to do ────────────────────────────────────────────────────
 
@@ -202,13 +206,22 @@ def run(
         # incident has been reported.", which sounds like a security event and
         # explains nothing. On a text console or over SSH it just means there is
         # no window to show a dialog in, and sudo is the answer.
+        if IN_APP_AGENT:
+            return HelperResult(
+                ok=False,
+                output=(
+                    "Permission was not granted, so nothing was changed.\n"
+                    "The password was not accepted three times. Over SSH, permission "
+                    "is never given (grubForge's rule allows it only at this computer)."
+                ),
+            )
         return HelperResult(
             ok=False,
             output=(
                 "Permission was not granted, so nothing was changed.\n"
                 "Either the password was not accepted, or this session has no "
-                "authentication agent to ask — which is normal over SSH or on a "
-                "text console. There, run grubForge with sudo instead."
+                "authentication agent to ask — which is normal over SSH. "
+                "There, run grubForge with sudo instead."
             ),
         )
 

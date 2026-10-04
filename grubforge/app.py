@@ -28,6 +28,7 @@ from forgekit import (
     ProgressDialog, ReviewDialog, glyph, load_pages,
 )
 
+from . import privilege
 from . import __version__
 from .session import Session
 from .settings_spec import BY_KEY, GROUPS
@@ -214,8 +215,19 @@ class GrubForgeApp(ForgeApp):
         yield ThemesScreen(self.session, id="sec-themes")
         yield BackupsScreen(self.session, id="sec-backups")
 
+    PASSWORD_TITLE = "grubForge needs your password"
+
     def on_mount(self) -> None:
         super().on_mount()
+        # v2.1 (Javier, 4 Oct 2026): polkit's password question is asked in
+        # grubForge's own box, on a desktop and on a text console alike —
+        # grubForge becomes polkit's password asker for its own process only
+        if self.session.capability.level.value == "polkit":
+            agent = self.polkit_agent()
+            privilege.IN_APP_AGENT = agent.active
+            if not agent.active:
+                self.notify(f"The password will be asked the usual way: {agent.reason}.",
+                            title="Password", severity="warning", timeout=10)
         user = os.environ.get("USER", "")
         mode = {"root": "no password needed", "polkit": "password at save",
                 "none": "read-only"}[self.session.capability.level.value]

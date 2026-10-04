@@ -20,7 +20,7 @@ Hold **Shift** (older computers) or tap **Esc** (UEFI computers) right after swi
 
 ## Only a text console, no desktop
 
-Press **Ctrl+Alt+F3**, log in, and run `sudo grubforge`. grubForge works on the text console; see [On a text console](#console).
+Press **Ctrl+Alt+F3**, log in, and run `grubforge`. It works on the text console and asks for your password in its own box; see [On a text console](#console).
 
 ## Nothing helps
 

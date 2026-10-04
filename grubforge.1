@@ -1,6 +1,6 @@
 .\" grubforge.1 — grubForge man page
 .\" GNU GPL v3 — see LICENSE
-.TH GRUBFORGE 1 "October 2026" "grubForge v2.0.0" "User Commands"
+.TH GRUBFORGE 1 "October 2026" "grubForge v2.1.0" "User Commands"
 .
 .SH NAME
 grubforge \- the GRUB boot menu, without editing files by hand
@@ -42,8 +42,9 @@ or
 .IR /boot ,
 it asks
 .BR polkit (8),
-and the desktop's own authentication agent prompts for the password;
-grubForge never receives it.
+and since 2.1 grubForge asks for the password in its own box, as polkit's
+authentication agent for its own process only; polkit's helper checks it.
+This works on a desktop and on a text console alike.
 The only component running as root is
 .IR /usr/lib/grubforge/grubforge-helper ,
 which accepts a fixed list of named operations and cannot be given a
@@ -71,8 +72,8 @@ Print the usage and exit.
 Open grubForge. Changes are authorised through polkit when saved.
 .TP
 .B sudo grubforge
-Run with root privileges directly. Use this on a text console or over SSH,
-where no authentication agent can show a password window.
+Run with root privileges directly. Only needed over SSH, where grubForge's
+polkit rule refuses permission (since 2.1 a text console asks in grubForge's own box).
 .PP
 When grubForge closes it prints a short record: what was saved, whether
 the boot menu has it, the newest backup, and where the run was logged.

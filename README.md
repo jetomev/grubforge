@@ -6,7 +6,7 @@
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)
 ![Status: Active](https://img.shields.io/badge/Status-Active-brightgreen.svg)
-![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-purple.svg)
+![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-purple.svg)
 [![AUR](https://img.shields.io/aur/version/grubforge?v=2.0.0-1)](https://aur.archlinux.org/packages/grubforge)
 
 > 🛡 **Security** — every release is GPG-signed and every commit is GitHub-Verified. **[Where We Stand](https://github.com/jetomev/KognogOS/blob/main/docs/where-we-stand.md)** covers our response to the 2026 AUR supply-chain attacks and how to check us yourself.
@@ -37,9 +37,9 @@ Changing it has traditionally meant editing a configuration file as root, hoping
 - 🗂 **Backups**: why each was made, in plain words, and what restoring it would change, before you do.
 - 💾 **Save and Rebuild, separately**: **F10** saves (review, backup, write); **F9** rebuilds the boot menu. "Saved · not in the boot menu yet" stays visible until you rebuild, and quitting asks first.
 - 📖 **A manual inside the app** (**M**), and **F1** on anything opens its page.
-- 🖥 **Readable on a plain text console**, where you end up when the desktop won't start.
+- 🖥 **Works on a plain text console**, where you end up when the desktop won't start: readable, and since 2.1 it can save there too.
 - 🐧 **Every major distribution**: Arch, Debian/Ubuntu, Fedora/RHEL, openSUSE and more, each found automatically.
-- 🔐 **Runs as you, not as root**: your desktop asks for your password when a change needs it; grubForge never sees it.
+- 🔐 **Runs as you, not as root** *(2.1)*: when a change needs permission, grubForge asks for your password **in its own box** (on the desktop and on a text console alike), and polkit checks it. grubForge never runs as root; only its small helper does, for one fixed job at a time.
 - 🌙 **Catppuccin Mocha**, on [forgekit](https://github.com/jetomev/forgekit), the Forge Suite's shared base.
 
 ---
@@ -67,8 +67,8 @@ Changing it has traditionally meant editing a configuration file as root, hoping
 
 - Linux with GRUB (any major distribution; see the table below)
 - Python 3.10 or newer
-- `python-textual`, `python-rich` and [`python-forgekit`](https://github.com/jetomev/forgekit) 0.5.0 or newer
-- **`polkit`**: how grubForge asks for permission without running as root. Almost every desktop install already has it.
+- `python-textual`, `python-rich` and [`python-forgekit`](https://github.com/jetomev/forgekit) 0.6.0 or newer
+- **`polkit`** and **`python-gobject`**: how grubForge asks for permission without running as root, with the password asked in its own box. Almost every desktop install already has both.
 
 ---
 
@@ -163,7 +163,7 @@ grubForge is built around one rule: **never break the bootloader.**
 
 1. **Review**: before anything is written you see every change as old → new.
 2. **Backup**: your settings, and your boot-order file, are saved first. The last 10 are kept in `/var/lib/grubforge/backups`.
-3. **Permission**: polkit authorises the change; your desktop draws the password window.
+3. **Permission**: polkit authorises the change. grubForge asks for the password in its own box (2.1) and polkit's own helper checks it; grubForge never sees whether it was right, and never runs as root.
 4. **Rebuild when you choose**: what you save stays saved; the boot menu changes when you rebuild.
 
 ### The helper's fixed list of jobs
@@ -207,6 +207,7 @@ grubForge is a human and AI collaboration, and we've written down how that works
 
 ### Done
 
+- [x] **v2.1.0**: the password in grubForge's own box, and saving on a text console ([#36](https://github.com/jetomev/grubforge/issues/36))
 - [x] **v2.0.0**: rebuilt on forgekit, every screen redesigned, every major distribution ([#21](https://github.com/jetomev/grubforge/issues/21), [#20](https://github.com/jetomev/grubforge/issues/20), [#19](https://github.com/jetomev/grubforge/issues/19), [#17](https://github.com/jetomev/grubforge/issues/17), [#22](https://github.com/jetomev/grubforge/issues/22), [#24](https://github.com/jetomev/grubforge/issues/24), [#25](https://github.com/jetomev/grubforge/issues/25), [#29–#33](https://github.com/jetomev/grubforge/issues?q=is%3Aissue+F-))
 - [x] **v1.1.3**: reads where each boot entry comes from instead of guessing it ([#28](https://github.com/jetomev/grubforge/issues/28))
 - [x] Earlier releases: [docs/CHANGELOG.md](docs/CHANGELOG.md)
@@ -214,6 +215,16 @@ grubForge is a human and AI collaboration, and we've written down how that works
 ---
 
 ## Changelog
+
+### v2.1.0 — October 4, 2026
+
+**The password in grubForge's own box, and saving on a text console** ([#36](https://github.com/jetomev/grubforge/issues/36)). Javier: a desktop password window *"doesn't make sense"* for a terminal app, and *"how does it work on the tty version?"* Until now it didn't: with no desktop to draw the password window, `pkexec` gave up and grubForge said to start it with `sudo`.
+
+- 🔐 grubForge becomes polkit's password asker **for its own process only** ([forgekit 0.6.0](https://github.com/jetomev/forgekit/releases/tag/v0.6.0)'s `InAppPolkitAgent`). polkit's own helper checks the password; grubForge still never runs as root, and its helper still does one fixed job at a time. A wrong password is asked again (three tries); Cancel cancels.
+- 🖥 **A text console can save now.** The manual's console pages no longer say `sudo grubforge`.
+- Over SSH nothing changes: grubForge's rule still refuses permission there.
+
+Tested in the KognogOS VM on a real text console (a wrong password asked again, the right one made a backup as root), then by Javier on his desktop (a theme change and a backup, both asked in grubForge's box: *"perfect!"*) and on tty3 (*"works wonders"*). Tests: 53. New dependency: `python-gobject`; `python-forgekit` ≥ 0.6.0.
 
 ### v2.0.0 — October 2, 2026
 
@@ -230,10 +241,6 @@ grubForge is a human and AI collaboration, and we've written down how that works
 - `grubforge --version` and `--help` print instead of opening the app (#22). Changes made outside grubForge are picked up on every screen switch (#17). Kernel options warn while your own order is in use (#19).
 
 Tested by Javier on KognogOS as a real package upgrade from 1.1.3, including a restart. Tests: 25 → **78** (53 new, plus the 25 boot-entry checks); warnings 0. New dependency: `python-forgekit` ≥ 0.5.0.
-
-### v1.1.3 — September 29, 2026
-
-**grubForge now reads where each boot entry comes from, instead of guessing.** `grub-mkconfig` writes which script produced each section of `grub.cfg`; grubForge reads that, keeps it through a custom order with a one-line note per entry, and says "(guessed)" when it has to guess ([#28](https://github.com/jetomev/grubforge/issues/28)). Also new: `tests/`, 25 automated checks run during every AUR build.
 
 *The complete history lives in [docs/CHANGELOG.md](docs/CHANGELOG.md).*
 

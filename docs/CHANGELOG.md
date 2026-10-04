@@ -2,6 +2,16 @@
 
 *The README carries the two most recent entries; the complete history lives here, newest-first.*
 
+### v2.1.0 — October 4, 2026
+
+**The password in grubForge's own box, and saving on a text console** ([#36](https://github.com/jetomev/grubforge/issues/36)). Javier: a desktop password window *"doesn't make sense"* for a terminal app, and *"how does it work on the tty version?"* Until now it didn't: with no desktop to draw the password window, `pkexec` gave up and grubForge said to start it with `sudo`.
+
+- 🔐 grubForge becomes polkit's password asker **for its own process only** ([forgekit 0.6.0](https://github.com/jetomev/forgekit/releases/tag/v0.6.0)'s `InAppPolkitAgent`). polkit's own helper checks the password; grubForge still never runs as root, and its helper still does one fixed job at a time. A wrong password is asked again (three tries); Cancel cancels.
+- 🖥 **A text console can save now.** The manual's console pages no longer say `sudo grubforge`.
+- Over SSH nothing changes: grubForge's rule still refuses permission there.
+
+Tested in the KognogOS VM on a real text console (a wrong password asked again, the right one made a backup as root), then by Javier on his desktop (a theme change and a backup, both asked in grubForge's box: *"perfect!"*) and on tty3 (*"works wonders"*). Tests: 53. New dependency: `python-gobject`; `python-forgekit` ≥ 0.6.0.
+
 ### v2.0.0 — October 2, 2026
 
 **grubForge, rebuilt.** Every screen was redesigned from a screen-by-screen plan Javier approved before any code was written ([`docs/design/v2.0.0-screens.html`](design/v2.0.0-screens.html)). Then it was built on [forgekit](https://github.com/jetomev/forgekit) 0.5.0, the base the Forge apps share. Javier's brief: screens with care for formatting, colour and the flow of use, and "leave as little to the user to write where options are known to select from."

@@ -1,11 +1,23 @@
 # grubForge — the list
 
-**Current release: v2.0.0** (2 Oct 2026, GitHub + AUR). Tested by Javier: *"it works wonders!"*
+**Current release: v2.1.0** (4 Oct 2026, GitHub + AUR). **v2.2.0 built, waiting for Javier's test.**
 
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
 
-- [ ] **Next version — button labels in Javier's format (3 Oct 2026):** "Words In Title Case (k)", e.g. "Review Updates (u)": the key in brackets after the words, for every Forge Suite app. What shipped stays until this app's next version.
+## v2.2.0 — keys from forgekit 0.10.0, Boot Menu, --hypeforge, button labels · built 2026-10-08, waiting for Javier's test; GitHub + AUR at release
+Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
+- [x] **#38 F-6**: Help had no number; "1-5 screens" confusing → numbers 1-6 (Help is 6) and Ctrl + the underlined letter come from forgekit 0.10.0; the bar says "1-6 menu"; Keys list, manual, man page, README
+- [x] **#39 F-7**: "Boot menu" → "Boot Menu" (tab, screen heading, manual, man page, README)
+- [x] **#40**: `--hypeforge` (any case): no Quit, Q / Ctrl+Q do nothing, Settings closes it through grubForge's own question; not in `--help`/man page; README "Inside hypeForge Settings", manual page 1, CLAUDE.md, changelog
+- [x] **#40 / 3 Oct 2026 — button labels in Javier's format:** "Words In Title Case (k)", the key in brackets after the words (every Button, review, quit and changes-bar label)
+- [x] Tests 78 → 100 (`tests/test_v220.py`, 22 new, each seen failing with its fix out); warnings 3 → 3
+- [x] Test matrix: `testing/20261008 - Test Matrix for grubForge v2-2-0.md`
+- [ ] **Javier runs the matrix** (§2–§6), on the desktop and inside hypeForge Settings
+- [ ] At release (lead): forgekit 0.10.0 released + on the AUR first; AUR recipe `python-forgekit>=0.10.0` and **`tests.test_v220` added to `check()`**; tag, GitHub release, issues #38 #39 #40 closed, AUR push after Javier's local test, badge cache-buster after; Vault
+- [ ] Screenshots in `screenshots/` still show "Boot menu" and the old button labels (`scripts/make-screenshots.py`)
+- [ ] **For forgekit (not changed here):** its Ctrl+<letter> keys are priority, so inside a text field, even in an open window (Rename), Ctrl+E and Ctrl+K switch the screen behind the window instead of "end of line" / "delete to the end" (they edited text in 2.1.0). Javier's call / forgekit issue
+
 ## Done · v2.1.0 — polkit's password in grubForge's own box, text console included · released 2026-10-04 (GitHub + AUR eedcc7b, #36 closed)
 - [x] forgekit's InAppPolkitAgent at start; manual (On a text console, Won't start) updated; 53 tests
 - [x] KognogOS VM tty3: wrong password → try again; right one → backup as root (source and installed 2.1.0rc1)

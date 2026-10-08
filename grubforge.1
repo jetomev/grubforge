@@ -1,6 +1,6 @@
 .\" grubforge.1 — grubForge man page
 .\" GNU GPL v3 — see LICENSE
-.TH GRUBFORGE 1 "October 2026" "grubForge v2.1.0" "User Commands"
+.TH GRUBFORGE 1 "October 2026" "grubForge v2.2.0" "User Commands"
 .
 .SH NAME
 grubforge \- the GRUB boot menu, without editing files by hand
@@ -91,7 +91,7 @@ value. On Debian and Ubuntu, a setting decided in
 .I /etc/default/grub.d/
 is shown locked with the file that sets it.
 .TP
-.B 3 \- Boot menu
+.B 3 \- Boot Menu
 The entries as shown at start-up. Move, rename, choose what starts first,
 remove, add an entry (checked with
 .BR grub-script-check ),
@@ -103,6 +103,9 @@ use a theme, or install a downloaded one.
 .TP
 .B 5 \- Backups
 Backups with the reason each was made and what restoring it would change.
+.TP
+.B 6 \- Help
+The manual, the list of keys, the license and About.
 .
 .SH KEYBINDINGS
 .TP
@@ -118,8 +121,9 @@ Flip a switch, tick a box.
 .B Esc
 Close a window.
 .TP
-.B 1 \(en 5 ", " Ctrl+letter
-Go to a screen.
+.B 1 \(en 6 ", " Ctrl+letter
+Go to a menu entry, in the order of the menu bar (6 is Help); Ctrl + the
+entry's underlined letter does the same.
 .TP
 .B F10 ", " S
 Save, with a review first.
@@ -143,13 +147,18 @@ All keys.
 Quit; asks first if something is unsaved, or saved but not rebuilt.
 .TP
 .B Shift+Up ", " Shift+Down ", " F2 ", " + ", " F
-Boot menu: move, rename, add an entry, find other systems.
+Boot Menu: move, rename, add an entry, find other systems.
 .TP
 .B I
 Themes: install a theme.
 .TP
 .B N ", " R ", " D
 Backups: back up now, restore, delete.
+.PP
+A button shows its key in brackets after its name, for example
+.B Save Changes (s)
+or
+.BR "Rebuild Boot Menu (F9)" .
 .
 .SH FILES
 .TP
@@ -191,7 +200,8 @@ The polkit action
 .
 .SH REQUIREMENTS
 Linux with GRUB; Python 3.10 or newer; python-textual, python-rich and
-python-forgekit 0.5.0 or newer; polkit.
+python-forgekit 0.10.0 or newer; polkit; python-gobject (for the password
+box).
 .
 .SH SEE ALSO
 .BR grub-mkconfig (8),

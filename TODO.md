@@ -16,7 +16,7 @@ Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
 - [ ] **Javier runs the matrix** (§2–§6), on the desktop and inside hypeForge Settings
 - [ ] At release (lead): forgekit 0.10.0 released + on the AUR first; AUR recipe `python-forgekit>=0.10.0` and **`tests.test_v220` added to `check()`**; tag, GitHub release, issues #38 #39 #40 closed, AUR push after Javier's local test, badge cache-buster after; Vault
 - [ ] Screenshots in `screenshots/` still show "Boot menu" and the old button labels (`scripts/make-screenshots.py`)
-- [ ] **For forgekit (not changed here):** its Ctrl+<letter> keys are priority, so inside a text field, even in an open window (Rename), Ctrl+E and Ctrl+K switch the screen behind the window instead of "end of line" / "delete to the end" (they edited text in 2.1.0). Javier's call / forgekit issue
+- [x] **Fixed in forgekit 0.10.0 (2026-10-08, found by this build):** a window open over the app keeps its keys, so Ctrl+E and Ctrl+K in the Rename field edit the text again and nothing switches the screen behind it (forgekit test `test_a_dialog_keeps_its_keys`; grubForge's 75 tests pass on it)
 
 ## Done · v2.1.0 — polkit's password in grubForge's own box, text console included · released 2026-10-04 (GitHub + AUR eedcc7b, #36 closed)
 - [x] forgekit's InAppPolkitAgent at start; manual (On a text console, Won't start) updated; 53 tests

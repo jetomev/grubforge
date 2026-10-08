@@ -11,7 +11,8 @@ Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
 - [x] **#39 F-7**: "Boot menu" → "Boot Menu" (tab, screen heading, manual, man page, README)
 - [x] **#40**: `--hypeforge` (any case): no Quit, Q / Ctrl+Q do nothing, Settings closes it through grubForge's own question; not in `--help`/man page; README "Inside hypeForge Settings", manual page 1, CLAUDE.md, changelog
 - [x] **#40 / 3 Oct 2026 — button labels in Javier's format:** "Words In Title Case (k)", the key in brackets after the words (every Button, review, quit and changes-bar label)
-- [x] Tests 78 → 100 (`tests/test_v220.py`, 22 new, each seen failing with its fix out); warnings 3 → 3
+- [x] **Round 2 (Javier's second run, 8 Oct):** forgekit's letter rule (first letter, else the next free one; Help H, Quit Q; Ctrl+R kept) → **Settings Ctrl+S, Backups Ctrl+A**, grubForge's `"acc"` removed; 6 again closes Help, the open menu lit; About and License as pages, Esc back. Keys list, manual, README, man page, changelog, matrix
+- [x] Tests 78 → 105 (`tests/test_v220.py`, 27 new, each seen failing with its fix out); warnings 3 → 3
 - [x] Test matrix: `testing/20261008 - Test Matrix for grubForge v2-2-0.md`
 - [ ] **Javier runs the matrix** (§2–§6), on the desktop and inside hypeForge Settings
 - [ ] At release (lead): forgekit 0.10.0 released + on the AUR first; AUR recipe `python-forgekit>=0.10.0` and **`tests.test_v220` added to `check()`**; tag, GitHub release, issues #38 #39 #40 closed, AUR push after Javier's local test, badge cache-buster after; Vault

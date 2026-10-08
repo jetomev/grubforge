@@ -156,10 +156,10 @@ class GrubForgeApp(ForgeApp):
     LICENSE_NOTICE = GPL3_NOTICE
     MENU = [
         {"id": "overview", "title": "Overview", "kind": "section"},
-        {"id": "settings", "title": "Settings", "kind": "section", "acc": "e"},
+        {"id": "settings", "title": "Settings", "kind": "section"},
         {"id": "boot", "title": "Boot Menu", "kind": "section"},   # F-7 (#39)
         {"id": "themes", "title": "Themes", "kind": "section"},
-        {"id": "backups", "title": "Backups", "kind": "section", "acc": "k"},
+        {"id": "backups", "title": "Backups", "kind": "section"},
         {"id": "help", "title": "Help", "kind": "menu", "items": [
             ("Manual", "m", "manual"), ("Keys", "k", "shortcuts"),
             ("License", "l", "license"), ("About", "a", "about")]},
@@ -169,7 +169,7 @@ class GrubForgeApp(ForgeApp):
         ("Tab / Shift+Tab", "next / previous field or button"),
         ("Enter", "open a list, press a button, confirm"),
         ("Space", "flip a switch, tick a box"),
-        ("Esc", "close a window"),
+        ("Esc", "close a window, or leave About / License"),
         ("1-6, Ctrl+letter", "go to a menu entry (Help is 6)"),
         ("F10 or S", "save, with a review first"),
         ("F9 or Ctrl+R", "rebuild the boot menu"),

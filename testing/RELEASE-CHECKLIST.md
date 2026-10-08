@@ -175,7 +175,7 @@ Every release artifact must carry the human + AI credit:
 - **All tests, no warnings:** `python tests/test_boot_entry_sources.py` and
   `PYTHONPATH=../forgekit python -W default -m unittest tests.test_v2_settings tests.test_v2_bootmenu tests.test_v2_themes_backups tests.test_v220`
   (the AUR `check()` runs both; **a new test file must be added to its list too**, or the build
-  silently skips it). Report the count; it was 78 at 2.0.0, 100 at 2.2.0 (25 checks + 75 tests).
+  silently skips it). Report the count; it was 78 at 2.0.0, 105 at 2.2.0 (25 checks + 80 tests).
 - **100 columns:** the three `*_at_100_columns` tests are the guard; also look at
   every screen with forgekit's `tools/console-preview.py --size 100x30`.
 - **Other distributions:** `scripts/make-test-vms.sh` (Debian, Ubuntu, Fedora,

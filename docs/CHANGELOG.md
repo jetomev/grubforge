@@ -4,15 +4,17 @@
 
 ### v2.2.0 — October 8, 2026
 
-**A key for every menu entry, "Boot Menu", a page of hypeForge Settings, and buttons that show their key.** Javier found the first three on October 8 while running grubForge inside hypeForge Settings.
+**A key for every menu entry, "Boot Menu", a page of hypeForge Settings, and buttons that show their key.** Javier found these on October 8 while running grubForge inside hypeForge Settings, in two rounds.
 
 - ⌨ **Help has a number now** ([#38](https://github.com/jetomev/grubforge/issues/38), F-6). The numbers **1 – 6** follow the menu bar, Help included (Quit has none), and **Ctrl** + an entry's underlined letter goes there too. The bottom bar says **1-6 menu** instead of the confusing "1-5 screens". These keys now come from [forgekit](https://github.com/jetomev/forge-suite/tree/main/forgekit) 0.10.0, which makes them from the menu itself, so no entry can be left without a key again.
+- 🔡 **Javier's letter rule** (his second run, same day): each entry's Ctrl letter is the first letter of its name unless another entry already has it, then the next letter of the name. Help is always H, Quit Q, and grubForge's own Ctrl+R (rebuild) is left alone. So **Settings is now Ctrl+S** (was Ctrl+E) and **Backups Ctrl+A** (was Ctrl+K: B belongs to Boot Menu). Pressing a menu's number again closes it (6, 6 opens and closes Help), and the open menu's name stays lit while it's open.
+- 📄 **About and License open as pages** in the main area instead of windows on top, with Help lit while they show; **Esc** goes back to where you were.
 - 🔤 **"Boot Menu"** ([#39](https://github.com/jetomev/grubforge/issues/39), F-7): the screen's name in the menu bar, on the screen itself, in the manual and in the README.
 - 🧩 **A page of hypeForge Settings** ([#40](https://github.com/jetomev/grubforge/issues/40)): started as `grubforge --hypeforge` (any capitals), grubForge has no Quit of its own. Settings closes it, and grubForge first asks its usual question when something isn't saved or isn't in the boot menu yet. `--help` doesn't list it: it's for Settings, not for people.
 - 🏷 **Buttons in Javier's format** ([#40](https://github.com/jetomev/grubforge/issues/40)): the name in Title Case, then the key in brackets: **Save Changes (s)**, **Rebuild Boot Menu (F9)**, **Restore (r)**, **Find Other Systems (f)**. A button without a key of its own shows just its name. Three buttons said "(asks for your password)"; that moved into the text beside them, so brackets always mean a key.
 - Also: the install steps for other distributions now fetch forgekit from the [Forge Suite](https://github.com/jetomev/forge-suite) (its old repository is archived) together with `pyte`, and the Usage section describes 2.1's password box instead of the desktop's password window.
 
-Tests: 78 → **100** (22 new; each one was seen to fail with its fix taken out). Warnings: 3 → 3 (no change), all deprecation notices from the PyGObject library and forgekit's use of it, none from grubForge's own code. New requirement: `python-forgekit` ≥ 0.10.0.
+Tests: 78 → **105** (27 new; each one was seen to fail with its fix taken out). Warnings: 3 → 3 (no change), all deprecation notices from the PyGObject library and forgekit's use of it, none from grubForge's own code. New requirement: `python-forgekit` ≥ 0.10.0.
 
 ### v2.1.0 — October 4, 2026
 

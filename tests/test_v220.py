@@ -30,13 +30,21 @@ sys.path.insert(0, str(Path(__file__).parent))
 from textual.widgets import Button  # noqa: E402
 
 from forgekit import HYPEFORGE_FLAG, HintBar, MenuDropdown, menu_key_clashes  # noqa: E402
-from forgekit.menu import accel  # noqa: E402
+from forgekit.menu import assign_accels  # noqa: E402
 
 from grubforge import cli, privilege  # noqa: E402
 from grubforge.app import GrubForgeApp, QuitDialog  # noqa: E402
 from test_v2_settings import SAMPLE, fake_session  # noqa: E402
 
 SECTIONS = ["overview", "settings", "boot", "themes", "backups"]
+# Javier's letter rule (forgekit, 2026-10-08): the title's first letter unless taken, else its
+# next free letter; Help H, Quit Q; the app's own Ctrl keys (Ctrl+R rebuild) count as taken
+LETTERS = {"overview": "o", "settings": "s", "boot": "b", "themes": "t", "backups": "a",
+           "help": "h", "quit": "q"}
+
+
+def own_ctrl_letters() -> set[str]:
+    return {b.key[5:] for b in GrubForgeApp.__dict__["BINDINGS"] if b.key.startswith("ctrl+") and len(b.key) == 6}
 
 
 def writable_session():
@@ -59,21 +67,31 @@ def active(app) -> list[str]:
 
 # ── F-6 (#38): every menu entry has a number and a Ctrl key, Help included ─────────────────────
 class MenuKeys(unittest.IsolatedAsyncioTestCase):
-    def test_every_underlined_letter_is_unique(self):
-        self.assertEqual(menu_key_clashes(GrubForgeApp.MENU), [])
+    def test_every_entry_gets_a_letter(self):
+        self.assertEqual(menu_key_clashes(GrubForgeApp.MENU, own_ctrl_letters()), [])
+
+    def test_javiers_rule_gives_these_letters(self):
+        self.assertEqual(assign_accels(GrubForgeApp.MENU, own_ctrl_letters()), LETTERS)
+        self.assertFalse(any("acc" in m for m in GrubForgeApp.MENU), "the rule decides, not the app")
+
+    async def test_the_running_app_underlines_those_letters(self):
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.3)
+            for entry, letter in LETTERS.items():
+                markup = str(app.query_one(f"#menu-{entry}").content)
+                self.assertEqual([u.lower() for u in re.findall(r"\[u\](.)\[/u\]", markup)], [letter], entry)
 
     def test_no_ctrl_key_of_the_app_takes_an_underlined_letter(self):
-        letters = {accel(m) for m in GrubForgeApp.MENU}
-        own = [b.key for b in GrubForgeApp.__dict__["BINDINGS"]]
-        clashes = [k for k in own if k.startswith("ctrl+") and k.removeprefix("ctrl+") in letters]
-        self.assertEqual(clashes, [], "an app Ctrl key on an underlined letter would hide that entry")
+        letters = set(assign_accels(GrubForgeApp.MENU, own_ctrl_letters()).values())
+        self.assertEqual(own_ctrl_letters() & letters, set(),
+                         "an app Ctrl key on an underlined letter would hide that entry")
 
     def test_the_app_binds_no_menu_keys_of_its_own(self):
         # forgekit makes them from MENU; a second, hand-written set drifts (Help had no number)
-        letters = {accel(m) for m in GrubForgeApp.MENU}
         own = [b.key for b in GrubForgeApp.__dict__["BINDINGS"]]
         self.assertEqual([k for k in own if k.isdigit()], [], "numbers come from forgekit")
-        self.assertEqual([k for k in own if k.removeprefix("ctrl+") in letters and k.startswith("ctrl+")], [])
+        self.assertEqual(own_ctrl_letters(), {"r"}, "only Ctrl+R (rebuild) is grubForge's own")
 
     async def test_numbers_reach_every_entry_help_included(self):
         app = GrubForgeApp(session=fake_session(SAMPLE))
@@ -100,14 +118,28 @@ class MenuKeys(unittest.IsolatedAsyncioTestCase):
         app = GrubForgeApp(session=fake_session(SAMPLE))
         async with app.run_test(size=(120, 40)) as pilot:
             await pilot.pause(0.3)
-            for key, section in (("ctrl+e", "settings"), ("ctrl+b", "boot"), ("ctrl+t", "themes"),
-                                 ("ctrl+k", "backups"), ("ctrl+o", "overview")):
+            for key, section in (("ctrl+s", "settings"), ("ctrl+b", "boot"), ("ctrl+t", "themes"),
+                                 ("ctrl+a", "backups"), ("ctrl+o", "overview")):
                 await pilot.press(key)
                 await pilot.pause(0.2)
                 self.assertEqual(active(app), [f"menu-{section}"], key)
             await pilot.press("ctrl+h")
             await pilot.pause(0.2)
             self.assertEqual(getattr(app.screen, "menu_id", None), "help", "Ctrl+H opens Help")
+
+    async def test_help_6_twice_closes_it_and_help_is_lit_while_open(self):
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.3)
+            app.set_focus(None)
+            await pilot.press("6")
+            await pilot.pause(0.2)
+            self.assertEqual(getattr(app.screen, "menu_id", None), "help")
+            self.assertTrue(app.query_one("#menu-help").has_class("open"), "Help lit while open")
+            await pilot.press("6")
+            await pilot.pause(0.2)
+            self.assertEqual(len(app.screen_stack), 1, "6 again closes Help")
+            self.assertFalse(app.query_one("#menu-help").has_class("open"))
 
     async def test_the_bottom_bar_says_1_6_menu(self):
         app = GrubForgeApp(session=fake_session(SAMPLE))
@@ -139,6 +171,43 @@ class MenuKeys(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(any("1-5" in k for k in keys))
         self.assertTrue(any("hypeForge Settings" in d for _k, d in GrubForgeApp.SHORTCUTS),
                         "the Quit line says it isn't there inside hypeForge Settings")
+
+
+# ── About and License are pages in the content area, not windows (forgekit, Javier 10-08) ──────
+class AboutAndLicensePages(unittest.IsolatedAsyncioTestCase):
+    async def test_pages_not_windows_and_esc_goes_back(self):
+        from textual.widgets import ContentSwitcher
+        for action, page in (("about", "forge-about"), ("license", "forge-license")):
+            app = GrubForgeApp(session=fake_session(SAMPLE))
+            async with app.run_test(size=(120, 40)) as pilot:
+                await pilot.pause(0.3)
+                await pilot.press("ctrl+t")                      # come from Themes
+                await pilot.pause(0.3)
+                app.action_act(action)
+                await pilot.pause(0.3)
+                work = app.query_one("#forge-work", ContentSwitcher)
+                self.assertEqual(len(app.screen_stack), 1, f"{action}: no window over the app")
+                self.assertEqual(work.current, f"sec-{page}", action)
+                self.assertEqual(active(app), ["menu-help"], f"{action}: Help lit while it shows")
+                if action == "about":
+                    self.assertIn("grubForge", app.export_screenshot())
+                await pilot.press("escape")
+                await pilot.pause(0.3)
+                self.assertEqual(work.current, "sec-themes", f"{action}: Esc goes back to Themes")
+                self.assertEqual(active(app), ["menu-themes"])
+
+    async def test_from_the_help_menu(self):
+        from textual.widgets import ContentSwitcher
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.3)
+            app.set_focus(None)
+            await pilot.press("6")
+            await pilot.pause(0.2)
+            await pilot.press("a")                               # About, in the Help menu
+            await pilot.pause(0.3)
+            self.assertEqual(app.query_one("#forge-work", ContentSwitcher).current, "sec-forge-about")
+            self.assertEqual(len(app.screen_stack), 1)
 
 
 # ── F-7 (#39): Boot Menu ───────────────────────────────────────────────────────────────────────

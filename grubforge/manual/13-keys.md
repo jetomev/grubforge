@@ -7,8 +7,8 @@
 | Tab / Shift+Tab | next / previous field or button |
 | Enter | open a list, press a button, confirm |
 | Space | flip a switch, tick a box |
-| Esc | close a window |
-| 1 – 6, or Ctrl + the underlined letter | go to a menu entry: Overview, Settings, Boot Menu, Themes, Backups, Help (6) |
+| Esc | close a window; leave the About or License page |
+| 1 – 6, or Ctrl + the underlined letter | go to a menu entry: Overview (O), Settings (S), Boot Menu (B), Themes (T), Backups (A), Help (6, H); 6 again closes Help |
 | F10, or S | save, with a review first |
 | F9, or Ctrl+R | rebuild the boot menu |
 | R | read the files again |

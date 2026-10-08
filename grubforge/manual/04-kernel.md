@@ -6,7 +6,7 @@ Extra instructions passed to Linux when it starts. In **Settings ▸ Kernel opti
 
 1. Open **Settings ▸ Kernel options**.
 2. Move to the option with **↑ ↓** and press **Space** to tick or untick it.
-3. **F10**, then **Save and rebuild**.
+3. **F10**, then **Save and Rebuild**.
 
 ## The known options
 

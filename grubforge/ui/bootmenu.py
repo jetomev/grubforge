@@ -1,4 +1,4 @@
-"""Boot menu — the entries shown when the computer starts (v2.0.0).
+"""Boot Menu — the entries shown when the computer starts (v2.0.0).
 
 The list is the screen; actions are buttons underneath, and the bigger jobs
 (adding an entry, finding other systems) open their own windows. Changes are a
@@ -15,7 +15,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, DataTable, Input, Select, Static, TextArea
 
-from forgekit import ConfirmDialog, ForgeModal, Notice, glyph
+from forgekit import MENU_HINT, ConfirmDialog, ForgeModal, Notice, glyph
 
 from .. import probe
 from ..boot_entries_manager import BootEntry
@@ -61,7 +61,7 @@ class BootMenuScreen(Vertical, can_focus=False):
     EDIT_HINTS = [("↑↓", "pick"), ("Shift+↑↓", "move"), ("F2", "rename"), ("+", "add"),
                   ("Tab", "buttons"), ("F10", "save"), ("?", "all keys")]
     # Fedora-style entries are shown, not edited: offer only what works (found in the Fedora 44 VM)
-    VIEW_HINTS = [("↑↓", "look"), ("F1", "help"), ("1-5", "screens"), ("?", "all keys")]
+    VIEW_HINTS = [("↑↓", "look"), ("F1", "help"), MENU_HINT, ("?", "all keys")]
 
     def __init__(self, session, **kw) -> None:
         super().__init__(**kw)
@@ -69,28 +69,28 @@ class BootMenuScreen(Vertical, can_focus=False):
         self._rows: list[Item] = []
 
     def compose(self) -> ComposeResult:
-        yield Static("[b $forge-title-accent]Boot menu[/]   [$forge-muted]the entries shown when the computer "
+        yield Static("[b $forge-title-accent]Boot Menu[/]   [$forge-muted]the entries shown when the computer "
                      "starts, top to bottom[/]", classes="gf-group-title")
         yield Notice(id="bm-notice")
         with Horizontal(id="bm-stale", classes="forge-buttons gf-box-buttons"):
-            yield Button("Drop the old copy", id="bm-drop", variant="primary")
+            yield Button("Drop the Old Copy", id="bm-drop", variant="primary")
         with Horizontal(id="bm-read", classes="forge-buttons gf-box-buttons"):
-            yield Button("Read the boot menu (asks for your password)", id="bm-read-btn", variant="primary")
+            yield Button("Read the Boot Menu", id="bm-read-btn", variant="primary")
         table = DataTable(id="bm-table", cursor_type="row", zebra_stripes=False)
         table.FORGE_HINTS = self.EDIT_HINTS
         yield table
         # three rows that fit at 100 columns: the picked entry, then the menu, then undo
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-actions"):
-            yield Button("Move up  Shift+↑", id="bm-up")
-            yield Button("Move down  Shift+↓", id="bm-down")
-            yield Button("Rename  F2", id="bm-rename")
-            yield Button(f"Remove{glyph('ellipsis')}", id="bm-remove")
+            yield Button("Move Up (Shift+↑)", id="bm-up")
+            yield Button("Move Down (Shift+↓)", id="bm-down")
+            yield Button("Rename (F2)", id="bm-rename")
+            yield Button("Remove", id="bm-remove")
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-more"):
-            yield Button("Start this first", id="bm-default")
-            yield Button(f"Add an entry{glyph('ellipsis')}  +", id="bm-add")
-            yield Button(f"Find other systems{glyph('ellipsis')}  F", id="bm-others")
+            yield Button("Start This First", id="bm-default")
+            yield Button("Add an Entry (+)", id="bm-add")
+            yield Button("Find Other Systems (f)", id="bm-others")
         with Horizontal(classes="forge-buttons gf-box-buttons", id="bm-undo"):
-            yield Button(f"Back to the original order{glyph('ellipsis')}", id="bm-restore")
+            yield Button("Back to the Original Order", id="bm-restore")
 
     def on_mount(self) -> None:
         t = self.query_one("#bm-table", DataTable)
@@ -255,7 +255,7 @@ class BootMenuScreen(Vertical, can_focus=False):
             return
         msg = (f"Remove \"{it.entry.title}\" from your boot menu?\n\nNothing is deleted from the disk. "
                "Going back to the original order brings it back.")
-        if await self.app.push_screen_wait(ConfirmDialog(msg, "Remove", danger=True)):
+        if await self.app.push_screen_wait(ConfirmDialog(msg, "Remove (y)", danger=True)):
             self.session.boot.remove(it)
             self._changed()
 
@@ -283,7 +283,7 @@ class BootMenuScreen(Vertical, can_focus=False):
         msg = ("Go back to the original order?\n\nGRUB makes the menu by itself again: new kernels "
                "appear on their own. Your own order, names and added entries are dropped. A backup is not "
                "needed: nothing else changes.")
-        if not await self.app.push_screen_wait(ConfirmDialog(msg, "Go back")):
+        if not await self.app.push_screen_wait(ConfirmDialog(msg, "Go Back (y)")):
             return
         await self.app.run_restore_original()
 
@@ -322,7 +322,7 @@ class RenameDialog(ForgeModal[str | None]):
             yield Static("", id="rn-problem")
             with Horizontal(classes="forge-buttons forge-panel-footer"):
                 yield Button("Rename", id="rn-ok", variant="primary")
-                yield Button("Cancel", id="rn-cancel")
+                yield Button("Cancel (Esc)", id="rn-cancel")
 
     def on_mount(self) -> None:
         self.query_one("#rn-input", Input).focus()
@@ -377,9 +377,9 @@ class AddEntryDialog(ForgeModal[BootEntry | None]):
                 yield TextArea("", id="ae-block", read_only=True, soft_wrap=True)
                 yield Static("", id="ae-problem")
             with Horizontal(classes="forge-buttons forge-panel-footer"):
-                yield Button("Edit by hand", id="ae-hand")
-                yield Button("Add entry", id="ae-ok", variant="primary")
-                yield Button("Cancel", id="ae-cancel")
+                yield Button("Edit by Hand", id="ae-hand")
+                yield Button("Add Entry", id="ae-ok", variant="primary")
+                yield Button("Cancel (Esc)", id="ae-cancel")
 
     def _line(self, label: str, control, line_id: str | None = None) -> Horizontal:
         return Horizontal(Static(label, classes="gf-add-label"), control, classes="gf-add-line", id=line_id)
@@ -407,7 +407,7 @@ class AddEntryDialog(ForgeModal[BootEntry | None]):
             why = "This computer didn't start in UEFI mode, so there are no firmware settings to open."
         if k == "other" and not self._loaders:
             why = ("No other system's loader is visible. To find Windows and others on other disks, "
-                   "use Find other systems instead.")
+                   "use Find Other Systems (f) instead.")
         self.query_one("#ae-why", Static).update(f"[$forge-warn]{escape(why)}[/]" if why else "")
         area = self.query_one("#ae-block", TextArea)
         area.read_only = k != "empty"
@@ -502,15 +502,15 @@ class OtherSystemsDialog(ForgeModal[None]):
         with Vertical(classes="forge-panel gf-small"):
             yield Static("Find other systems", classes="forge-panel-title")
             yield Static("[$forge-muted]When the search is on, rebuilding the boot menu adds Windows and other "
-                         "systems it finds on your disks.[/]")
+                         "systems it finds on your disks. Search Now asks for your password.[/]")
             yield Static("\n".join(lines), id="os-status")
             yield Static("", id="os-results")
             with Horizontal(classes="forge-buttons forge-panel-footer"):
                 if not on:
-                    yield Button("Turn the search on", id="os-on")
+                    yield Button("Turn the Search On", id="os-on")
                 if installed:
-                    yield Button("Search now (asks for your password)", id="os-scan", variant="primary")
-                yield Button("Close", id="os-close")
+                    yield Button("Search Now", id="os-scan", variant="primary")
+                yield Button("Close (Esc)", id="os-close")
 
     def on_button_pressed(self, e: Button.Pressed) -> None:
         e.stop()

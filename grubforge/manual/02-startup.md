@@ -6,9 +6,9 @@ How the menu behaves when the computer starts. In **Settings ▸ Start-up**.
 
 1. Open **Settings** (press **2**), then **Start-up**.
 2. On **Start this entry**, press **Enter** and pick an entry. Type to jump to it.
-3. Press **F10**, check the review, choose **Save and rebuild**.
+3. Press **F10**, check the review, choose **Save and Rebuild**.
 
-You can also pick an entry on the **Boot menu** screen and press **Start this first**.
+You can also pick an entry on the **Boot Menu** screen and press **Start This First**.
 
 ## The settings
 

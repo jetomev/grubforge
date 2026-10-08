@@ -3,10 +3,10 @@
 ## Add Windows (or another Linux) to the menu
 
 1. Make sure **os-prober** is installed. On KognogOS: `nog install os-prober`.
-2. In **Settings ▸ Other systems**, turn **Find other systems** on. (Or: **Boot menu ▸ Find other systems… ▸ Turn the search on**.)
-3. **F10**, then **Save and rebuild**. The rebuild searches the disks and adds what it finds.
+2. In **Settings ▸ Other systems**, turn **Find other systems** on. (Or: **Boot Menu ▸ Find Other Systems (f) ▸ Turn the Search On**.)
+3. **F10**, then **Save and Rebuild**. The rebuild searches the disks and adds what it finds.
 
-**Boot menu ▸ Find other systems… ▸ Search now** shows what a rebuild would find, without changing anything.
+**Boot Menu ▸ Find Other Systems (f) ▸ Search Now** shows what a rebuild would find, without changing anything.
 
 ## Why it's off at first
 

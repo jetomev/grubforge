@@ -1,6 +1,6 @@
 # On other distributions
 
-GRUB keeps its files in different places on different distributions. grubForge finds them by itself and says what it found on the Overview (**Safety ▸ Boot menu / Built by**).
+GRUB keeps its files in different places on different distributions. grubForge finds them by itself and says what it found on the Overview (**Safety ▸ GRUB / Menu file**).
 
 | Family | Examples | GRUB lives in | Rebuilt by |
 |---|---|---|---|

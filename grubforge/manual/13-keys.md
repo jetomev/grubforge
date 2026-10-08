@@ -8,25 +8,27 @@
 | Enter | open a list, press a button, confirm |
 | Space | flip a switch, tick a box |
 | Esc | close a window |
-| 1 – 5, or Ctrl + the underlined letter | go to a screen |
+| 1 – 6, or Ctrl + the underlined letter | go to a menu entry: Overview, Settings, Boot Menu, Themes, Backups, Help (6) |
 | F10, or S | save, with a review first |
 | F9, or Ctrl+R | rebuild the boot menu |
 | R | read the files again |
 | F1 | help on what is selected |
 | M | this manual |
 | ? | all keys |
-| Q, or Ctrl+Q | quit (asks first if something isn't finished) |
+| Q, or Ctrl+Q | quit (asks first if something isn't finished); not there inside hypeForge Settings, which closes grubForge itself |
 
 ## In lists
 
 | Key | Does |
 |---|---|
 | ↑ ↓ | pick |
-| Shift+↑ Shift+↓ | move an entry (Boot menu) |
-| F2 | rename (Boot menu) |
-| + | add an entry (Boot menu) |
-| F | find other systems (Boot menu) |
+| Shift+↑ Shift+↓ | move an entry (Boot Menu) |
+| F2 | rename (Boot Menu) |
+| + | add an entry (Boot Menu) |
+| F | find other systems (Boot Menu) |
 | I | install a theme (Themes) |
 | N / R / D | back up / restore / delete (Backups) |
 
 Letter keys never act while you're typing in a field.
+
+A button shows its key in brackets after its name, for example **Save Changes (s)** or **Rename (F2)**.

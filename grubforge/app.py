@@ -24,8 +24,8 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Static
 
 from forgekit import (
-    FORGE_CSS, GPL3_NOTICE, ChangeGroup, ForgeApp, ForgeModal, ForgePanelScreen, ManualScreen, Notice,
-    ProgressDialog, ReviewDialog, glyph, load_pages,
+    FORGE_CSS, GPL3_NOTICE, MENU_HINT, ChangeGroup, ForgeApp, ForgeModal, ForgePanelScreen, ManualScreen,
+    Notice, ProgressDialog, ReviewDialog, load_pages,
 )
 
 from . import privilege
@@ -123,7 +123,7 @@ class QuitDialog(ForgeModal[str | None]):
             with Horizontal(classes="forge-buttons forge-panel-footer"):
                 for label, bid, primary in self._buttons:
                     yield Button(label, id=bid, variant="primary" if primary else "default")
-                yield Button("Stay", id="stay")
+                yield Button("Stay (Esc)", id="stay")
 
     def on_mount(self) -> None:
         self.query_one(f"#{self._buttons[0][1]}", Button).focus()
@@ -157,7 +157,7 @@ class GrubForgeApp(ForgeApp):
     MENU = [
         {"id": "overview", "title": "Overview", "kind": "section"},
         {"id": "settings", "title": "Settings", "kind": "section", "acc": "e"},
-        {"id": "boot", "title": "Boot menu", "kind": "section"},
+        {"id": "boot", "title": "Boot Menu", "kind": "section"},   # F-7 (#39)
         {"id": "themes", "title": "Themes", "kind": "section"},
         {"id": "backups", "title": "Backups", "kind": "section", "acc": "k"},
         {"id": "help", "title": "Help", "kind": "menu", "items": [
@@ -170,7 +170,7 @@ class GrubForgeApp(ForgeApp):
         ("Enter", "open a list, press a button, confirm"),
         ("Space", "flip a switch, tick a box"),
         ("Esc", "close a window"),
-        ("1-5, Ctrl+letter", "go to a screen (the underlined letter)"),
+        ("1-6, Ctrl+letter", "go to a menu entry (Help is 6)"),
         ("F10 or S", "save, with a review first"),
         ("F9 or Ctrl+R", "rebuild the boot menu"),
         ("R", "read the files again"),
@@ -178,15 +178,12 @@ class GrubForgeApp(ForgeApp):
         ("M", "the manual"),
         ("?", "this list"),
         ("Q or Ctrl+Q", "quit (asks first if something isn't finished)"),
+        ("", "not there inside hypeForge Settings"),
     ]
-    HINTS = [("Tab", "next"), ("1-5", "screens"), ("F10", "save"), ("F9", "rebuild"), ("F1", "help"), ("?", "all keys")]
+    # 2.2.0 (F-6, #38): "1-6 menu". The numbers 1-6 (Help is 6) and Ctrl + each underlined
+    # letter come from forgekit 0.10.0, made from MENU; grubForge no longer binds its own
+    HINTS = [("Tab", "next"), MENU_HINT, ("F10", "save"), ("F9", "rebuild"), ("F1", "help"), ("?", "all keys")]
     BINDINGS = [
-        Binding("1", "go('overview')", show=False), Binding("2", "go('settings')", show=False),
-        Binding("3", "go('boot')", show=False), Binding("4", "go('themes')", show=False),
-        Binding("5", "go('backups')", show=False),
-        Binding("ctrl+o", "go('overview')", show=False), Binding("ctrl+e", "go('settings')", show=False),
-        Binding("ctrl+b", "go('boot')", show=False), Binding("ctrl+t", "go('themes')", show=False),
-        Binding("ctrl+k", "go('backups')", show=False),
         Binding("f10", "save", show=False, priority=True), Binding("s", "save", show=False),
         Binding("f9", "rebuild", show=False, priority=True), Binding("ctrl+r", "rebuild", show=False, priority=True),
         Binding("r", "reload", show=False),
@@ -234,10 +231,7 @@ class GrubForgeApp(ForgeApp):
         self.set_title_status(f"{self.session.env.distro} · {user} · {mode}")
         self.refresh_state()
 
-    # ── navigation ───────────────────────────────────────────────────────────
-    def action_go(self, section: str) -> None:
-        self._switch_section(section)
-
+    # ── navigation (the keys to each menu entry are forgekit's, from MENU) ──
     def on_section_shown(self, section_id: str) -> None:
         # the files may have changed outside grubForge (#17): read them again;
         # unsaved changes stay
@@ -286,7 +280,7 @@ class GrubForgeApp(ForgeApp):
                 "their own.\n\nSaving your own order writes the entries, as you arranged them, to "
                 "[b]/etc/grub.d/40_custom[/] and turns off the scripts that made them. That keeps your order, "
                 "but those scripts no longer add anything new: a kernel update won't appear until you go "
-                "[b]Back to the original order[/].\n\nEntries made by other tools (snapshots) are fixed: "
+                "[b]Back to the Original Order[/].\n\nEntries made by other tools (snapshots) are fixed: "
                 "their tool keeps placing them, and grubForge never copies them into your order.")))
             return
         row = next((a for a in (w.ancestors_with_self if w else []) if isinstance(a, SettingRow)), None)
@@ -306,11 +300,11 @@ class GrubForgeApp(ForgeApp):
         n = s.change_count()
         if n:
             bar.show(f"{n} change{'s' if n != 1 else ''} not saved yet", "changed",
-                     [(f"Save{glyph('ellipsis')}  F10", "gf-save", True), ("Discard", "gf-discard", False)])
+                     [("Save Changes (s)", "gf-save", True), ("Discard Changes", "gf-discard", False)])
         elif s.not_rebuilt and not s.read_only:
             when = s.last_saved()
             bar.show(f"Saved{f' at {when:%I:%M %p}' if when else ''} · not in the boot menu yet", "warn",
-                     [("Rebuild boot menu  F9", "gf-rebuild", True), ("Why?", "gf-why", False)])
+                     [("Rebuild Boot Menu (F9)", "gf-rebuild", True), ("Why?", "gf-why", False)])
         else:
             bar.hide()
 
@@ -333,7 +327,7 @@ class GrubForgeApp(ForgeApp):
                 f"([b]{self.session.env.grub_cfg}[/]), which is built from your settings by "
                 f"[b]{self.session.env.mkconfig}[/].\n\nSaving writes your settings. Rebuilding makes the "
                 "boot menu from them. Until you rebuild, the computer starts with the old menu.\n\n"
-                "Press [b]F9[/] or [b]Rebuild boot menu[/] when you're ready."))
+                "Press [b]Rebuild Boot Menu (F9)[/] when you're ready."))
         elif bid == "task-default":
             self._switch_section("settings")
             self.query_one(SettingsScreen).show_group("startup")
@@ -371,12 +365,12 @@ class GrubForgeApp(ForgeApp):
         steps = ["A backup of your settings is saved", "The changes are written"]
         if s.boot_changed and s.boot.scripts_to_turn_off():
             steps.append("The scripts that made these entries are turned off, so your order stays")
-        steps.append('Rebuild the boot menu: now with "Save and rebuild", or later with F9')
+        steps.append('Rebuild the boot menu: now with "Save and Rebuild", or later with F9')
         note = s.capability.prompt_note or ""
         choice = await self.push_screen_wait(ReviewDialog(
             "Review before saving", groups, steps=steps,
             note=note,
-            buttons=[("Save", "save", True), ("Save and rebuild", "both", False)]))
+            buttons=[("Save", "save", True), ("Save and Rebuild", "both", False)]))
         if choice is None:
             return
         rebuild = choice == "both"
@@ -444,7 +438,7 @@ class GrubForgeApp(ForgeApp):
         self.refresh_state()
 
     def settings_changed_elsewhere(self, key: str) -> None:
-        """A setting changed from another screen (Boot menu, Find other systems)."""
+        """A setting changed from another screen (Boot Menu, Find Other Systems)."""
         self.query_one(SettingsScreen).sync()
 
     async def run_restore_original(self) -> None:
@@ -466,13 +460,13 @@ class GrubForgeApp(ForgeApp):
             self.push_screen(QuitDialog(
                 f"{n} change{'s are' if n != 1 else ' is'} not saved",
                 ["Quitting now loses them."],
-                [("Save first", "save", True), ("Quit without saving", "quit", False)]), self._after_quit_choice)
+                [("Save First", "save", True), ("Quit Without Saving", "quit", False)]), self._after_quit_choice)
             return False
         if s.not_rebuilt and not s.read_only:
             self.push_screen(QuitDialog(
                 "Saved changes are not in the boot menu yet",
                 ["The computer will start with the old menu until you rebuild it."],
-                [("Rebuild and quit", "rebuild", True), ("Quit anyway", "quit", False)]), self._after_quit_choice)
+                [("Rebuild and Quit", "rebuild", True), ("Quit Anyway", "quit", False)]), self._after_quit_choice)
             return False
         return True
 

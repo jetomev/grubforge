@@ -93,11 +93,11 @@ class BackupsScreen(Horizontal, can_focus=False):
             yield t
             yield Static("", id="bk-where")
             with Horizontal(classes="forge-buttons gf-box-buttons bk-actions", id="bk-actions"):
-                yield Button(f"Restore{glyph('ellipsis')}  R", id="bk-restore", variant="primary")
-                yield Button("Back up now  N", id="bk-new")
+                yield Button("Restore (r)", id="bk-restore", variant="primary")
+                yield Button("Back Up Now (n)", id="bk-new")
             with Horizontal(classes="forge-buttons gf-box-buttons bk-actions", id="bk-more"):
-                yield Button("Show whole file", id="bk-show")
-                yield Button(f"Delete{glyph('ellipsis')}  D", id="bk-delete")
+                yield Button("Show Whole File", id="bk-show")
+                yield Button("Delete (d)", id="bk-delete")
         with VerticalScroll(id="bk-right", classes="gf-box", can_focus=False):
             yield Static("", id="bk-diff")
             yield Notice(id="bk-note")
@@ -166,7 +166,7 @@ class BackupsScreen(Horizontal, can_focus=False):
         note = self.query_one("#bk-note", Notice)
         if b.path.with_name(b.path.name + ".40_custom").exists():
             note.show("Your boot order file was saved with it", [
-                "Restoring puts back the settings. The boot order is changed on the Boot menu screen; "
+                "Restoring puts back the settings. The boot order is changed on the Boot Menu screen; "
                 "the saved copy is kept beside the backup for recovery."], level="muted")
         else:
             note.hide()
@@ -204,7 +204,7 @@ class BackupsScreen(Horizontal, can_focus=False):
         msg = (f"Restore the backup from {day.lower()} {clock}?\n\nThe settings shown on the right are put back. "
                "Today's settings are backed up first, so this can be undone. The boot menu changes only when "
                "you rebuild.")
-        if not await self.app.push_screen_wait(ConfirmDialog(msg, "Restore", default_no=True)):
+        if not await self.app.push_screen_wait(ConfirmDialog(msg, "Restore (y)", default_no=True)):
             return
         r = await privilege.run_async("backup-restore", b.path.name, capability=self.session.capability)
         if r.ok:
@@ -221,7 +221,7 @@ class BackupsScreen(Horizontal, can_focus=False):
             return
         day, clock = when(b.timestamp)
         if not await self.app.push_screen_wait(ConfirmDialog(
-                f"Delete the backup from {day.lower()} {clock}?\n\nThis can't be undone.", "Delete",
+                f"Delete the backup from {day.lower()} {clock}?\n\nThis can't be undone.", "Delete (y)",
                 danger=True, default_no=True)):
             return
         r = await privilege.run_async("backup-delete", b.path.name, capability=self.session.capability)

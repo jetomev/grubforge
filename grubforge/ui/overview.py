@@ -13,7 +13,7 @@ from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, Static
 
-from forgekit import glyph
+from forgekit import MENU_HINT, glyph
 
 from ..backup_manager import list_backups
 from ..boot_entries_manager import GrubCfgUnreadable, parse_boot_entries
@@ -31,7 +31,7 @@ def _when(t: float | None) -> str:
 
 
 class OverviewScreen(VerticalScroll, can_focus=False):
-    FORGE_HINTS = [("Tab", "next button"), ("Enter", "do it"), ("1-5", "screens"), ("F1", "help"), ("?", "all keys")]
+    FORGE_HINTS = [("Tab", "next button"), ("Enter", "do it"), MENU_HINT, ("F1", "help"), ("?", "all keys")]
 
     def __init__(self, session, **kw) -> None:
         super().__init__(**kw)
@@ -44,18 +44,18 @@ class OverviewScreen(VerticalScroll, can_focus=False):
             with Vertical(classes="gf-box gf-attention", id="box-attention"):
                 yield Vertical(id="ov-attention")
                 with Horizontal(classes="forge-buttons gf-box-buttons", id="ov-attention-buttons"):
-                    yield Button("Rebuild it now", id="ov-rebuild", variant="primary")
-                    yield Button("What this means", id="ov-why")
+                    yield Button("Rebuild It Now (F9)", id="ov-rebuild", variant="primary")
+                    yield Button("What This Means", id="ov-why")
             with Vertical(classes="gf-box", id="box-safety"):
                 yield Static("", id="ov-safety")
             with Vertical(classes="gf-box", id="box-tasks"):
                 yield Static("", id="ov-tasks")
                 with Horizontal(classes="forge-buttons gf-task-row"):
-                    yield Button("Start this entry", id="task-default")
-                    yield Button("Wait time", id="task-timeout")
+                    yield Button("Start This Entry", id="task-default")
+                    yield Button("Wait Time", id="task-timeout")
                 with Horizontal(classes="forge-buttons gf-task-row"):
-                    yield Button("Pick a theme", id="task-theme")
-                    yield Button("Back up now", id="task-backup")
+                    yield Button("Pick a Theme", id="task-theme")
+                    yield Button("Back Up Now", id="task-backup")
 
     def on_mount(self) -> None:
         for box, title in (("box-menu", "Your boot menu"), ("box-attention", "Needs attention"),

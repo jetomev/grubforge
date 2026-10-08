@@ -1,6 +1,10 @@
 """Starting grubForge from the terminal (v2.0.0).
 
 ``--version`` and ``--help`` answer and exit without opening the app (#22).
+``--hypeforge`` (2.2.0, #40; any case, ``--hypeForge`` too) is how hypeForge Settings
+starts grubForge as one of its pages: no Quit of its own, Settings closes it and
+grubForge asks first if something isn't finished. It is for Settings, not for
+people, so ``--help`` and the man page don't list it.
 Otherwise the app runs full-screen, and when it closes the terminal gets the
 record of the session: the start banner, then a closing note saying what was
 saved, whether the boot menu has it, where the run was logged, and a thank-you
@@ -29,9 +33,15 @@ Manual: https://github.com/jetomev/grubforge/tree/main/grubforge/manual
 
 LOG_DIR = "~/.local/share/grubforge/logs"
 
+# forgekit's HYPEFORGE_FLAG, written out so --version and --help answer without
+# loading forgekit (a test checks the two agree)
+HYPEFORGE_FLAG = "--hypeforge"
+
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
+    hypeforge = any(a.lower() == HYPEFORGE_FLAG for a in args)
+    args = [a for a in args if a.lower() != HYPEFORGE_FLAG]
     if args and args[0] in ("--version", "-V", "version"):
         print(f"grubForge {__version__}")
         return 0
@@ -45,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     from forgekit import closing_notice, runs_log_row, session_banner
     from .app import GrubForgeApp
 
-    app = GrubForgeApp()
+    app = GrubForgeApp(hypeforge=hypeforge)
     app.run()
     s = app.session
     ended = dt.datetime.now()

@@ -5,8 +5,8 @@ What the menu looks like. In **Settings ▸ Look**, and on the **Themes** screen
 ## Make the menu look nicer
 
 1. Open **Themes** (press **4**). Pick one and look at the preview.
-2. Choose **Use this theme**. grubForge also turns on what a theme needs: the menu drawn as **Graphics**, and a resolution.
-3. **F10**, then **Save and rebuild**.
+2. Choose **Use This Theme**. grubForge also turns on what a theme needs: the menu drawn as **Graphics**, and a resolution.
+3. **F10**, then **Save and Rebuild**.
 
 ## The settings
 

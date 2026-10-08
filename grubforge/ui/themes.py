@@ -1,6 +1,6 @@
 """Themes — pick a theme and see roughly how your menu will look (v2.0.0).
 
-The preview draws your real entries in the theme's colours. "Use this theme"
+The preview draws your real entries in the theme's colours. "Use This Theme"
 is a change like any other (Save, then Rebuild); it also sets the two things a
 theme needs — the menu drawn as graphics, and a resolution — and those show
 in the review too. Installing a downloaded theme goes through the helper.
@@ -34,7 +34,7 @@ WHERE_TO_GET = (
     "  · Catppuccin  [u]https://github.com/catppuccin/grub[/]\n"
     "  · Vimix, Tela, Stylish, WhiteSur  [u]https://github.com/vinceliuice/grub2-themes[/]\n"
     "  · More on gnome-look  [u]https://www.gnome-look.org/browse?cat=109[/]\n\n"
-    "Download one (a folder, or a .tar.gz / .zip of it), then use [b]Install a theme…[/]. "
+    "Download one (a folder, or a .tar.gz / .zip of it), then use [b]Install a Theme (i)[/]. "
     "grubForge copies it into place; nothing runs from it.")
 
 COLOUR_KEYS = ("desktop-color", "item_color", "selected_item_color", "message-color", "text_color")
@@ -98,11 +98,11 @@ class ThemesScreen(Horizontal, can_focus=False):
             yield Static("", id="th-preview")
             yield Static("", id="th-info")
             with Horizontal(classes="forge-buttons gf-box-buttons th-actions", id="th-actions"):
-                yield Button("Use this theme", id="th-use", variant="primary")
-                yield Button("Stop using a theme", id="th-none")
+                yield Button("Use This Theme", id="th-use", variant="primary")
+                yield Button("Stop Using a Theme", id="th-none")
             with Horizontal(classes="forge-buttons gf-box-buttons th-actions", id="th-more"):
-                yield Button(f"Install a theme{glyph('ellipsis')}  I", id="th-install")
-                yield Button("Where to get themes", id="th-get")
+                yield Button("Install a Theme (i)", id="th-install")
+                yield Button("Where to Get Themes", id="th-get")
 
     def on_mount(self) -> None:
         self.refresh_view()
@@ -130,7 +130,7 @@ class ThemesScreen(Horizontal, can_focus=False):
         notice = self.query_one("#th-notice", Notice)
         if not self.themes:
             notice.show("No themes installed yet",
-                        ["Download one and use Install a theme…, or see Where to get themes."], level="info")
+                        ["Download one and use Install a Theme (i), or see Where to Get Themes."], level="info")
         else:
             notice.hide()
         self.query_one("#th-actions").display = True
@@ -281,7 +281,8 @@ class InstallThemeDialog(ForgeModal[bool]):
     def compose(self) -> ComposeResult:
         with Vertical(classes="forge-panel gf-small"):
             yield Static("Install a theme", classes="forge-panel-title")
-            yield Static("[$forge-muted]A downloaded theme: its folder, or the .tar.gz / .zip it came in.[/]")
+            yield Static("[$forge-muted]A downloaded theme: its folder, or the .tar.gz / .zip it came in. "
+                         "Installing asks for your password.[/]")
             with Horizontal(classes="gf-add-line"):
                 yield Static("Theme", classes="gf-add-label")
                 yield Input(placeholder="choose, or type a path", id="ti-path")
@@ -290,9 +291,9 @@ class InstallThemeDialog(ForgeModal[bool]):
                 yield Input(placeholder="the folder name under themes/", id="ti-name")
             yield Static("", id="ti-status")
             with Horizontal(classes="forge-buttons forge-panel-footer"):
-                yield Button(f"Choose{glyph('ellipsis')}", id="ti-choose")
-                yield Button("Install (asks for your password)", id="ti-ok", variant="primary")
-                yield Button("Cancel", id="ti-cancel")
+                yield Button("Choose", id="ti-choose")
+                yield Button("Install", id="ti-ok", variant="primary")
+                yield Button("Cancel (Esc)", id="ti-cancel")
 
     def on_mount(self) -> None:
         self.query_one("#ti-choose", Button).focus()
@@ -345,7 +346,7 @@ class InstallThemeDialog(ForgeModal[bool]):
         if not r.ok:
             status.update(f"[$forge-danger]{escape(r.message)}[/]")
             return
-        self.app.notify(f"{name} installed. Pick it and choose Use this theme.", title="Theme installed", timeout=8)
+        self.app.notify(f"{name} installed. Pick it and choose Use This Theme.", title="Theme installed", timeout=8)
         self.dismiss(True)
 
     def action_cancel(self) -> None:

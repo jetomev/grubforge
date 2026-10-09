@@ -2,6 +2,8 @@
 
 > The GRUB boot menu, without editing files by hand: every setting in plain words, picked from lists, reviewed before it's written, with a backup first.
 
+> 🖥 **Where it runs:** **any major Linux distribution with GRUB** (Arch, Debian/Ubuntu, Fedora/RHEL, openSUSE…) · **no desktop needed**: any desktop, or none · **works on a plain text console** (a tty), saving included.
+
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 ![Platform: Linux](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)

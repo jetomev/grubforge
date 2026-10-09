@@ -5,6 +5,9 @@
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
 
+## At the next release
+- [ ] **The AUR description, at the next release** (Javier, 2026-10-09): the AUR `pkgdesc` (and `.SRCINFO`) gets the same "where it runs" words as the README, GitHub About and kognogos.org — distribution · desktop · plain text console. Not pushed on its own: AUR pushes stay one per proven version.
+
 ## v2.2.0 — keys from forgekit 0.10.0, Boot Menu, --hypeforge, button labels · released 2026-10-08 (GitHub + AUR; Javier on the installed package: "all perfect!")
 Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
 - [x] **#38 F-6**: Help had no number; "1-5 screens" confusing → numbers 1-6 (Help is 6) and Ctrl + the underlined letter come from forgekit 0.10.0; the bar says "1-6 menu"; Keys list, manual, man page, README

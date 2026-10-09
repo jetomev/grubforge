@@ -6,6 +6,7 @@
 - **F-7 (#39):** "Boot menu" → **Boot Menu** (the screen's name).
 - **#40:** the `--hypeforge` start option (no Quit of its own inside hypeForge Settings), and button labels as **"Words In Title Case (k)"**.
 - **Round 2 (Javier's second run, same day; forgekit d3e8e90):** his letter rule (Settings **Ctrl+S**, Backups **Ctrl+A**), a menu's number pressed again closes it, the open menu lit, About and License as pages.
+- **Round 3 (Javier: "yes, Keys and Manual as pages too"; forgekit d7b7ba3):** Keys and the manual open as pages too.
 
 **Build under test:** grubForge 2.2.0 with python-forgekit 0.10.0 (both unreleased at the time of writing).
 **Where:** this desktop (KognogOS) for everything that only looks and presses keys; a real save and rebuild only on a safe path (§5).
@@ -19,7 +20,7 @@
 |---|---|---|---|---|
 | 1.1 | `tests/test_boot_entry_sources.py` | 25 | PASS (10-08) | unchanged |
 | 1.2 | `tests/test_v2_settings.py`, `test_v2_bootmenu.py`, `test_v2_themes_backups.py` | 53 | PASS (10-08) | incl. every button label still fits at 100 columns |
-| 1.3 | `tests/test_v220.py` (new): numbers and Ctrl keys reach every entry, Help is 6, Quit has none; no clashing letters; the bar says "1-6 menu"; the tab reads "Boot Menu"; under `--hypeforge` no Quit, Q / Ctrl+Q do nothing, Settings' close (SIGUSR1) shows grubForge's own question and the answer closes it; the command line takes `--hypeforge` / `--hypeForge` and `--help` doesn't list it; every button label in Javier's format and every key in a label really bound; round 2: the letters O S B T A H, Help's 6 twice, the lit title, About and License as pages with Esc back | 27 | PASS (10-08) | 12 fail on the 2.1.0 code; the other 10 (already given by forgekit 0.10.0) were each seen to fail with that piece switched off; the 5 round-2 tests fail on forgekit before d3e8e90 |
+| 1.3 | `tests/test_v220.py` (new): numbers and Ctrl keys reach every entry, Help is 6, Quit has none; no clashing letters; the bar says "1-6 menu"; the tab reads "Boot Menu"; under `--hypeforge` no Quit, Q / Ctrl+Q do nothing, Settings' close (SIGUSR1) shows grubForge's own question and the answer closes it; the command line takes `--hypeforge` / `--hypeForge` and `--help` doesn't list it; every button label in Javier's format and every key in a label really bound; round 2: the letters O S B T A H, Help's 6 twice, the lit title, About and License as pages with Esc back; round 3: M, F1 and ? open the manual / Keys as pages at the right page, Esc back | 30 | PASS (10-08) | 12 fail on the 2.1.0 code; the other 10 (already given by forgekit 0.10.0) were each seen to fail with that piece switched off; the 5 round-2 tests fail on forgekit before d3e8e90; the 3 round-3 tests fail without the app's change (manual) or on forgekit before d7b7ba3 (Keys) |
 | 1.4 | Warnings with `-W always` | 3 → 3 | PASS (10-08) | PyGObject deprecation notices, none from grubForge |
 | 1.5 | `grep -rn "run_worker(self\.action_" grubforge/` | empty | PASS (10-08) | |
 
@@ -37,10 +38,12 @@ Start it the usual way: `grubforge`.
 | 2.4b | Go to Themes, then **Help ▸ About** | About shows in the main area (no window on top), Help lit at the top | | round 2 |
 | 2.4c | **Esc** | back on Themes | | round 2 |
 | 2.4d | **Help ▸ License**, then **Esc** | the license in the main area; Esc goes back | | round 2 |
+| 2.4f | On Backups, press **F1**; pick another page in the contents with **Enter**, then **Backspace**, then **Esc** | the manual in the main area at **Backups and undo**, Help lit; Backspace goes to the previous manual page; Esc goes back to Backups | | round 3 |
+| 2.4g | Settings ▸ Start-up: **F1** on "Wait before starting", then **Esc** | the manual at **Start-up settings**; Esc goes back to Settings | | round 3 |
 | 2.4e | In the Rename window (Boot Menu ▸ F2), press **Ctrl+E** and **Ctrl+K** in the name | the cursor goes to the end / the text after it is deleted; the screen behind doesn't change | | forgekit fix found by this build |
 | 2.5 | Ctrl+H twice in a row | Help opens, then closes; never two Help menus stacked | | forgekit #47 |
 | 2.6 | Look at the bottom bar on the Overview and on Themes | says **1-6 menu**, never "1-5 screens" | | F-6 |
-| 2.7 | Press **?** | the Keys list: "1-6, Ctrl+letter · go to a menu entry (Help is 6)", and under the Quit line "not there inside hypeForge Settings"; nothing wraps | | |
+| 2.7 | Press **?** | Keys opens in the main area (no window on top), Help lit; **Esc** goes back. The list: "1-6, Ctrl+letter · go to a menu entry (Help is 6)", and under the Quit line "not there inside hypeForge Settings"; nothing wraps | | |
 | 2.8 | Boot Menu screen | its heading reads **Boot Menu** | | F-7 |
 | 2.9 | Change one setting, press **Q** | "Before you go": **Save First** · **Quit Without Saving** · **Stay (Esc)** | | |
 | 2.10 | **Esc**, then **Q** again and **Quit Without Saving** | grubForge closes; the closing note says changes were left unsaved | | |
@@ -98,7 +101,7 @@ In the KognogOS VM, or on this desktop with a harmless change you set back after
 | 6.1 | `grubforge --version` | `grubForge 2.2.0` | | |
 | 6.2 | `grubforge --help` | the usage; **no** mention of hypeforge | | it's for Settings |
 | 6.3 | `man grubforge` | v2.2.0; keys **1 – 6** (6 is Help); "3 - Boot Menu"; no hypeforge | | |
-| 6.4 | **M** (manual) ▸ Getting started | "1 – 6", Ctrl + the underlined letter, and the "Inside hypeForge Settings" part | | |
+| 6.4 | **M** (manual) ▸ Getting started; Esc | "1 – 6", Ctrl + the underlined letter, and the "Inside hypeForge Settings" part; Esc goes back to the screen you were on | | |
 | 6.5 | README on GitHub (after the push) | version 2.2.0; "Inside hypeForge Settings"; keys 1 – 6 | | |
 
 ## 7 · Findings

@@ -15,8 +15,8 @@ Saving and rebuilding are separate on purpose: what you save stays saved, and th
 - **Tab** goes to the next field or button, **Shift+Tab** back.
 - **Enter** opens a list or presses a button. **Space** flips a switch.
 - **1 – 6** go to the menu entries along the top: Overview, Settings, Boot Menu, Themes, Backups, and **6** opens Help. **Ctrl** + the underlined letter does the same: Ctrl+O, Ctrl+S, Ctrl+B, Ctrl+T, Ctrl+A, and Ctrl+H for Help. Pressing **6** again closes Help.
-- **Help ▸ About** and **Help ▸ License** open in the main area, with Help lit at the top; **Esc** takes you back to where you were.
-- **F1** explains whatever is selected. **?** lists every key. **M** opens this manual.
+- **Help ▸ About** and **Help ▸ License** open in the main area too; **Esc** takes you back.
+- **F1** explains whatever is selected. **?** lists every key. **M** opens this manual. They open in the main area, with **Help** lit at the top; **Esc** takes you back to the screen you were on, and **Backspace** to the previous manual page.
 - **Q** quits. If something isn't saved, or saved but not rebuilt, grubForge asks first.
 - A button shows its key in brackets: **Save Changes (s)** is also the **S** key, **Rebuild Boot Menu (F9)** is **F9**.
 

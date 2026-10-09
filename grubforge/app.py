@@ -24,8 +24,8 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Static
 
 from forgekit import (
-    FORGE_CSS, GPL3_NOTICE, MENU_HINT, ChangeGroup, ForgeApp, ForgeModal, ForgePanelScreen, ManualScreen,
-    Notice, ProgressDialog, ReviewDialog, load_pages,
+    FORGE_CSS, GPL3_NOTICE, MENU_HINT, ChangeGroup, ForgeApp, ForgeModal, ForgePanelScreen, Notice,
+    ProgressDialog, ReviewDialog, load_pages,
 )
 
 from . import privilege
@@ -175,7 +175,7 @@ class GrubForgeApp(ForgeApp):
         ("F9 or Ctrl+R", "rebuild the boot menu"),
         ("R", "read the files again"),
         ("F1", "help on what is selected"),
-        ("M", "the manual"),
+        ("M", "the manual (Backspace: its previous page)"),
         ("?", "this list"),
         ("Q or Ctrl+Q", "quit (asks first if something isn't finished)"),
         ("", "not there inside hypeForge Settings"),
@@ -262,7 +262,8 @@ class GrubForgeApp(ForgeApp):
         if not pages:
             self.notify("The manual isn't installed here.", severity="warning")
             return
-        self.push_screen(ManualScreen("grubForge manual", pages, start=page))
+        # 2.2.0 (Javier, 10-08): a page in the main area, Help lit; Esc goes back where you were
+        self.show_manual("grubForge manual", pages, start=page)
 
     def action_field_help(self) -> None:
         from forgekit import SettingRow

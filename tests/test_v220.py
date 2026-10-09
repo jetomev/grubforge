@@ -210,6 +210,79 @@ class AboutAndLicensePages(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(app.screen_stack), 1)
 
 
+# ── Keys and the manual are pages too (forgekit d7b7ba3; Javier: "yes, Keys and Manual as pages too")
+class KeysAndManualPages(unittest.IsolatedAsyncioTestCase):
+    async def _open(self, app, pilot, section_key: str, how) -> None:
+        await pilot.press(section_key)
+        await pilot.pause(0.4)
+        await how(app, pilot)
+        await pilot.pause(0.5)
+
+    def _work(self, app):
+        from textual.widgets import ContentSwitcher
+        return app.query_one("#forge-work", ContentSwitcher)
+
+    async def test_m_opens_the_manual_as_a_page_and_esc_returns(self):
+        from forgekit import ManualView
+
+        async def press_m(app, pilot):
+            app.set_focus(None)
+            await pilot.press("m")
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await self._open(app, pilot, "ctrl+t", press_m)
+            self.assertEqual(len(app.screen_stack), 1, "no window over the app")
+            self.assertEqual(self._work(app).current, "sec-forge-manual")
+            self.assertEqual(active(app), ["menu-help"], "Help lit")
+            self.assertEqual(app.query_one(ManualView).current, "start", "the first page")
+            await pilot.press("escape")
+            await pilot.pause(0.3)
+            self.assertEqual(self._work(app).current, "sec-themes", "Esc goes back to Themes")
+            self.assertEqual(active(app), ["menu-themes"])
+
+    async def test_f1_opens_the_right_manual_page(self):
+        from forgekit import ManualView
+
+        async def f1_on_backups(app, pilot):
+            app.query_one("#bk-table").focus()
+            await pilot.pause(0.2)
+            await pilot.press("f1")
+
+        async def f1_on_a_setting(app, pilot):
+            app.query_one("#row-GRUB_TIMEOUT").control.query_one("Input").focus()
+            await pilot.pause(0.2)
+            self.assertIn("GRUB_TIMEOUT", [getattr(a, "id", "") and a.id.removeprefix("row-")
+                                           for a in app.focused.ancestors_with_self], "F1 from the field")
+            await pilot.press("f1")
+        for key, how, page, section in (("ctrl+a", f1_on_backups, "backups", "sec-backups"),
+                                        ("ctrl+s", f1_on_a_setting, "startup", "sec-settings")):
+            app = GrubForgeApp(session=writable_session())    # a read-only session disables the fields
+            async with app.run_test(size=(120, 40)) as pilot:
+                await self._open(app, pilot, key, how)
+                self.assertEqual(len(app.screen_stack), 1, page)
+                self.assertEqual(self._work(app).current, "sec-forge-manual", page)
+                self.assertEqual(app.query_one(ManualView).current, page)
+                self.assertEqual(active(app), ["menu-help"], page)
+                await pilot.press("escape")
+                await pilot.pause(0.3)
+                self.assertEqual(self._work(app).current, section, f"{page}: Esc goes back")
+
+    async def test_question_mark_opens_keys_as_a_page(self):
+        async def press_q(app, pilot):
+            app.set_focus(None)
+            await pilot.press("question_mark")
+        app = GrubForgeApp(session=fake_session(SAMPLE))
+        async with app.run_test(size=(120, 40)) as pilot:
+            await self._open(app, pilot, "ctrl+b", press_q)
+            self.assertEqual(len(app.screen_stack), 1, "no window over the app")
+            self.assertEqual(self._work(app).current, "sec-forge-keys")
+            self.assertEqual(active(app), ["menu-help"])
+            self.assertIn("1-6, Ctrl+letter", app.export_screenshot().replace("&#160;", " "))
+            await pilot.press("escape")
+            await pilot.pause(0.3)
+            self.assertEqual(self._work(app).current, "sec-boot")
+
+
 # ── F-7 (#39): Boot Menu ───────────────────────────────────────────────────────────────────────
 class BootMenuName(unittest.IsolatedAsyncioTestCase):
     async def test_the_tab_and_the_heading_read_boot_menu(self):

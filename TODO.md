@@ -1,11 +1,11 @@
 # grubForge — the list
 
-**Current release: v2.1.0** (4 Oct 2026, GitHub + AUR). **v2.2.0 built, waiting for Javier's test.**
+**Current release: v2.2.0** (8 Oct 2026, GitHub + AUR); before it v2.1.0 (4 Oct). **v2.2.0 released 2026-10-08 (GitHub + AUR; Javier on the installed package: "all perfect!")
 
 **Updated after every step.** The full story behind each item is in its GitHub issue.
 
 
-## v2.2.0 — keys from forgekit 0.10.0, Boot Menu, --hypeforge, button labels · built 2026-10-08, waiting for Javier's test; GitHub + AUR at release
+## v2.2.0 — keys from forgekit 0.10.0, Boot Menu, --hypeforge, button labels · released 2026-10-08 (GitHub + AUR; Javier on the installed package: "all perfect!")
 Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
 - [x] **#38 F-6**: Help had no number; "1-5 screens" confusing → numbers 1-6 (Help is 6) and Ctrl + the underlined letter come from forgekit 0.10.0; the bar says "1-6 menu"; Keys list, manual, man page, README
 - [x] **#39 F-7**: "Boot menu" → "Boot Menu" (tab, screen heading, manual, man page, README)
@@ -16,7 +16,7 @@ Javier's findings running grubForge inside hypeForge Settings (8 Oct 2026):
 - [x] Tests 78 → 108 (`tests/test_v220.py`, 30 new, each seen failing with its fix out); warnings 3 → 3
 - [x] Test matrix: `testing/20261008 - Test Matrix for grubForge v2-2-0.md`
 - [ ] **Javier runs the matrix** (§2–§6), on the desktop and inside hypeForge Settings
-- [ ] At release (lead): forgekit 0.10.0 released + on the AUR first; AUR recipe `python-forgekit>=0.10.0` and **`tests.test_v220` added to `check()`**; tag, GitHub release, issues #38 #39 #40 closed, AUR push after Javier's local test, badge cache-buster after; Vault
+- [x] At release (done 2026-10-08) (lead): forgekit 0.10.0 released + on the AUR first; AUR recipe `python-forgekit>=0.10.0` and **`tests.test_v220` added to `check()`**; tag, GitHub release, issues #38 #39 #40 closed, AUR push after Javier's local test, badge cache-buster after; Vault
 - [ ] Screenshots in `screenshots/` still show "Boot menu" and the old button labels (`scripts/make-screenshots.py`)
 - [x] **Fixed in forgekit 0.10.0 (2026-10-08, found by this build):** a window open over the app keeps its keys, so Ctrl+E and Ctrl+K in the Rename field edit the text again and nothing switches the screen behind it (forgekit test `test_a_dialog_keeps_its_keys`; grubForge's 75 tests pass on it)
 

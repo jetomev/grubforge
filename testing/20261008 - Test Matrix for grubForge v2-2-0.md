@@ -8,7 +8,7 @@
 - **Round 2 (Javier's second run, same day; forgekit d3e8e90):** his letter rule (Settings **Ctrl+S**, Backups **Ctrl+A**), a menu's number pressed again closes it, the open menu lit, About and License as pages.
 - **Round 3 (Javier: "yes, Keys and Manual as pages too"; forgekit d7b7ba3):** Keys and the manual open as pages too.
 
-**Build under test:** grubForge 2.2.0 with python-forgekit 0.10.0 (both unreleased at the time of writing).
+**Build under test:** grubForge 2.2.0 with python-forgekit 0.10.0 (both unreleased when this was written; released 2026-10-08).
 **Where:** this desktop (KognogOS) for everything that only looks and presses keys; a real save and rebuild only on a safe path (§5).
 **Who:** §1 Claude (automated). §2–§6 Javier, at the keyboard. Leave a row's Result empty until it's been run; anything that looks wrong goes in §7 as F-n.
 

@@ -1,3 +1,6 @@
+> ## 📦 grubForge has moved into the [Forge Suite](https://github.com/jetomev/forge-suite/tree/main/grubforge)
+> Since **22 October 2026** grubForge lives in **[jetomev/forge-suite](https://github.com/jetomev/forge-suite)**, with its full history. New releases are tagged `grubforge-vX.Y.Z` there, and issues go there too (the open ones moved: #34 → [forge-suite#119](https://github.com/jetomev/forge-suite/issues/119), #35 → [#120](https://github.com/jetomev/forge-suite/issues/120)). This repository is archived: its releases (up to 2.2.2) and issues stay readable, and the AUR package `grubforge` keeps working. Thank you to everyone who starred it here.
+
 # ⚡ grubForge
 
 > The GRUB boot menu, without editing files by hand: every setting in plain words, picked from lists, reviewed before it's written, with a backup first.
